@@ -1,14 +1,13 @@
 // Prisma schema for Mompuffs: social feed + multi-vendor marketplace + POD imports.
-// Uses SQLite for zero-config local development. Swap "provider" to "postgresql"
-// and point DATABASE_URL at a real Postgres instance for production.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
