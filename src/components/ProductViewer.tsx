@@ -100,12 +100,6 @@ export default function ProductViewer({
           {shop.name}
         </Link>
         <p className="text-xl font-semibold mt-3">{formatCents(selected.priceCents, selected.currency)}</p>
-        {description && <p className="mt-3 text-sm text-gray-700 whitespace-pre-wrap">{description}</p>}
-        {source !== "MANUAL" && (
-          <p className="mt-2 text-xs inline-block bg-gray-100 text-gray-600 px-2 py-1 rounded">
-            Sourced from {source}
-          </p>
-        )}
 
         <div className="mt-3">
           <label className="text-sm font-medium text-gray-700 block mb-1">Options</label>
@@ -143,6 +137,13 @@ export default function ProductViewer({
             {!selected.isAvailable ? "Out of stock" : added ? "Added ✓" : "Add to cart"}
           </button>
         </div>
+
+        {description && <p className="mt-4 text-sm text-gray-700 whitespace-pre-wrap">{description}</p>}
+        {source !== "MANUAL" && (
+          <p className="mt-2 text-xs inline-block bg-gray-100 text-gray-600 px-2 py-1 rounded">
+            Sourced from {source}
+          </p>
+        )}
       </div>
     </>
   );

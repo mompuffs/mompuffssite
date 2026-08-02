@@ -50,19 +50,19 @@ export default async function ProductPage({ params }: { params: { id: string } }
               {product.shop.name}
             </Link>
             <p className="text-xl font-semibold mt-3">{formatCents(product.priceCents, product.currency)}</p>
+            <div className="mt-4">
+              <AddToCartButton
+                product={{ id: product.id, title: product.title, priceCents: product.priceCents, imageUrl: product.imageUrl }}
+              />
+            </div>
             {product.description && (
-              <p className="mt-3 text-sm text-gray-700 whitespace-pre-wrap">{product.description}</p>
+              <p className="mt-4 text-sm text-gray-700 whitespace-pre-wrap">{product.description}</p>
             )}
             {product.source !== "MANUAL" && (
               <p className="mt-2 text-xs inline-block bg-gray-100 text-gray-600 px-2 py-1 rounded">
                 Sourced from {product.source}
               </p>
             )}
-            <div className="mt-6">
-              <AddToCartButton
-                product={{ id: product.id, title: product.title, priceCents: product.priceCents, imageUrl: product.imageUrl }}
-              />
-            </div>
           </div>
         </>
       )}
