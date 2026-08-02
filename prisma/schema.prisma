@@ -235,18 +235,22 @@ model ProductVariant {
   orderItems  OrderItem[]
 }
 
-// Prototype checkout is simulated -- no real payment processor is wired up.
+// Orders paid via a real processor (e.g. PayPal) carry paymentProvider +
+// externalPaymentId (the capture ID) for refund lookups; orders placed
+// through the simulated flow leave both null.
 model Order {
-  id            String      @id @default(cuid())
-  buyer         User        @relation(fields: [buyerId], references: [id], onDelete: Cascade)
-  buyerId       String
-  status        String      @default("PENDING")
-  totalCents    Int
-  discountCents Int         @default(0)
-  couponCode    String?     // snapshot, so order history reads correctly if the coupon is later deleted
-  coupon        Coupon?     @relation(fields: [couponId], references: [id])
-  couponId      String?
-  createdAt     DateTime    @default(now())
+  id                String      @id @default(cuid())
+  buyer             User        @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  buyerId           String
+  status            String      @default("PENDING")
+  totalCents        Int
+  discountCents     Int         @default(0)
+  couponCode        String?     // snapshot, so order history reads correctly if the coupon is later deleted
+  coupon            Coupon?     @relation(fields: [couponId], references: [id])
+  couponId          String?
+  paymentProvider   String?     // "PAYPAL" | "STRIPE" | "SQUARE" | null (simulated)
+  externalPaymentId String?     // processor's capture/charge ID, for refunds
+  createdAt         DateTime    @default(now())
 
   items         OrderItem[]
 }

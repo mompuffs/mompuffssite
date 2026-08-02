@@ -32,6 +32,7 @@ export const BUILTIN_PAYMENT_PROVIDERS: BuiltinPaymentProvider[] = [
     fields: [
       { key: "clientId", label: "Client ID" },
       { key: "apiKey", label: "Client Secret", password: true },
+      { key: "environment", label: "Environment: \"sandbox\" or \"live\"", placeholder: "sandbox" },
     ],
   },
   {

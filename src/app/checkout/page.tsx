@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart, cartLineKey } from "@/components/CartContext";
 import { formatCents } from "@/lib/money";
+import PayPalCheckoutButton from "@/components/PayPalCheckoutButton";
 
 type AppliedCoupon = {
   code: string;
@@ -25,8 +26,25 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
 
+  const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
+
   const discountCents = appliedCoupon?.discountCents ?? 0;
   const finalTotalCents = Math.max(0, totalCents - discountCents);
+
+  // PayPal checkout only supports one shop's items at a time (a single order
+  // pays into a single connected account).
+  const shopIds = Array.from(new Set(items.map((i) => i.shopId)));
+  const singleShopId = shopIds.length === 1 ? shopIds[0] : null;
+
+  useEffect(() => {
+    if (!singleShopId) {
+      setPaypalClientId(null);
+      return;
+    }
+    fetch(`/api/checkout/paypal/config?shopId=${encodeURIComponent(singleShopId)}`)
+      .then((r) => r.json())
+      .then((data) => setPaypalClientId(data.available ? data.clientId : null));
+  }, [singleShopId]);
 
   async function applyCoupon() {
     if (!couponInput.trim()) return;
@@ -53,7 +71,7 @@ export default function CheckoutPage() {
     setCouponError(null);
   }
 
-  async function placeOrder() {
+  async function placeSimulatedOrder() {
     setPlacing(true);
     setError(null);
     const res = await fetch("/api/orders", {
@@ -71,6 +89,11 @@ export default function CheckoutPage() {
     router.push("/orders");
   }
 
+  function handlePayPalSuccess() {
+    clear();
+    router.push("/orders");
+  }
+
   if (items.length === 0) {
     return <p className="text-center text-gray-500 mt-12">Your cart is empty.</p>;
   }
@@ -78,10 +101,6 @@ export default function CheckoutPage() {
   return (
     <div className="max-w-md mx-auto bg-white rounded-xl shadow p-6">
       <h1 className="text-xl font-bold mb-4">Checkout</h1>
-      <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3 mb-4">
-        This is a prototype checkout — no real payment is processed. Clicking
-        &quot;Place order&quot; simulates a successful payment.
-      </p>
       <ul className="text-sm space-y-1 mb-4">
         {items.map((i) => (
           <li key={cartLineKey(i)} className="flex justify-between">
@@ -93,6 +112,13 @@ export default function CheckoutPage() {
           </li>
         ))}
       </ul>
+
+      {shopIds.length > 1 && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 mb-4">
+          Your cart has items from multiple shops. Real payment checkout supports one shop at a time -- you can
+          still place a simulated order, or remove items so only one shop remains.
+        </p>
+      )}
 
       <div className="mb-4">
         {appliedCoupon ? (
@@ -142,13 +168,37 @@ export default function CheckoutPage() {
       </div>
 
       {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
+
+      {paypalClientId && (
+        <PayPalCheckoutButton
+          items={items}
+          couponCode={appliedCoupon?.code}
+          clientId={paypalClientId}
+          onSuccess={handlePayPalSuccess}
+          onError={setError}
+        />
+      )}
+
+      {paypalClientId && (
+        <div className="flex items-center gap-2 my-3">
+          <div className="flex-1 border-t" />
+          <span className="text-xs text-gray-400">or</span>
+          <div className="flex-1 border-t" />
+        </div>
+      )}
+
       <button
-        onClick={placeOrder}
+        onClick={placeSimulatedOrder}
         disabled={placing}
         className="w-full bg-brand-600 text-white rounded py-2 font-medium hover:bg-brand-700 disabled:opacity-60"
       >
-        {placing ? "Placing order…" : "Place order (simulated)"}
+        {placing ? "Placing order…" : paypalClientId ? "Place order (simulated, no real payment)" : "Place order (simulated)"}
       </button>
+      {!paypalClientId && (
+        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 mt-3">
+          No real payment processor connected for this order yet -- this simulates a successful payment.
+        </p>
+      )}
     </div>
   );
 }
