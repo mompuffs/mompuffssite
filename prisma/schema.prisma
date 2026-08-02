@@ -91,6 +91,7 @@ model Shop {
 
   products    Product[]
   podConnections PodConnection[]
+  paymentConnections PaymentConnection[]
 }
 
 // Per-shop POD provider credentials, so each seller connects their own
@@ -107,6 +108,27 @@ model PodConnection {
   updatedAt DateTime @updatedAt
 
   @@unique([shopId, provider])
+}
+
+// Per-shop payment processor credentials (Stripe, PayPal, Square, or a
+// custom one like Authorize.net). Encrypted like PodConnection, and just as
+// strictly per-shop -- no shared/platform-wide fallback.
+model PaymentConnection {
+  id          String   @id @default(cuid())
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId      String
+  provider    String   // "STRIPE" | "PAYPAL" | "SQUARE" | "CUSTOM"
+  // Stable per-connection identifier: "stripe"/"paypal"/"square" for built-ins,
+  // a slugified name (e.g. "authorize-net") for custom ones so a shop can add
+  // more than one custom processor.
+  slug        String
+  displayName String
+  apiKey      String   // encrypted -- the primary secret/token
+  extra       String?  // encrypted JSON blob for additional fields
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([shopId, slug])
 }
 
 // NOTE: SQLite has no native enum support in Prisma, so ProductSource and

@@ -47,6 +47,9 @@ export default async function ShopDashboardPage() {
               <Link href="/dashboard/shop/connections" className="text-sm text-brand-600 hover:underline">
                 Connections
               </Link>
+              <Link href="/dashboard/shop/payments" className="text-sm text-brand-600 hover:underline">
+                Payments
+              </Link>
               <Link href="/dashboard/shop/import" className="text-sm text-brand-600 hover:underline">
                 Import from Printify / Printful / Peaprint →
               </Link>
