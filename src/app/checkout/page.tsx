@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCart, cartLineKey } from "@/components/CartContext";
 import { formatCents } from "@/lib/money";
 import PayPalCheckoutButton from "@/components/PayPalCheckoutButton";
+import StripeCheckoutForm from "@/components/StripeCheckoutForm";
 
 type AppliedCoupon = {
   code: string;
@@ -27,12 +28,13 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
 
   const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
+  const [stripePublishableKey, setStripePublishableKey] = useState<string | null>(null);
 
   const discountCents = appliedCoupon?.discountCents ?? 0;
   const finalTotalCents = Math.max(0, totalCents - discountCents);
 
-  // PayPal checkout only supports one shop's items at a time (a single order
-  // pays into a single connected account).
+  // Real-payment checkout only supports one shop's items at a time (a single
+  // order pays into a single connected account).
   const shopIds = Array.from(new Set(items.map((i) => i.shopId)));
   const singleShopId = shopIds.length === 1 ? shopIds[0] : null;
 
@@ -45,6 +47,18 @@ export default function CheckoutPage() {
       .then((r) => r.json())
       .then((data) => setPaypalClientId(data.available ? data.clientId : null));
   }, [singleShopId]);
+
+  useEffect(() => {
+    if (!singleShopId) {
+      setStripePublishableKey(null);
+      return;
+    }
+    fetch(`/api/checkout/stripe/config?shopId=${encodeURIComponent(singleShopId)}`)
+      .then((r) => r.json())
+      .then((data) => setStripePublishableKey(data.available ? data.publishableKey : null));
+  }, [singleShopId]);
+
+  const hasRealPayment = Boolean(paypalClientId || stripePublishableKey);
 
   async function applyCoupon() {
     if (!couponInput.trim()) return;
@@ -89,7 +103,7 @@ export default function CheckoutPage() {
     router.push("/orders");
   }
 
-  function handlePayPalSuccess() {
+  function handlePaymentSuccess() {
     clear();
     router.push("/orders");
   }
@@ -169,17 +183,36 @@ export default function CheckoutPage() {
 
       {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
 
+      {stripePublishableKey && (
+        <StripeCheckoutForm
+          items={items}
+          couponCode={appliedCoupon?.code}
+          publishableKey={stripePublishableKey}
+          amountCents={finalTotalCents}
+          onSuccess={handlePaymentSuccess}
+          onError={setError}
+        />
+      )}
+
+      {paypalClientId && stripePublishableKey && (
+        <div className="flex items-center gap-2 my-3">
+          <div className="flex-1 border-t" />
+          <span className="text-xs text-gray-400">or</span>
+          <div className="flex-1 border-t" />
+        </div>
+      )}
+
       {paypalClientId && (
         <PayPalCheckoutButton
           items={items}
           couponCode={appliedCoupon?.code}
           clientId={paypalClientId}
-          onSuccess={handlePayPalSuccess}
+          onSuccess={handlePaymentSuccess}
           onError={setError}
         />
       )}
 
-      {paypalClientId && (
+      {hasRealPayment && (
         <div className="flex items-center gap-2 my-3">
           <div className="flex-1 border-t" />
           <span className="text-xs text-gray-400">or</span>
@@ -192,9 +225,9 @@ export default function CheckoutPage() {
         disabled={placing}
         className="w-full bg-brand-600 text-white rounded py-2 font-medium hover:bg-brand-700 disabled:opacity-60"
       >
-        {placing ? "Placing order…" : paypalClientId ? "Place order (simulated, no real payment)" : "Place order (simulated)"}
+        {placing ? "Placing order…" : hasRealPayment ? "Place order (simulated, no real payment)" : "Place order (simulated)"}
       </button>
-      {!paypalClientId && (
+      {!hasRealPayment && (
         <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 mt-3">
           No real payment processor connected for this order yet -- this simulates a successful payment.
         </p>
