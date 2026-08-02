@@ -4,10 +4,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import CategoryPicker, { Category } from "@/components/CategoryPicker";
 
+type VariantRow = { color: string; size: string; priceAdjustment: string; imageUrl: string };
+
 export default function AddProductForm({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const [form, setForm] = useState({ title: "", description: "", price: "", imageUrl: "" });
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
+  const [variantRows, setVariantRows] = useState<VariantRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -16,20 +19,53 @@ export default function AddProductForm({ categories }: { categories: Category[] 
       setForm((f) => ({ ...f, [field]: e.target.value }));
   }
 
+  function addVariantRow() {
+    setVariantRows((rows) => [...rows, { color: "", size: "", priceAdjustment: "", imageUrl: "" }]);
+  }
+
+  function updateVariantRow(i: number, field: keyof VariantRow, value: string) {
+    setVariantRows((rows) => rows.map((row, idx) => (idx === i ? { ...row, [field]: value } : row)));
+  }
+
+  function removeVariantRow(i: number) {
+    setVariantRows((rows) => rows.filter((_, idx) => idx !== i));
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const priceCents = Math.round(parseFloat(form.price) * 100);
+
+    const basePriceCents = Math.round(parseFloat(form.price) * 100);
+
+    const variants =
+      variantRows.length > 0
+        ? variantRows.map((row) => {
+            const options: Record<string, string> = {};
+            if (row.color) options.Colors = row.color;
+            if (row.size) options.Sizes = row.size;
+            const adjustmentCents = row.priceAdjustment ? Math.round(parseFloat(row.priceAdjustment) * 100) : 0;
+            return {
+              label: [row.color, row.size].filter(Boolean).join(" / ") || "Variant",
+              priceCents: basePriceCents + adjustmentCents,
+              currency: "USD",
+              isAvailable: true,
+              imageUrl: row.imageUrl || undefined,
+              options,
+            };
+          })
+        : undefined;
+
     const res = await fetch("/api/shop/products", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: form.title,
         description: form.description,
-        priceCents,
+        priceCents: basePriceCents,
         imageUrl: form.imageUrl,
         categoryIds,
+        variants,
       }),
     });
     setLoading(false);
@@ -40,6 +76,7 @@ export default function AddProductForm({ categories }: { categories: Category[] 
     }
     setForm({ title: "", description: "", price: "", imageUrl: "" });
     setCategoryIds([]);
+    setVariantRows([]);
     router.refresh();
   }
 
@@ -49,9 +86,78 @@ export default function AddProductForm({ categories }: { categories: Category[] 
       <input required placeholder="Title" value={form.title} onChange={update("title")} className="w-full border rounded px-3 py-2 text-sm" />
       <textarea placeholder="Description" value={form.description} onChange={update("description")} rows={2} className="w-full border rounded px-3 py-2 text-sm resize-none" />
       <div className="flex gap-2">
-        <input required type="number" step="0.01" min="0.01" placeholder="Price (USD)" value={form.price} onChange={update("price")} className="w-1/2 border rounded px-3 py-2 text-sm" />
-        <input placeholder="Image URL" value={form.imageUrl} onChange={update("imageUrl")} className="w-1/2 border rounded px-3 py-2 text-sm" />
+        <input
+          required
+          type="number"
+          step="0.01"
+          min="0.01"
+          placeholder={variantRows.length > 0 ? "Base price (USD)" : "Price (USD)"}
+          value={form.price}
+          onChange={update("price")}
+          className="w-1/2 border rounded px-3 py-2 text-sm"
+        />
+        <input
+          placeholder={variantRows.length > 0 ? "Image URL (fallback)" : "Image URL"}
+          value={form.imageUrl}
+          onChange={update("imageUrl")}
+          className="w-1/2 border rounded px-3 py-2 text-sm"
+        />
       </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-xs font-medium text-gray-700">Variations (optional)</label>
+          <button type="button" onClick={addVariantRow} className="text-brand-600 hover:underline text-xs">
+            + Add variation
+          </button>
+        </div>
+        {variantRows.length > 0 && (
+          <div className="space-y-2 border rounded p-2">
+            <p className="text-xs text-gray-500">
+              Each variation's price is the base price plus its adjustment (e.g. leave blank or 0 for no
+              change, enter 2 for +$2.00, -1.50 for $1.50 off).
+            </p>
+            {variantRows.map((row, i) => (
+              <div key={i} className="grid grid-cols-2 gap-1.5 border-b last:border-b-0 pb-2 last:pb-0">
+                <input
+                  placeholder="Color"
+                  value={row.color}
+                  onChange={(e) => updateVariantRow(i, "color", e.target.value)}
+                  className="border rounded px-2 py-1 text-xs"
+                />
+                <input
+                  placeholder="Size"
+                  value={row.size}
+                  onChange={(e) => updateVariantRow(i, "size", e.target.value)}
+                  className="border rounded px-2 py-1 text-xs"
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  placeholder="Price adjustment (+/-)"
+                  value={row.priceAdjustment}
+                  onChange={(e) => updateVariantRow(i, "priceAdjustment", e.target.value)}
+                  className="border rounded px-2 py-1 text-xs"
+                />
+                <input
+                  placeholder="Image URL"
+                  value={row.imageUrl}
+                  onChange={(e) => updateVariantRow(i, "imageUrl", e.target.value)}
+                  className="border rounded px-2 py-1 text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeVariantRow(i)}
+                  className="col-span-2 text-red-500 text-xs hover:underline text-left"
+                >
+                  Remove variation
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div>
         <label className="text-xs font-medium text-gray-700 block mb-1">Categories</label>
         <CategoryPicker categories={categories} selectedIds={categoryIds} onChange={setCategoryIds} />

@@ -12,6 +12,7 @@ export default function ShopProductRow({
   product: {
     id: string;
     title: string;
+    description: string | null;
     priceCents: number;
     currency: string;
     source: string;
@@ -20,9 +21,17 @@ export default function ShopProductRow({
   categories: Category[];
 }) {
   const router = useRouter();
-  const [editing, setEditing] = useState(false);
+  const [editingCategories, setEditingCategories] = useState(false);
   const [selectedIds, setSelectedIds] = useState(product.categories.map((c) => c.id));
-  const [saving, setSaving] = useState(false);
+  const [savingCategories, setSavingCategories] = useState(false);
+
+  const [editingDescription, setEditingDescription] = useState(false);
+  const [description, setDescription] = useState(product.description ?? "");
+  const [savingDescription, setSavingDescription] = useState(false);
+
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [title, setTitle] = useState(product.title);
+  const [savingTitle, setSavingTitle] = useState(false);
 
   async function handleDelete() {
     if (!confirm(`Remove "${product.title}"?`)) return;
@@ -30,15 +39,37 @@ export default function ShopProductRow({
     router.refresh();
   }
 
-  async function saveCategories() {
-    setSaving(true);
-    await fetch(`/api/shop/products/${product.id}`, {
+  async function patch(body: Record<string, unknown>) {
+    const res = await fetch(`/api/shop/products/${product.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ categoryIds: selectedIds }),
+      body: JSON.stringify(body),
     });
-    setSaving(false);
-    setEditing(false);
+    return res.ok;
+  }
+
+  async function saveCategories() {
+    setSavingCategories(true);
+    await patch({ categoryIds: selectedIds });
+    setSavingCategories(false);
+    setEditingCategories(false);
+    router.refresh();
+  }
+
+  async function saveDescription() {
+    setSavingDescription(true);
+    await patch({ description });
+    setSavingDescription(false);
+    setEditingDescription(false);
+    router.refresh();
+  }
+
+  async function saveTitle() {
+    if (!title.trim()) return;
+    setSavingTitle(true);
+    await patch({ title });
+    setSavingTitle(false);
+    setEditingTitle(false);
     router.refresh();
   }
 
@@ -54,23 +85,67 @@ export default function ShopProductRow({
         </div>
         <div className="flex items-center gap-3">
           <span>{formatCents(product.priceCents, product.currency)}</span>
-          <button onClick={() => setEditing((e) => !e)} className="text-brand-600 hover:underline">
-            {editing ? "Cancel" : "Categories"}
+          <button onClick={() => setEditingTitle((e) => !e)} className="text-brand-600 hover:underline">
+            {editingTitle ? "Cancel" : "Title"}
+          </button>
+          <button onClick={() => setEditingDescription((e) => !e)} className="text-brand-600 hover:underline">
+            {editingDescription ? "Cancel" : "Description"}
+          </button>
+          <button onClick={() => setEditingCategories((e) => !e)} className="text-brand-600 hover:underline">
+            {editingCategories ? "Cancel" : "Categories"}
           </button>
           <button onClick={handleDelete} className="text-red-500 hover:underline">
             Remove
           </button>
         </div>
       </div>
-      {editing && (
+
+      {editingTitle && (
+        <div className="mt-2">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full border rounded px-2 py-1.5 text-sm"
+            placeholder="Title"
+          />
+          <button
+            onClick={saveTitle}
+            disabled={savingTitle || !title.trim()}
+            className="mt-2 bg-brand-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
+          >
+            {savingTitle ? "Saving…" : "Save title"}
+          </button>
+        </div>
+      )}
+
+      {editingDescription && (
+        <div className="mt-2">
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            className="w-full border rounded px-2 py-1.5 text-sm resize-none"
+            placeholder="Description"
+          />
+          <button
+            onClick={saveDescription}
+            disabled={savingDescription}
+            className="mt-2 bg-brand-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
+          >
+            {savingDescription ? "Saving…" : "Save description"}
+          </button>
+        </div>
+      )}
+
+      {editingCategories && (
         <div className="mt-2">
           <CategoryPicker categories={categories} selectedIds={selectedIds} onChange={setSelectedIds} />
           <button
             onClick={saveCategories}
-            disabled={saving}
+            disabled={savingCategories}
             className="mt-2 bg-brand-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
           >
-            {saving ? "Saving…" : "Save categories"}
+            {savingCategories ? "Saving…" : "Save categories"}
           </button>
         </div>
       )}

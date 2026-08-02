@@ -14,14 +14,29 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
-  const { categoryIds } = await req.json();
-  if (!Array.isArray(categoryIds)) {
+  const body = await req.json();
+  const { categoryIds, description, title } = body;
+
+  if (categoryIds !== undefined && !Array.isArray(categoryIds)) {
     return NextResponse.json({ error: "categoryIds must be an array." }, { status: 400 });
+  }
+  if (description !== undefined && typeof description !== "string") {
+    return NextResponse.json({ error: "description must be a string." }, { status: 400 });
+  }
+  if (title !== undefined && (typeof title !== "string" || !title.trim())) {
+    return NextResponse.json({ error: "title must be a non-empty string." }, { status: 400 });
+  }
+  if (categoryIds === undefined && description === undefined && title === undefined) {
+    return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
   }
 
   const updated = await db.product.update({
     where: { id: params.id },
-    data: { categories: { set: categoryIds.map((id: string) => ({ id })) } },
+    data: {
+      ...(categoryIds !== undefined ? { categories: { set: categoryIds.map((id: string) => ({ id })) } } : {}),
+      ...(description !== undefined ? { description: description || null } : {}),
+      ...(title !== undefined ? { title: title.trim() } : {}),
+    },
     include: { categories: true },
   });
 
