@@ -117,6 +117,25 @@ model Product {
 
   posts         Post[]
   orderItems    OrderItem[]
+  variants      ProductVariant[]
+}
+
+// Imported POD products may have multiple purchasable options (e.g. size/color),
+// each with its own price. Manually-added products have no variants -- the
+// base Product.priceCents is used directly in that case.
+model ProductVariant {
+  id          String      @id @default(cuid())
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId   String
+  // Original variant ID from the POD provider's catalog
+  externalId  String?
+  label       String
+  priceCents  Int
+  currency    String      @default("USD")
+  isAvailable Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+
+  orderItems  OrderItem[]
 }
 
 // Prototype checkout is simulated -- no real payment processor is wired up.
@@ -132,11 +151,16 @@ model Order {
 }
 
 model OrderItem {
-  id           String  @id @default(cuid())
-  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId      String
-  product      Product @relation(fields: [productId], references: [id])
-  productId    String
-  quantity     Int     @default(1)
+  id             String          @id @default(cuid())
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId        String
+  product        Product         @relation(fields: [productId], references: [id])
+  productId      String
+  variant        ProductVariant? @relation(fields: [variantId], references: [id])
+  variantId      String?
+  // Snapshot of the variant's label at purchase time, so order history still
+  // reads correctly even if the variant is later removed/changed.
+  variantLabel   String?
+  quantity       Int             @default(1)
   unitPriceCents Int
 }

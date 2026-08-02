@@ -1,4 +1,5 @@
 import { ImportableProduct, PodAdapter } from "./types";
+import { stripHtml } from "./html";
 
 // Printify REST API v1. Docs: https://developers.printify.com/docs/
 // Auth: Bearer token (Personal Access Token from My Profile > Connections),
@@ -44,16 +45,24 @@ export const printifyAdapter: PodAdapter = {
 
     return products.map((p: any) => {
       // Printify variant "price" is already in cents.
-      const firstVariant = Array.isArray(p.variants) ? p.variants.find((v: any) => v.is_enabled) ?? p.variants[0] : null;
+      const enabledVariants = Array.isArray(p.variants) ? p.variants.filter((v: any) => v.is_enabled) : [];
+      const variants = enabledVariants.map((v: any) => ({
+        externalId: String(v.id),
+        label: v.title || "Default",
+        priceCents: v.price ?? 0,
+        currency: "USD",
+        isAvailable: v.is_available !== false,
+      }));
       const image = Array.isArray(p.images) && p.images.length > 0 ? p.images[0].src : undefined;
 
       return {
         externalId: String(p.id),
         title: p.title,
-        description: p.description,
+        description: stripHtml(p.description),
         imageUrl: image,
-        priceCents: firstVariant?.price ?? 0,
+        priceCents: variants[0]?.priceCents ?? 0,
         currency: "USD",
+        variants,
         raw: p,
       };
     });

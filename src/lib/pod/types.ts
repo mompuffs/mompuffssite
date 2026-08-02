@@ -1,3 +1,11 @@
+export type ImportableVariant = {
+  externalId: string;
+  label: string;
+  priceCents: number;
+  currency: string;
+  isAvailable: boolean;
+};
+
 // Common shape every print-on-demand adapter normalizes its catalog into,
 // so the UI and import route don't need to know provider-specific fields.
 export type ImportableProduct = {
@@ -7,6 +15,7 @@ export type ImportableProduct = {
   imageUrl?: string;
   priceCents: number;
   currency: string;
+  variants: ImportableVariant[];
   raw: unknown; // original provider payload, stored for debugging/reference
 };
 

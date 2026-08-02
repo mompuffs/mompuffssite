@@ -13,7 +13,7 @@ export async function POST(req: Request, { params }: { params: { provider: strin
   const adapter = getPodAdapter(params.provider);
   if (!adapter) return NextResponse.json({ error: "Unknown provider." }, { status: 404 });
 
-  const { externalId, title, description, imageUrl, priceCents, raw } = await req.json();
+  const { externalId, title, description, imageUrl, priceCents, raw, variants } = await req.json();
   if (!externalId || !title || !priceCents) {
     return NextResponse.json({ error: "Missing product fields." }, { status: 400 });
   }
@@ -28,7 +28,20 @@ export async function POST(req: Request, { params }: { params: { provider: strin
       source: adapter.id,
       externalId: String(externalId),
       externalMeta: raw ? JSON.stringify(raw).slice(0, 5000) : undefined,
+      variants:
+        Array.isArray(variants) && variants.length > 0
+          ? {
+              create: variants.map((v: any) => ({
+                externalId: v.externalId ? String(v.externalId) : undefined,
+                label: v.label || "Default",
+                priceCents: Math.round(Number(v.priceCents) || 0),
+                currency: v.currency || "USD",
+                isAvailable: v.isAvailable !== false,
+              })),
+            }
+          : undefined,
     },
+    include: { variants: true },
   });
 
   return NextResponse.json(product, { status: 201 });

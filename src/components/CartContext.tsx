@@ -4,17 +4,24 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 
 export type CartItem = {
   productId: string;
+  variantId?: string;
+  variantLabel?: string;
   title: string;
   priceCents: number;
   imageUrl: string | null;
   quantity: number;
 };
 
+// Distinct variants of the same product are separate cart lines.
+export function cartLineKey(item: { productId: string; variantId?: string }) {
+  return item.variantId ?? item.productId;
+}
+
 type CartContextValue = {
   items: CartItem[];
   addItem: (item: Omit<CartItem, "quantity">, quantity?: number) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeItem: (lineKey: string) => void;
+  updateQuantity: (lineKey: string, quantity: number) => void;
   clear: () => void;
   totalCents: number;
 };
@@ -43,25 +50,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   function addItem(item: Omit<CartItem, "quantity">, quantity = 1) {
     setItems((prev) => {
-      const existing = prev.find((i) => i.productId === item.productId);
+      const key = cartLineKey(item);
+      const existing = prev.find((i) => cartLineKey(i) === key);
       if (existing) {
-        return prev.map((i) =>
-          i.productId === item.productId ? { ...i, quantity: i.quantity + quantity } : i
-        );
+        return prev.map((i) => (cartLineKey(i) === key ? { ...i, quantity: i.quantity + quantity } : i));
       }
       return [...prev, { ...item, quantity }];
     });
   }
 
-  function removeItem(productId: string) {
-    setItems((prev) => prev.filter((i) => i.productId !== productId));
+  function removeItem(lineKey: string) {
+    setItems((prev) => prev.filter((i) => cartLineKey(i) !== lineKey));
   }
 
-  function updateQuantity(productId: string, quantity: number) {
+  function updateQuantity(lineKey: string, quantity: number) {
     setItems((prev) =>
       quantity <= 0
-        ? prev.filter((i) => i.productId !== productId)
-        : prev.map((i) => (i.productId === productId ? { ...i, quantity } : i))
+        ? prev.filter((i) => cartLineKey(i) !== lineKey)
+        : prev.map((i) => (cartLineKey(i) === lineKey ? { ...i, quantity } : i))
     );
   }
 

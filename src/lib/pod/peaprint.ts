@@ -1,4 +1,5 @@
 import { ImportableProduct, PodAdapter } from "./types";
+import { stripHtml } from "./html";
 
 // Peaprint (peaprint.com) advertises an order-automation API on their site,
 // but as of writing there is no public developer portal or published
@@ -48,10 +49,11 @@ export const peaprintAdapter: PodAdapter = {
     return products.map((p: any) => ({
       externalId: String(p.id ?? p.product_id),
       title: p.title ?? p.name ?? "Untitled product",
-      description: p.description,
+      description: stripHtml(p.description),
       imageUrl: p.image_url ?? p.thumbnail,
       priceCents: p.price_cents ?? Math.round((p.price ?? 0) * 100),
       currency: p.currency ?? "USD",
+      variants: [],
       raw: p,
     }));
   },

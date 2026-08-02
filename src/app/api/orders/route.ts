@@ -15,20 +15,33 @@ export async function POST(req: Request) {
   }
 
   const productIds = items.map((i: any) => i.productId);
-  const products = await db.product.findMany({ where: { id: { in: productIds } } });
+  const variantIds = items.filter((i: any) => i.variantId).map((i: any) => i.variantId);
+
+  const [products, variants] = await Promise.all([
+    db.product.findMany({ where: { id: { in: productIds } } }),
+    variantIds.length > 0 ? db.productVariant.findMany({ where: { id: { in: variantIds } } }) : Promise.resolve([]),
+  ]);
   const productMap = new Map(products.map((p) => [p.id, p]));
+  const variantMap = new Map(variants.map((v) => [v.id, v]));
 
   let totalCents = 0;
   const orderItemsData = [];
   for (const item of items) {
     const product = productMap.get(item.productId);
     if (!product) continue;
+
+    const variant = item.variantId ? variantMap.get(item.variantId) : undefined;
+    if (item.variantId && (!variant || variant.productId !== product.id || !variant.isAvailable)) continue;
+
+    const unitPriceCents = variant ? variant.priceCents : product.priceCents;
     const quantity = Math.max(1, Number(item.quantity) || 1);
-    totalCents += product.priceCents * quantity;
+    totalCents += unitPriceCents * quantity;
     orderItemsData.push({
       productId: product.id,
+      variantId: variant?.id,
+      variantLabel: variant?.label,
       quantity,
-      unitPriceCents: product.priceCents,
+      unitPriceCents,
     });
   }
 

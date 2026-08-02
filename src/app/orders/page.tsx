@@ -28,7 +28,10 @@ export default async function OrdersPage() {
           <ul className="text-sm space-y-1">
             {order.items.map((item) => (
               <li key={item.id} className="flex justify-between">
-                <span>{item.product.title} × {item.quantity}</span>
+                <span>
+                  {item.product.title}
+                  {item.variantLabel ? ` (${item.variantLabel})` : ""} × {item.quantity}
+                </span>
                 <span>{formatCents(item.unitPriceCents * item.quantity)}</span>
               </li>
             ))}

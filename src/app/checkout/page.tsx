@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCart } from "@/components/CartContext";
+import { useCart, cartLineKey } from "@/components/CartContext";
 import { formatCents } from "@/lib/money";
 
 export default function CheckoutPage() {
@@ -42,8 +42,11 @@ export default function CheckoutPage() {
       </p>
       <ul className="text-sm space-y-1 mb-4">
         {items.map((i) => (
-          <li key={i.productId} className="flex justify-between">
-            <span>{i.title} × {i.quantity}</span>
+          <li key={cartLineKey(i)} className="flex justify-between">
+            <span>
+              {i.title}
+              {i.variantLabel ? ` (${i.variantLabel})` : ""} × {i.quantity}
+            </span>
             <span>{formatCents(i.priceCents * i.quantity)}</span>
           </li>
         ))}

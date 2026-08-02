@@ -1,4 +1,5 @@
 import { ImportableProduct, PodAdapter } from "./types";
+import { stripHtml } from "./html";
 
 // Printful API v1. Docs: https://developers.printful.com/docs/
 // Auth: Bearer private token (Developer Portal > Private Token), scoped to one store.
@@ -48,16 +49,23 @@ export const printfulAdapter: PodAdapter = {
         const detailData = await detailRes.json();
         const syncProduct = detailData?.result?.sync_product;
         const syncVariants = detailData?.result?.sync_variants ?? [];
-        const firstVariant = syncVariants[0];
+
+        const variants = syncVariants.map((v: any) => ({
+          externalId: String(v.id),
+          label: [v.color, v.size].filter(Boolean).join(" / ") || v.name || "Default",
+          priceCents: v.retail_price ? Math.round(parseFloat(v.retail_price) * 100) : 0,
+          currency: v.currency ?? "USD",
+          isAvailable: v.availability_status ? v.availability_status !== "discontinued" : true,
+        }));
 
         return {
           externalId: String(summary.id),
           title: syncProduct?.name ?? summary.name,
+          description: stripHtml(syncProduct?.description),
           imageUrl: syncProduct?.thumbnail ?? summary.thumbnail_url,
-          priceCents: firstVariant?.retail_price
-            ? Math.round(parseFloat(firstVariant.retail_price) * 100)
-            : 0,
-          currency: firstVariant?.currency ?? "USD",
+          priceCents: variants[0]?.priceCents ?? 0,
+          currency: variants[0]?.currency ?? "USD",
+          variants,
           raw: detailData?.result,
         } as ImportableProduct;
       })
