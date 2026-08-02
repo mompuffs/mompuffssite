@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import CategoryPicker, { Category } from "@/components/CategoryPicker";
+import ImageInput from "@/components/ImageInput";
 
 type VariantRow = { color: string; size: string; priceAdjustment: string; imageUrl: string };
 
@@ -85,24 +86,21 @@ export default function AddProductForm({ categories }: { categories: Category[] 
       <h3 className="font-semibold text-sm">Add a product manually</h3>
       <input required placeholder="Title" value={form.title} onChange={update("title")} className="w-full border rounded px-3 py-2 text-sm" />
       <textarea placeholder="Description" value={form.description} onChange={update("description")} rows={2} className="w-full border rounded px-3 py-2 text-sm resize-none" />
-      <div className="flex gap-2">
-        <input
-          required
-          type="number"
-          step="0.01"
-          min="0.01"
-          placeholder={variantRows.length > 0 ? "Base price (USD)" : "Price (USD)"}
-          value={form.price}
-          onChange={update("price")}
-          className="w-1/2 border rounded px-3 py-2 text-sm"
-        />
-        <input
-          placeholder={variantRows.length > 0 ? "Image URL (fallback)" : "Image URL"}
-          value={form.imageUrl}
-          onChange={update("imageUrl")}
-          className="w-1/2 border rounded px-3 py-2 text-sm"
-        />
-      </div>
+      <input
+        required
+        type="number"
+        step="0.01"
+        min="0.01"
+        placeholder={variantRows.length > 0 ? "Base price (USD)" : "Price (USD)"}
+        value={form.price}
+        onChange={update("price")}
+        className="w-full border rounded px-3 py-2 text-sm"
+      />
+      <ImageInput
+        value={form.imageUrl}
+        onChange={(url) => setForm((f) => ({ ...f, imageUrl: url }))}
+        placeholder={variantRows.length > 0 ? "Image URL (fallback)" : "Image URL"}
+      />
 
       <div>
         <div className="flex items-center justify-between mb-1">
@@ -139,12 +137,9 @@ export default function AddProductForm({ categories }: { categories: Category[] 
                   onChange={(e) => updateVariantRow(i, "priceAdjustment", e.target.value)}
                   className="border rounded px-2 py-1 text-xs"
                 />
-                <input
-                  placeholder="Image URL"
-                  value={row.imageUrl}
-                  onChange={(e) => updateVariantRow(i, "imageUrl", e.target.value)}
-                  className="border rounded px-2 py-1 text-xs"
-                />
+                <div className="col-span-2">
+                  <ImageInput value={row.imageUrl} onChange={(url) => updateVariantRow(i, "imageUrl", url)} />
+                </div>
                 <button
                   type="button"
                   onClick={() => removeVariantRow(i)}
