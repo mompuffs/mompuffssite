@@ -6,12 +6,18 @@ export default function PayPalCheckoutButton({
   items,
   couponCode,
   clientId,
+  billing,
+  shipping,
+  contactPhone,
   onSuccess,
   onError,
 }: {
   items: any[];
   couponCode?: string;
   clientId: string;
+  billing?: Record<string, string | undefined>;
+  shipping?: Record<string, string | undefined>;
+  contactPhone?: string;
   onSuccess: (order: any) => void;
   onError: (message: string) => void;
 }) {
@@ -59,7 +65,7 @@ export default function PayPalCheckoutButton({
         const res = await fetch("/api/checkout/paypal/capture-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ paypalOrderId: data.orderID, items, couponCode }),
+          body: JSON.stringify({ paypalOrderId: data.orderID, items, couponCode, billing, shipping, contactPhone }),
         });
         const order = await res.json();
         if (!res.ok) {
@@ -81,7 +87,7 @@ export default function PayPalCheckoutButton({
         // already unmounted
       }
     };
-  }, [sdkReady, items, couponCode, onSuccess, onError]);
+  }, [sdkReady, items, couponCode, billing, shipping, contactPhone, onSuccess, onError]);
 
   return <div ref={containerRef} className="mt-2" />;
 }

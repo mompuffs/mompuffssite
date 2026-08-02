@@ -42,10 +42,27 @@ export default async function OrdersPage() {
               <span>-{formatCents(order.discountCents)}</span>
             </div>
           )}
+          <div className="flex justify-between text-sm mt-1">
+            <span>Shipping</span>
+            <span>{order.shippingCents > 0 ? formatCents(order.shippingCents) : "Free"}</span>
+          </div>
           <div className="flex justify-between font-semibold border-t mt-2 pt-2">
             <span>Total</span>
             <span>{formatCents(order.totalCents)}</span>
           </div>
+          {order.shippingName && (
+            <div className="text-xs text-gray-500 mt-2 border-t pt-2">
+              <p className="font-medium text-gray-600">Shipping to</p>
+              <p>{order.shippingName}</p>
+              <p>
+                {order.shippingAddress1}
+                {order.shippingAddress2 ? `, ${order.shippingAddress2}` : ""}
+              </p>
+              <p>
+                {order.shippingCity}, {order.shippingState} {order.shippingZip}
+              </p>
+            </div>
+          )}
         </div>
       ))}
     </div>

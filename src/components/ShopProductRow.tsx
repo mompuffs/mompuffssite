@@ -16,6 +16,8 @@ export default function ShopProductRow({
     priceCents: number;
     currency: string;
     source: string;
+    shippingMode: string;
+    shippingCents: number;
     categories: { id: string; name: string }[];
   };
   categories: Category[];
@@ -32,6 +34,13 @@ export default function ShopProductRow({
   const [editingTitle, setEditingTitle] = useState(false);
   const [title, setTitle] = useState(product.title);
   const [savingTitle, setSavingTitle] = useState(false);
+
+  const [editingShipping, setEditingShipping] = useState(false);
+  const [shippingMode, setShippingMode] = useState(product.shippingMode);
+  const [shippingCost, setShippingCost] = useState(
+    product.shippingCents ? (product.shippingCents / 100).toFixed(2) : ""
+  );
+  const [savingShipping, setSavingShipping] = useState(false);
 
   async function handleDelete() {
     if (!confirm(`Remove "${product.title}"?`)) return;
@@ -73,6 +82,17 @@ export default function ShopProductRow({
     router.refresh();
   }
 
+  async function saveShipping() {
+    setSavingShipping(true);
+    await patch({
+      shippingMode,
+      shippingCents: shippingMode === "PRODUCT" ? Math.round(parseFloat(shippingCost || "0") * 100) : 0,
+    });
+    setSavingShipping(false);
+    setEditingShipping(false);
+    router.refresh();
+  }
+
   return (
     <div className="border-b py-2 text-sm">
       <div className="flex items-center justify-between">
@@ -93,6 +113,9 @@ export default function ShopProductRow({
           </button>
           <button onClick={() => setEditingCategories((e) => !e)} className="text-brand-600 hover:underline">
             {editingCategories ? "Cancel" : "Categories"}
+          </button>
+          <button onClick={() => setEditingShipping((e) => !e)} className="text-brand-600 hover:underline">
+            {editingShipping ? "Cancel" : "Shipping"}
           </button>
           <button onClick={handleDelete} className="text-red-500 hover:underline">
             Remove
@@ -133,6 +156,37 @@ export default function ShopProductRow({
             className="mt-2 bg-brand-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
           >
             {savingDescription ? "Saving…" : "Save description"}
+          </button>
+        </div>
+      )}
+
+      {editingShipping && (
+        <div className="mt-2 flex gap-2 items-start">
+          <select
+            value={shippingMode}
+            onChange={(e) => setShippingMode(e.target.value)}
+            className="border rounded px-2 py-1.5 text-sm"
+          >
+            <option value="FLAT">Shop's flat rate</option>
+            <option value="PRODUCT">Custom for this product</option>
+          </select>
+          {shippingMode === "PRODUCT" && (
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="Shipping cost (USD)"
+              value={shippingCost}
+              onChange={(e) => setShippingCost(e.target.value)}
+              className="border rounded px-2 py-1.5 text-sm w-40"
+            />
+          )}
+          <button
+            onClick={saveShipping}
+            disabled={savingShipping}
+            className="bg-brand-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
+          >
+            {savingShipping ? "Saving…" : "Save"}
           </button>
         </div>
       )}

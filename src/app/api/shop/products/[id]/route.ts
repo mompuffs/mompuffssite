@@ -15,7 +15,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 
   const body = await req.json();
-  const { categoryIds, description, title } = body;
+  const { categoryIds, description, title, shippingMode, shippingCents } = body;
 
   if (categoryIds !== undefined && !Array.isArray(categoryIds)) {
     return NextResponse.json({ error: "categoryIds must be an array." }, { status: 400 });
@@ -26,7 +26,16 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (title !== undefined && (typeof title !== "string" || !title.trim())) {
     return NextResponse.json({ error: "title must be a non-empty string." }, { status: 400 });
   }
-  if (categoryIds === undefined && description === undefined && title === undefined) {
+  if (shippingMode !== undefined && shippingMode !== "FLAT" && shippingMode !== "PRODUCT") {
+    return NextResponse.json({ error: "shippingMode must be FLAT or PRODUCT." }, { status: 400 });
+  }
+  if (
+    categoryIds === undefined &&
+    description === undefined &&
+    title === undefined &&
+    shippingMode === undefined &&
+    shippingCents === undefined
+  ) {
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
   }
 
@@ -36,6 +45,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       ...(categoryIds !== undefined ? { categories: { set: categoryIds.map((id: string) => ({ id })) } } : {}),
       ...(description !== undefined ? { description: description || null } : {}),
       ...(title !== undefined ? { title: title.trim() } : {}),
+      ...(shippingMode !== undefined ? { shippingMode } : {}),
+      ...(shippingCents !== undefined ? { shippingCents: Math.round(Number(shippingCents) || 0) } : {}),
     },
     include: { categories: true },
   });

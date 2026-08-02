@@ -9,9 +9,13 @@ export async function POST(req: Request) {
   const shop = await db.shop.findUnique({ where: { ownerId: user.id } });
   if (!shop) return NextResponse.json({ error: "You need a shop first." }, { status: 400 });
 
-  const { title, description, priceCents, imageUrl, images, categoryIds, variants } = await req.json();
+  const { title, description, priceCents, imageUrl, images, categoryIds, variants, shippingMode, shippingCents } =
+    await req.json();
   if (!title) {
     return NextResponse.json({ error: "Title is required." }, { status: 400 });
+  }
+  if (shippingMode !== undefined && shippingMode !== "FLAT" && shippingMode !== "PRODUCT") {
+    return NextResponse.json({ error: "shippingMode must be FLAT or PRODUCT." }, { status: 400 });
   }
 
   const hasVariants = Array.isArray(variants) && variants.length > 0;
@@ -33,6 +37,8 @@ export async function POST(req: Request) {
       priceCents: basePriceCents,
       imageUrl: baseImageUrl,
       source: "MANUAL",
+      shippingMode: shippingMode || "FLAT",
+      shippingCents: shippingMode === "PRODUCT" ? Math.round(Number(shippingCents) || 0) : 0,
       categories:
         Array.isArray(categoryIds) && categoryIds.length > 0
           ? { connect: categoryIds.map((id: string) => ({ id })) }

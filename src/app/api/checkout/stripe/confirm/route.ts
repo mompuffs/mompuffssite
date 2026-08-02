@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { priceCartItems } from "@/lib/checkout";
 import { evaluateCoupon } from "@/lib/coupons";
+import { calculateShippingCents } from "@/lib/shipping";
 import { getShopPaymentCreds } from "@/lib/payments/connections";
 import { retrievePaymentIntent } from "@/lib/payments/stripe";
 import { createPaidOrder } from "@/lib/orders";
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
-  const { paymentIntentId, items, couponCode } = await req.json();
+  const { paymentIntentId, items, couponCode, billing, shipping, contactPhone } = await req.json();
   if (!paymentIntentId || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: "Missing order details." }, { status: 400 });
   }
@@ -41,12 +42,13 @@ export async function POST(req: Request) {
   // Guard against a stale/mismatched intent being confirmed against a
   // different cart than the one it was created for.
   const totalCents = priced.reduce((sum, i) => sum + i.unitPriceCents * i.quantity, 0);
+  const shippingCents = await calculateShippingCents(priced);
   let discountCents = 0;
   if (couponCode) {
     const result = await evaluateCoupon(couponCode, items);
     if (result.valid) discountCents = result.discountCents;
   }
-  const expectedCents = Math.max(0, totalCents - discountCents);
+  const expectedCents = Math.max(0, totalCents - discountCents) + shippingCents;
   if (intent.amount !== expectedCents) {
     return NextResponse.json({ error: "Payment amount does not match cart total." }, { status: 400 });
   }
@@ -58,6 +60,9 @@ export async function POST(req: Request) {
       couponCode,
       paymentProvider: "STRIPE",
       externalPaymentId: intent.id,
+      billing,
+      shipping,
+      contactPhone,
     });
     return NextResponse.json(order, { status: 201 });
   } catch (err: any) {

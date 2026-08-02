@@ -10,6 +10,8 @@ type VariantRow = { color: string; size: string; priceAdjustment: string; imageU
 export default function AddProductForm({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const [form, setForm] = useState({ title: "", description: "", price: "", imageUrl: "" });
+  const [shippingMode, setShippingMode] = useState<"FLAT" | "PRODUCT">("FLAT");
+  const [shippingCost, setShippingCost] = useState("");
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [variantRows, setVariantRows] = useState<VariantRow[]>([]);
   const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
@@ -81,6 +83,8 @@ export default function AddProductForm({ categories }: { categories: Category[] 
         images: galleryUrls.filter(Boolean),
         categoryIds,
         variants,
+        shippingMode,
+        shippingCents: shippingMode === "PRODUCT" ? Math.round(parseFloat(shippingCost || "0") * 100) : 0,
       }),
     });
     setLoading(false);
@@ -93,6 +97,8 @@ export default function AddProductForm({ categories }: { categories: Category[] 
     setCategoryIds([]);
     setVariantRows([]);
     setGalleryUrls([]);
+    setShippingMode("FLAT");
+    setShippingCost("");
     router.refresh();
   }
 
@@ -193,6 +199,31 @@ export default function AddProductForm({ categories }: { categories: Category[] 
             ))}
           </div>
         )}
+      </div>
+
+      <div>
+        <label className="text-xs font-medium text-gray-700 block mb-1">Shipping</label>
+        <div className="flex gap-2">
+          <select
+            value={shippingMode}
+            onChange={(e) => setShippingMode(e.target.value as "FLAT" | "PRODUCT")}
+            className="w-1/2 border rounded px-2 py-1.5 text-sm"
+          >
+            <option value="FLAT">Shop's flat rate</option>
+            <option value="PRODUCT">Custom for this product</option>
+          </select>
+          {shippingMode === "PRODUCT" && (
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              placeholder="Shipping cost (USD)"
+              value={shippingCost}
+              onChange={(e) => setShippingCost(e.target.value)}
+              className="w-1/2 border rounded px-2 py-1.5 text-sm"
+            />
+          )}
+        </div>
       </div>
 
       <div>

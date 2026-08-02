@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
-  const { paypalOrderId, items, couponCode } = await req.json();
+  const { paypalOrderId, items, couponCode, billing, shipping, contactPhone } = await req.json();
   if (!paypalOrderId || !Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: "Missing order details." }, { status: 400 });
   }
@@ -49,6 +49,9 @@ export async function POST(req: Request) {
       couponCode,
       paymentProvider: "PAYPAL",
       externalPaymentId: captureId,
+      billing,
+      shipping,
+      contactPhone,
     });
     return NextResponse.json(order, { status: 201 });
   } catch (err: any) {

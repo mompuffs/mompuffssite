@@ -87,6 +87,9 @@ model Shop {
   name        String
   description String?
   bannerUrl   String?
+  // Default per-order shipping charge, used by any product left on "FLAT"
+  // shipping mode (see Product.shippingMode).
+  flatShippingCents Int @default(0)
   createdAt   DateTime  @default(now())
 
   products    Product[]
@@ -173,6 +176,10 @@ model Product {
   currency      String        @default("USD")
   imageUrl      String?
   source        String        @default("MANUAL")
+  // "FLAT" -- uses the shop's flatShippingCents; "PRODUCT" -- uses this
+  // product's own shippingCents instead (e.g. a heavier/oversized item).
+  shippingMode  String        @default("FLAT")
+  shippingCents Int           @default(0)
   // Original ID from the POD provider's catalog, if imported
   externalId    String?
   externalMeta  String?       // raw JSON blob from the provider, for reference/debugging
@@ -245,11 +252,27 @@ model Order {
   status            String      @default("PENDING")
   totalCents        Int
   discountCents     Int         @default(0)
+  shippingCents     Int         @default(0)
   couponCode        String?     // snapshot, so order history reads correctly if the coupon is later deleted
   coupon            Coupon?     @relation(fields: [couponId], references: [id])
   couponId          String?
   paymentProvider   String?     // "PAYPAL" | "STRIPE" | "SQUARE" | null (simulated)
   externalPaymentId String?     // processor's capture/charge ID, for refunds
+  contactPhone      String?
+  billingName       String?
+  billingAddress1   String?
+  billingAddress2   String?
+  billingCity       String?
+  billingState      String?
+  billingZip        String?
+  billingCountry    String?
+  shippingName      String?
+  shippingAddress1  String?
+  shippingAddress2  String?
+  shippingCity      String?
+  shippingState     String?
+  shippingZip       String?
+  shippingCountry   String?
   createdAt         DateTime    @default(now())
 
   items         OrderItem[]

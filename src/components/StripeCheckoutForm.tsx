@@ -7,6 +7,9 @@ export default function StripeCheckoutForm({
   couponCode,
   publishableKey,
   amountCents,
+  billing,
+  shipping,
+  contactPhone,
   onSuccess,
   onError,
 }: {
@@ -14,6 +17,9 @@ export default function StripeCheckoutForm({
   couponCode?: string;
   publishableKey: string;
   amountCents: number;
+  billing?: { name?: string; address1?: string; address2?: string; city?: string; state?: string; zip?: string; country?: string };
+  shipping?: Record<string, string | undefined>;
+  contactPhone?: string;
   onSuccess: (order: any) => void;
   onError: (message: string) => void;
 }) {
@@ -70,7 +76,14 @@ export default function StripeCheckoutForm({
     const res = await fetch("/api/checkout/stripe/confirm", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ paymentIntentId: confirmedPaymentIntentId, items, couponCode }),
+      body: JSON.stringify({
+        paymentIntentId: confirmedPaymentIntentId,
+        items,
+        couponCode,
+        billing,
+        shipping,
+        contactPhone,
+      }),
     });
     const order = await res.json();
     if (!res.ok) {
@@ -124,7 +137,27 @@ export default function StripeCheckoutForm({
     setPaying(true);
     const { error, paymentIntent } = await stripeRef.current.confirmPayment({
       elements: elementsRef.current,
-      confirmParams: { return_url: window.location.href },
+      confirmParams: {
+        return_url: window.location.href,
+        ...(billing?.name
+          ? {
+              payment_method_data: {
+                billing_details: {
+                  name: billing.name,
+                  phone: contactPhone || undefined,
+                  address: {
+                    line1: billing.address1 || undefined,
+                    line2: billing.address2 || undefined,
+                    city: billing.city || undefined,
+                    state: billing.state || undefined,
+                    postal_code: billing.zip || undefined,
+                    country: billing.country || undefined,
+                  },
+                },
+              },
+            }
+          : {}),
+      },
       redirect: "if_required",
     });
     setPaying(false);

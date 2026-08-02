@@ -74,6 +74,11 @@ export default async function ShopDashboardPage() {
                 Coupons
               </Link>
             </li>
+            <li>
+              <Link href="/dashboard/shop/shipping" className="text-brand-600 hover:underline">
+                Shipping
+              </Link>
+            </li>
           </ul>
         </div>
 

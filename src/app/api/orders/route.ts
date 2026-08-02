@@ -11,13 +11,13 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
-  const { items, couponCode } = await req.json();
+  const { items, couponCode, billing, shipping, contactPhone } = await req.json();
   if (!Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: "Cart is empty." }, { status: 400 });
   }
 
   try {
-    const { order } = await createPaidOrder({ buyerId: user.id, items, couponCode });
+    const { order } = await createPaidOrder({ buyerId: user.id, items, couponCode, billing, shipping, contactPhone });
     return NextResponse.json(order, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message ?? "Could not place order." }, { status: 400 });

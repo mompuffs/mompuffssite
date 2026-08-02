@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/session";
 import { priceCartItems } from "@/lib/checkout";
 import { evaluateCoupon } from "@/lib/coupons";
+import { calculateShippingCents } from "@/lib/shipping";
 import { getShopPaymentCreds } from "@/lib/payments/connections";
 import { createOrder } from "@/lib/payments/paypal";
 
@@ -34,13 +35,14 @@ export async function POST(req: Request) {
   }
 
   const totalCents = priced.reduce((sum, i) => sum + i.unitPriceCents * i.quantity, 0);
+  const shippingCents = await calculateShippingCents(priced);
   let discountCents = 0;
   if (couponCode) {
     const result = await evaluateCoupon(couponCode, items);
     if (!result.valid) return NextResponse.json({ error: result.error }, { status: 400 });
     discountCents = result.discountCents;
   }
-  const finalTotalCents = Math.max(0, totalCents - discountCents);
+  const finalTotalCents = Math.max(0, totalCents - discountCents) + shippingCents;
   if (finalTotalCents <= 0) {
     return NextResponse.json({ error: "Order total must be greater than zero." }, { status: 400 });
   }
