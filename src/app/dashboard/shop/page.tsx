@@ -41,23 +41,7 @@ export default async function ShopDashboardPage() {
         <AddProductForm categories={categories} />
 
         <div className="mt-6 bg-white rounded-xl shadow p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold text-sm">Your products ({shop.products.length})</h3>
-            <div className="flex items-center gap-3">
-              <Link href="/dashboard/shop/connections" className="text-sm text-brand-600 hover:underline">
-                Connections
-              </Link>
-              <Link href="/dashboard/shop/payments" className="text-sm text-brand-600 hover:underline">
-                Payments
-              </Link>
-              <Link href="/dashboard/shop/coupons" className="text-sm text-brand-600 hover:underline">
-                Coupons
-              </Link>
-              <Link href="/dashboard/shop/import" className="text-sm text-brand-600 hover:underline">
-                Import from Printify / Printful / Peaprint →
-              </Link>
-            </div>
-          </div>
+          <h3 className="font-semibold text-sm mb-2">Your products ({shop.products.length})</h3>
           {shop.products.length === 0 ? (
             <p className="text-sm text-gray-500">No products yet.</p>
           ) : (
@@ -66,13 +50,41 @@ export default async function ShopDashboardPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow p-4 h-fit">
-        <h3 className="font-semibold text-sm mb-2">Tips</h3>
-        <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
-          <li>Products you add here show up instantly on the public marketplace.</li>
-          <li>Link a product to a post from the feed composer to promote it (coming soon).</li>
-          <li>Import catalog items from Printify, Printful, or Peaprint from the import page.</li>
-        </ul>
+      <div className="space-y-6 h-fit">
+        <div className="bg-white rounded-xl shadow p-4">
+          <h3 className="font-semibold text-sm mb-2">Manage shop</h3>
+          <ul className="text-sm space-y-1.5">
+            <li>
+              <Link href="/dashboard/shop/import" className="text-brand-600 hover:underline">
+                Import from Printify / Printful / Peaprint
+              </Link>
+            </li>
+            <li>
+              <Link href="/dashboard/shop/connections" className="text-brand-600 hover:underline">
+                Connections
+              </Link>
+            </li>
+            <li>
+              <Link href="/dashboard/shop/payments" className="text-brand-600 hover:underline">
+                Payments
+              </Link>
+            </li>
+            <li>
+              <Link href="/dashboard/shop/coupons" className="text-brand-600 hover:underline">
+                Coupons
+              </Link>
+            </li>
+          </ul>
+        </div>
+
+        <div className="bg-white rounded-xl shadow p-4">
+          <h3 className="font-semibold text-sm mb-2">Tips</h3>
+          <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
+            <li>Products you add here show up instantly on the public marketplace.</li>
+            <li>Link a product to a post from the feed composer to promote it (coming soon).</li>
+            <li>Import catalog items from Printify, Printful, or Peaprint from the import page.</li>
+          </ul>
+        </div>
       </div>
     </div>
   );
