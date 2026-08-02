@@ -10,6 +10,8 @@ export type CartItem = {
   priceCents: number;
   imageUrl: string | null;
   quantity: number;
+  shopId: string;
+  shopName: string;
 };
 
 // Distinct variants of the same product are separate cart lines.

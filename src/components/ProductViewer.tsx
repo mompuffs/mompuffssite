@@ -25,7 +25,7 @@ export default function ProductViewer({
   variants,
 }: {
   product: { id: string; title: string };
-  shop: { name: string; slug: string };
+  shop: { id: string; name: string; slug: string };
   description: string | null;
   source: string;
   baseImageUrl: string | null;
@@ -94,6 +94,8 @@ export default function ProductViewer({
       title: product.title,
       priceCents: selected.priceCents,
       imageUrl: displayImage,
+      shopId: shop.id,
+      shopName: shop.name,
     });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);

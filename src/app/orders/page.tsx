@@ -36,6 +36,12 @@ export default async function OrdersPage() {
               </li>
             ))}
           </ul>
+          {order.discountCents > 0 && (
+            <div className="flex justify-between text-sm text-green-700 mt-1">
+              <span>Discount {order.couponCode ? `(${order.couponCode})` : ""}</span>
+              <span>-{formatCents(order.discountCents)}</span>
+            </div>
+          )}
           <div className="flex justify-between font-semibold border-t mt-2 pt-2">
             <span>Total</span>
             <span>{formatCents(order.totalCents)}</span>

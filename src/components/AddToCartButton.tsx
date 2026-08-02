@@ -6,13 +6,27 @@ import { useCart } from "@/components/CartContext";
 export default function AddToCartButton({
   product,
 }: {
-  product: { id: string; title: string; priceCents: number; imageUrl: string | null };
+  product: {
+    id: string;
+    title: string;
+    priceCents: number;
+    imageUrl: string | null;
+    shopId: string;
+    shopName: string;
+  };
 }) {
   const { addItem } = useCart();
   const [added, setAdded] = useState(false);
 
   function handleAdd() {
-    addItem({ productId: product.id, title: product.title, priceCents: product.priceCents, imageUrl: product.imageUrl });
+    addItem({
+      productId: product.id,
+      title: product.title,
+      priceCents: product.priceCents,
+      imageUrl: product.imageUrl,
+      shopId: product.shopId,
+      shopName: product.shopName,
+    });
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   }

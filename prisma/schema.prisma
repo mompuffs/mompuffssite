@@ -92,6 +92,7 @@ model Shop {
   products    Product[]
   podConnections PodConnection[]
   paymentConnections PaymentConnection[]
+  coupons     Coupon[]
 }
 
 // Per-shop POD provider credentials, so each seller connects their own
@@ -129,6 +130,29 @@ model PaymentConnection {
   updatedAt   DateTime @updatedAt
 
   @@unique([shopId, slug])
+}
+
+// Shop-scoped discount code. A coupon only discounts the line items that
+// belong to its own shop -- a multi-vendor cart checkout applies it just to
+// that shop's subtotal, not the whole order.
+model Coupon {
+  id            String    @id @default(cuid())
+  shop          Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId        String
+  code          String    // stored uppercase, matched case-insensitively
+  type          String    // "PERCENT" | "FIXED"
+  // PERCENT: 1-100 (whole percent off); FIXED: cents off
+  amount        Int
+  isActive      Boolean   @default(true)
+  maxUses       Int?      // null = unlimited
+  usedCount     Int       @default(0)
+  expiresAt     DateTime?
+  minOrderCents Int?      // minimum subtotal (of this shop's items) to qualify
+  createdAt     DateTime  @default(now())
+
+  orders        Order[]
+
+  @@unique([shopId, code])
 }
 
 // NOTE: SQLite has no native enum support in Prisma, so ProductSource and
@@ -213,14 +237,18 @@ model ProductVariant {
 
 // Prototype checkout is simulated -- no real payment processor is wired up.
 model Order {
-  id          String      @id @default(cuid())
-  buyer       User        @relation(fields: [buyerId], references: [id], onDelete: Cascade)
-  buyerId     String
-  status      String      @default("PENDING")
-  totalCents  Int
-  createdAt   DateTime    @default(now())
+  id            String      @id @default(cuid())
+  buyer         User        @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  buyerId       String
+  status        String      @default("PENDING")
+  totalCents    Int
+  discountCents Int         @default(0)
+  couponCode    String?     // snapshot, so order history reads correctly if the coupon is later deleted
+  coupon        Coupon?     @relation(fields: [couponId], references: [id])
+  couponId      String?
+  createdAt     DateTime    @default(now())
 
-  items       OrderItem[]
+  items         OrderItem[]
 }
 
 model OrderItem {

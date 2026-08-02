@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { priceCartItems } from "@/lib/checkout";
+import { evaluateCoupon } from "@/lib/coupons";
 
 // Prototype checkout: no real payment processor is wired up. This endpoint
 // trusts the client-submitted cart, re-prices every line item server-side
@@ -9,54 +11,58 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
-  const { items } = await req.json();
+  const { items, couponCode } = await req.json();
   if (!Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: "Cart is empty." }, { status: 400 });
   }
 
-  const productIds = items.map((i: any) => i.productId);
-  const variantIds = items.filter((i: any) => i.variantId).map((i: any) => i.variantId);
-
-  const [products, variants] = await Promise.all([
-    db.product.findMany({ where: { id: { in: productIds } } }),
-    variantIds.length > 0 ? db.productVariant.findMany({ where: { id: { in: variantIds } } }) : Promise.resolve([]),
-  ]);
-  const productMap = new Map(products.map((p) => [p.id, p]));
-  const variantMap = new Map(variants.map((v) => [v.id, v]));
-
-  let totalCents = 0;
-  const orderItemsData = [];
-  for (const item of items) {
-    const product = productMap.get(item.productId);
-    if (!product) continue;
-
-    const variant = item.variantId ? variantMap.get(item.variantId) : undefined;
-    if (item.variantId && (!variant || variant.productId !== product.id || !variant.isAvailable)) continue;
-
-    const unitPriceCents = variant ? variant.priceCents : product.priceCents;
-    const quantity = Math.max(1, Number(item.quantity) || 1);
-    totalCents += unitPriceCents * quantity;
-    orderItemsData.push({
-      productId: product.id,
-      variantId: variant?.id,
-      variantLabel: variant?.label,
-      quantity,
-      unitPriceCents,
-    });
-  }
-
-  if (orderItemsData.length === 0) {
+  const priced = await priceCartItems(items);
+  if (priced.length === 0) {
     return NextResponse.json({ error: "No valid items in cart." }, { status: 400 });
   }
 
-  const order = await db.order.create({
-    data: {
-      buyerId: user.id,
-      status: "PAID",
-      totalCents,
-      items: { create: orderItemsData },
-    },
-    include: { items: { include: { product: true } } },
+  const totalCents = priced.reduce((sum, i) => sum + i.unitPriceCents * i.quantity, 0);
+
+  let discountCents = 0;
+  let couponId: string | undefined;
+  let couponCodeSnapshot: string | undefined;
+
+  if (couponCode) {
+    const result = await evaluateCoupon(couponCode, items);
+    if (!result.valid) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+    discountCents = result.discountCents;
+    couponId = result.couponId;
+    couponCodeSnapshot = result.code;
+  }
+
+  const finalTotalCents = Math.max(0, totalCents - discountCents);
+
+  const order = await db.$transaction(async (tx) => {
+    if (couponId) {
+      await tx.coupon.update({ where: { id: couponId }, data: { usedCount: { increment: 1 } } });
+    }
+    return tx.order.create({
+      data: {
+        buyerId: user.id,
+        status: "PAID",
+        totalCents: finalTotalCents,
+        discountCents,
+        couponCode: couponCodeSnapshot,
+        couponId,
+        items: {
+          create: priced.map((i) => ({
+            productId: i.productId,
+            variantId: i.variantId,
+            variantLabel: i.variantLabel,
+            quantity: i.quantity,
+            unitPriceCents: i.unitPriceCents,
+          })),
+        },
+      },
+      include: { items: { include: { product: true } } },
+    });
   });
 
   return NextResponse.json(order, { status: 201 });

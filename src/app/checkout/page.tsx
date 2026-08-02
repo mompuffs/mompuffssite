@@ -5,11 +5,53 @@ import { useRouter } from "next/navigation";
 import { useCart, cartLineKey } from "@/components/CartContext";
 import { formatCents } from "@/lib/money";
 
+type AppliedCoupon = {
+  code: string;
+  type: "PERCENT" | "FIXED";
+  amount: number;
+  shopId: string;
+  shopName: string;
+  discountCents: number;
+};
+
 export default function CheckoutPage() {
   const { items, totalCents, clear } = useCart();
   const router = useRouter();
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [couponInput, setCouponInput] = useState("");
+  const [applying, setApplying] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+
+  const discountCents = appliedCoupon?.discountCents ?? 0;
+  const finalTotalCents = Math.max(0, totalCents - discountCents);
+
+  async function applyCoupon() {
+    if (!couponInput.trim()) return;
+    setApplying(true);
+    setCouponError(null);
+    const res = await fetch("/api/coupons/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: couponInput, items }),
+    });
+    const data = await res.json();
+    setApplying(false);
+    if (!res.ok || !data.valid) {
+      setCouponError(data.error ?? "Could not apply that code.");
+      setAppliedCoupon(null);
+      return;
+    }
+    setAppliedCoupon(data);
+    setCouponInput("");
+  }
+
+  function removeCoupon() {
+    setAppliedCoupon(null);
+    setCouponError(null);
+  }
 
   async function placeOrder() {
     setPlacing(true);
@@ -17,7 +59,7 @@ export default function CheckoutPage() {
     const res = await fetch("/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items }),
+      body: JSON.stringify({ items, couponCode: appliedCoupon?.code }),
     });
     if (!res.ok) {
       const data = await res.json();
@@ -51,10 +93,54 @@ export default function CheckoutPage() {
           </li>
         ))}
       </ul>
-      <div className="flex justify-between font-semibold border-t pt-2 mb-4">
-        <span>Total</span>
-        <span>{formatCents(totalCents)}</span>
+
+      <div className="mb-4">
+        {appliedCoupon ? (
+          <div className="flex items-center justify-between text-sm bg-green-50 border border-green-200 rounded p-2">
+            <span>
+              Code <span className="font-medium">{appliedCoupon.code}</span> applied ({appliedCoupon.shopName})
+            </span>
+            <button onClick={removeCoupon} className="text-red-500 hover:underline">
+              Remove
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <input
+              placeholder="Promo code"
+              value={couponInput}
+              onChange={(e) => setCouponInput(e.target.value)}
+              className="flex-1 border rounded px-3 py-1.5 text-sm"
+            />
+            <button
+              onClick={applyCoupon}
+              disabled={applying || !couponInput.trim()}
+              className="bg-gray-100 border rounded px-3 py-1.5 text-sm font-medium hover:bg-gray-200 disabled:opacity-60"
+            >
+              {applying ? "Checking…" : "Apply"}
+            </button>
+          </div>
+        )}
+        {couponError && <p className="text-red-600 text-xs mt-1">{couponError}</p>}
       </div>
+
+      <div className="space-y-1 mb-4">
+        <div className="flex justify-between text-sm">
+          <span>Subtotal</span>
+          <span>{formatCents(totalCents)}</span>
+        </div>
+        {discountCents > 0 && (
+          <div className="flex justify-between text-sm text-green-700">
+            <span>Discount</span>
+            <span>-{formatCents(discountCents)}</span>
+          </div>
+        )}
+        <div className="flex justify-between font-semibold border-t pt-2">
+          <span>Total</span>
+          <span>{formatCents(finalTotalCents)}</span>
+        </div>
+      </div>
+
       {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
       <button
         onClick={placeOrder}

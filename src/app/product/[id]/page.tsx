@@ -27,7 +27,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
       {product.variants.length > 0 ? (
         <ProductViewer
           product={{ id: product.id, title: product.title }}
-          shop={{ name: product.shop.name, slug: product.shop.slug }}
+          shop={{ id: product.shopId, name: product.shop.name, slug: product.shop.slug }}
           description={product.description}
           source={product.source}
           baseImageUrl={product.imageUrl}
@@ -56,7 +56,14 @@ export default async function ProductPage({ params }: { params: { id: string } }
             <p className="text-xl font-semibold mt-3">{formatCents(product.priceCents, product.currency)}</p>
             <div className="mt-4">
               <AddToCartButton
-                product={{ id: product.id, title: product.title, priceCents: product.priceCents, imageUrl: product.imageUrl }}
+                product={{
+                  id: product.id,
+                  title: product.title,
+                  priceCents: product.priceCents,
+                  imageUrl: product.imageUrl,
+                  shopId: product.shopId,
+                  shopName: product.shop.name,
+                }}
               />
             </div>
             {product.description && (
