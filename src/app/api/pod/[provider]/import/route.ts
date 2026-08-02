@@ -37,6 +37,9 @@ export async function POST(req: Request, { params }: { params: { provider: strin
                 priceCents: Math.round(Number(v.priceCents) || 0),
                 currency: v.currency || "USD",
                 isAvailable: v.isAvailable !== false,
+                imageUrl: v.imageUrl || undefined,
+                optionsJson:
+                  v.options && Object.keys(v.options).length > 0 ? JSON.stringify(v.options) : undefined,
               })),
             }
           : undefined,

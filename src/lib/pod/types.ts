@@ -4,6 +4,9 @@ export type ImportableVariant = {
   priceCents: number;
   currency: string;
   isAvailable: boolean;
+  imageUrl?: string;
+  // Option name -> value, e.g. { Colors: "Black", Sizes: "S" }, when the provider exposes it
+  options?: Record<string, string>;
 };
 
 // Common shape every print-on-demand adapter normalizes its catalog into,

@@ -44,22 +44,50 @@ export const printifyAdapter: PodAdapter = {
     const products = Array.isArray(data?.data) ? data.data : [];
 
     return products.map((p: any) => {
+      const optionDefs = Array.isArray(p.options) ? p.options : [];
+      const images = Array.isArray(p.images) ? p.images : [];
+
+      // Printify variants reference their option values (e.g. Color, Size) by
+      // numeric ID; resolve those back to readable names via product.options.
+      function resolveOptions(variant: any): Record<string, string> {
+        const valueIds: number[] = Array.isArray(variant.options) ? variant.options : [];
+        const resolved: Record<string, string> = {};
+        for (const def of optionDefs) {
+          const match = (def.values || []).find((v: any) => valueIds.includes(v.id));
+          if (match) resolved[def.name] = match.title;
+        }
+        return resolved;
+      }
+
+      // Each catalog image lists which variant IDs it depicts (usually one per color).
+      function resolveImage(variant: any): string | undefined {
+        return images.find((img: any) => Array.isArray(img.variant_ids) && img.variant_ids.includes(variant.id))
+          ?.src;
+      }
+
       // Printify variant "price" is already in cents.
       const enabledVariants = Array.isArray(p.variants) ? p.variants.filter((v: any) => v.is_enabled) : [];
-      const variants = enabledVariants.map((v: any) => ({
-        externalId: String(v.id),
-        label: v.title || "Default",
-        priceCents: v.price ?? 0,
-        currency: "USD",
-        isAvailable: v.is_available !== false,
-      }));
-      const image = Array.isArray(p.images) && p.images.length > 0 ? p.images[0].src : undefined;
+      const variants = enabledVariants.map((v: any) => {
+        const options = resolveOptions(v);
+        const optionLabel = Object.values(options).join(" / ");
+        return {
+          externalId: String(v.id),
+          label: optionLabel || v.title || "Default",
+          priceCents: v.price ?? 0,
+          currency: "USD",
+          isAvailable: v.is_available !== false,
+          imageUrl: resolveImage(v),
+          options,
+        };
+      });
+
+      const defaultImage = images.find((img: any) => img.is_default)?.src ?? images[0]?.src;
 
       return {
         externalId: String(p.id),
         title: p.title,
         description: stripHtml(p.description),
-        imageUrl: image,
+        imageUrl: defaultImage,
         priceCents: variants[0]?.priceCents ?? 0,
         currency: "USD",
         variants,

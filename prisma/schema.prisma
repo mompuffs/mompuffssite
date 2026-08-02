@@ -133,6 +133,11 @@ model ProductVariant {
   priceCents  Int
   currency    String      @default("USD")
   isAvailable Boolean     @default(true)
+  // Variant-specific photo (e.g. the mockup for this color), if the provider has one
+  imageUrl    String?
+  // JSON map of option name -> value, e.g. {"Colors":"Black","Sizes":"S"}, used to
+  // group the variant picker (by color, by size, ...) instead of a flat list
+  optionsJson String?
   createdAt   DateTime    @default(now())
 
   orderItems  OrderItem[]

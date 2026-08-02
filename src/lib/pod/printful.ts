@@ -50,13 +50,24 @@ export const printfulAdapter: PodAdapter = {
         const syncProduct = detailData?.result?.sync_product;
         const syncVariants = detailData?.result?.sync_variants ?? [];
 
-        const variants = syncVariants.map((v: any) => ({
-          externalId: String(v.id),
-          label: [v.color, v.size].filter(Boolean).join(" / ") || v.name || "Default",
-          priceCents: v.retail_price ? Math.round(parseFloat(v.retail_price) * 100) : 0,
-          currency: v.currency ?? "USD",
-          isAvailable: v.availability_status ? v.availability_status !== "discontinued" : true,
-        }));
+        const variants = syncVariants.map((v: any) => {
+          const options: Record<string, string> = {};
+          if (v.color) options.Color = v.color;
+          if (v.size) options.Size = v.size;
+          const previewFile = Array.isArray(v.files)
+            ? v.files.find((f: any) => f.type === "preview" || f.type === "default")
+            : undefined;
+
+          return {
+            externalId: String(v.id),
+            label: [v.color, v.size].filter(Boolean).join(" / ") || v.name || "Default",
+            priceCents: v.retail_price ? Math.round(parseFloat(v.retail_price) * 100) : 0,
+            currency: v.currency ?? "USD",
+            isAvailable: v.availability_status ? v.availability_status !== "discontinued" : true,
+            imageUrl: previewFile?.preview_url,
+            options,
+          };
+        });
 
         return {
           externalId: String(summary.id),
