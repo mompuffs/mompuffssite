@@ -12,10 +12,13 @@ export default async function ShopDashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const shop = await db.shop.findUnique({
-    where: { ownerId: user.id },
-    include: { products: { orderBy: { createdAt: "desc" } } },
-  });
+  const [shop, categories] = await Promise.all([
+    db.shop.findUnique({
+      where: { ownerId: user.id },
+      include: { products: { orderBy: { createdAt: "desc" }, include: { categories: true } } },
+    }),
+    db.category.findMany({ orderBy: [{ parentId: "asc" }, { name: "asc" }] }),
+  ]);
 
   if (!shop) {
     return (
@@ -35,7 +38,7 @@ export default async function ShopDashboardPage() {
             View public page →
           </Link>
         </div>
-        <AddProductForm />
+        <AddProductForm categories={categories} />
 
         <div className="mt-6 bg-white rounded-xl shadow p-4">
           <div className="flex items-center justify-between mb-2">
@@ -47,7 +50,7 @@ export default async function ShopDashboardPage() {
           {shop.products.length === 0 ? (
             <p className="text-sm text-gray-500">No products yet.</p>
           ) : (
-            shop.products.map((p) => <ShopProductRow key={p.id} product={p as any} />)
+            shop.products.map((p) => <ShopProductRow key={p.id} product={p as any} categories={categories} />)
           )}
         </div>
       </div>

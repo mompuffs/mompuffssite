@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   const shop = await db.shop.findUnique({ where: { ownerId: user.id } });
   if (!shop) return NextResponse.json({ error: "You need a shop first." }, { status: 400 });
 
-  const { title, description, priceCents, imageUrl } = await req.json();
+  const { title, description, priceCents, imageUrl, categoryIds } = await req.json();
   if (!title || !priceCents || Number(priceCents) <= 0) {
     return NextResponse.json({ error: "Title and a positive price (in cents) are required." }, { status: 400 });
   }
@@ -22,7 +22,12 @@ export async function POST(req: Request) {
       priceCents: Math.round(Number(priceCents)),
       imageUrl: imageUrl || undefined,
       source: "MANUAL",
+      categories:
+        Array.isArray(categoryIds) && categoryIds.length > 0
+          ? { connect: categoryIds.map((id: string) => ({ id })) }
+          : undefined,
     },
+    include: { categories: true },
   });
 
   return NextResponse.json(product, { status: 201 });

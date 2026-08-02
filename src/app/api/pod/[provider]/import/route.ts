@@ -13,7 +13,7 @@ export async function POST(req: Request, { params }: { params: { provider: strin
   const adapter = getPodAdapter(params.provider);
   if (!adapter) return NextResponse.json({ error: "Unknown provider." }, { status: 404 });
 
-  const { externalId, title, description, imageUrl, priceCents, raw, variants } = await req.json();
+  const { externalId, title, description, imageUrl, priceCents, raw, variants, categoryIds } = await req.json();
   if (!externalId || !title || !priceCents) {
     return NextResponse.json({ error: "Missing product fields." }, { status: 400 });
   }
@@ -28,6 +28,10 @@ export async function POST(req: Request, { params }: { params: { provider: strin
       source: adapter.id,
       externalId: String(externalId),
       externalMeta: raw ? JSON.stringify(raw).slice(0, 5000) : undefined,
+      categories:
+        Array.isArray(categoryIds) && categoryIds.length > 0
+          ? { connect: categoryIds.map((id: string) => ({ id })) }
+          : undefined,
       variants:
         Array.isArray(variants) && variants.length > 0
           ? {
