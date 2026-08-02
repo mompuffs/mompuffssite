@@ -59,10 +59,17 @@ export const printifyAdapter: PodAdapter = {
         return resolved;
       }
 
-      // Each catalog image lists which variant IDs it depicts (usually one per color).
+      // Each catalog image lists which variant IDs it depicts (usually one per
+      // color). Prefer whichever of those Printify itself flags as the
+      // representative shot (is_default) rather than just the first match --
+      // some designs are back-print only, so "first in array" can land on a
+      // blank front angle instead of the one showing the actual print.
       function resolveImage(variant: any): string | undefined {
-        return images.find((img: any) => Array.isArray(img.variant_ids) && img.variant_ids.includes(variant.id))
-          ?.src;
+        const matches = images.filter(
+          (img: any) => Array.isArray(img.variant_ids) && img.variant_ids.includes(variant.id)
+        );
+        if (matches.length === 0) return undefined;
+        return (matches.find((img: any) => img.is_default) ?? matches[0]).src;
       }
 
       // Printify variant "price" is already in cents.
