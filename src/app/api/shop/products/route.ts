@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { SHIPPING_MODES } from "@/lib/shipping";
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
@@ -14,8 +15,8 @@ export async function POST(req: Request) {
   if (!title) {
     return NextResponse.json({ error: "Title is required." }, { status: 400 });
   }
-  if (shippingMode !== undefined && shippingMode !== "FLAT" && shippingMode !== "PRODUCT") {
-    return NextResponse.json({ error: "shippingMode must be FLAT or PRODUCT." }, { status: 400 });
+  if (shippingMode !== undefined && !SHIPPING_MODES.includes(shippingMode)) {
+    return NextResponse.json({ error: `shippingMode must be one of: ${SHIPPING_MODES.join(", ")}.` }, { status: 400 });
   }
 
   const hasVariants = Array.isArray(variants) && variants.length > 0;

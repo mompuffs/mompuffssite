@@ -169,6 +169,7 @@ export default function ShopProductRow({
           >
             <option value="FLAT">Shop's flat rate</option>
             <option value="PRODUCT">Custom for this product</option>
+            <option value="FREE">Free shipping</option>
           </select>
           {shippingMode === "PRODUCT" && (
             <input

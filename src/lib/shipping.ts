@@ -1,10 +1,17 @@
 import { db } from "@/lib/db";
 import { PricedCartItem } from "@/lib/checkout";
 
-// Each product is either "FLAT" (counts toward its shop's single flat
-// shipping charge, applied once per shop even if several FLAT items from
-// that shop are in the cart) or "PRODUCT" (has its own per-unit shipping
-// cost, added on top regardless of what else is in the cart).
+export const SHIPPING_MODES = ["FLAT", "PRODUCT", "FREE"] as const;
+export type ShippingMode = (typeof SHIPPING_MODES)[number];
+
+// Each product is one of:
+//   "FLAT"    -- counts toward its shop's single flat shipping charge,
+//                applied once per shop even if several FLAT items from that
+//                shop are in the cart.
+//   "PRODUCT" -- has its own per-unit shipping cost, added on top
+//                regardless of what else is in the cart.
+//   "FREE"    -- always contributes $0 shipping and never triggers its
+//                shop's flat charge, overriding what FLAT would otherwise add.
 export async function calculateShippingCents(items: PricedCartItem[]): Promise<number> {
   if (items.length === 0) return 0;
 
@@ -27,6 +34,8 @@ export async function calculateShippingCents(items: PricedCartItem[]): Promise<n
     if (!product) continue;
     if (product.shippingMode === "PRODUCT") {
       perProductCents += product.shippingCents * item.quantity;
+    } else if (product.shippingMode === "FREE") {
+      // Contributes nothing and doesn't opt its shop into the flat charge.
     } else {
       flatShopsNeeded.add(product.shopId);
     }

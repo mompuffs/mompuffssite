@@ -177,7 +177,8 @@ model Product {
   imageUrl      String?
   source        String        @default("MANUAL")
   // "FLAT" -- uses the shop's flatShippingCents; "PRODUCT" -- uses this
-  // product's own shippingCents instead (e.g. a heavier/oversized item).
+  // product's own shippingCents instead (e.g. a heavier/oversized item);
+  // "FREE" -- always $0, overriding the shop's flat rate for this item.
   shippingMode  String        @default("FLAT")
   shippingCents Int           @default(0)
   // Original ID from the POD provider's catalog, if imported
@@ -291,4 +292,8 @@ model OrderItem {
   variantLabel   String?
   quantity       Int             @default(1)
   unitPriceCents Int
+  // Set when the SELLING shop marks its portion of this order complete.
+  // Independent per shop, so a multi-vendor order can have one shop's items
+  // fulfilled while another shop's are still open.
+  fulfilledAt    DateTime?
 }

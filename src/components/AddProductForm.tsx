@@ -10,7 +10,7 @@ type VariantRow = { color: string; size: string; priceAdjustment: string; imageU
 export default function AddProductForm({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const [form, setForm] = useState({ title: "", description: "", price: "", imageUrl: "" });
-  const [shippingMode, setShippingMode] = useState<"FLAT" | "PRODUCT">("FLAT");
+  const [shippingMode, setShippingMode] = useState<"FLAT" | "PRODUCT" | "FREE">("FLAT");
   const [shippingCost, setShippingCost] = useState("");
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [variantRows, setVariantRows] = useState<VariantRow[]>([]);
@@ -206,11 +206,12 @@ export default function AddProductForm({ categories }: { categories: Category[] 
         <div className="flex gap-2">
           <select
             value={shippingMode}
-            onChange={(e) => setShippingMode(e.target.value as "FLAT" | "PRODUCT")}
+            onChange={(e) => setShippingMode(e.target.value as "FLAT" | "PRODUCT" | "FREE")}
             className="w-1/2 border rounded px-2 py-1.5 text-sm"
           >
             <option value="FLAT">Shop's flat rate</option>
             <option value="PRODUCT">Custom for this product</option>
+            <option value="FREE">Free shipping</option>
           </select>
           {shippingMode === "PRODUCT" && (
             <input

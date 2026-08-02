@@ -55,6 +55,11 @@ export default async function ShopDashboardPage() {
           <h3 className="font-semibold text-sm mb-2">Manage shop</h3>
           <ul className="text-sm space-y-1.5">
             <li>
+              <Link href="/dashboard/shop/orders" className="text-brand-600 hover:underline">
+                Orders
+              </Link>
+            </li>
+            <li>
               <Link href="/dashboard/shop/import" className="text-brand-600 hover:underline">
                 Import from Printify / Printful / Peaprint
               </Link>

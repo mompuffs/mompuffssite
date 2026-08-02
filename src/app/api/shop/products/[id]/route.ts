@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { SHIPPING_MODES } from "@/lib/shipping";
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const user = await getCurrentUser();
@@ -26,8 +27,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (title !== undefined && (typeof title !== "string" || !title.trim())) {
     return NextResponse.json({ error: "title must be a non-empty string." }, { status: 400 });
   }
-  if (shippingMode !== undefined && shippingMode !== "FLAT" && shippingMode !== "PRODUCT") {
-    return NextResponse.json({ error: "shippingMode must be FLAT or PRODUCT." }, { status: 400 });
+  if (shippingMode !== undefined && !SHIPPING_MODES.includes(shippingMode)) {
+    return NextResponse.json({ error: `shippingMode must be one of: ${SHIPPING_MODES.join(", ")}.` }, { status: 400 });
   }
   if (
     categoryIds === undefined &&
