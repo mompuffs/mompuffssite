@@ -24,11 +24,22 @@ export type ImportableProduct = {
   raw: unknown; // original provider payload, stored for debugging/reference
 };
 
+// Credentials keyed by field name, e.g. { apiKey: "...", shopId: "..." }
+export type PodCredentials = Record<string, string>;
+
+export type PodFieldDef = {
+  key: string;
+  label: string;
+  placeholder?: string;
+};
+
 export interface PodAdapter {
   id: "PRINTIFY" | "PRINTFUL" | "PEAPRINT";
   label: string;
-  /** True once the required env vars are present. */
-  isConfigured(): boolean;
+  /** Describes the inputs a "connect" form needs to collect for this provider. */
+  fields: PodFieldDef[];
+  /** True once usable credentials are present (passed-in, or an env var fallback). */
+  isConfigured(creds: PodCredentials): boolean;
   /** Fetch a page of the seller's existing products from the provider. */
-  listProducts(): Promise<ImportableProduct[]>;
+  listProducts(creds: PodCredentials): Promise<ImportableProduct[]>;
 }

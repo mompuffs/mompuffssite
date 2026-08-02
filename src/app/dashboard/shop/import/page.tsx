@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { formatCents } from "@/lib/money";
 import CategoryPicker, { Category } from "@/components/CategoryPicker";
 
@@ -68,7 +69,12 @@ export default function ImportPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-1">Import products</h1>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="text-2xl font-bold">Import products</h1>
+        <Link href="/dashboard/shop/connections" className="text-sm text-brand-600 hover:underline">
+          Manage connections →
+        </Link>
+      </div>
       <p className="text-sm text-gray-500 mb-4">
         Pull existing products from your connected print-on-demand accounts into your Mompuffs shop.
       </p>
@@ -91,7 +97,12 @@ export default function ImportPage() {
 
       {loading && <p className="text-gray-500 text-sm">Loading catalog…</p>}
       {error && (
-        <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3 max-w-lg">{error}</p>
+        <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3 max-w-lg">
+          {error}{" "}
+          <Link href="/dashboard/shop/connections" className="underline font-medium">
+            Go to Connections →
+          </Link>
+        </p>
       )}
 
       {!loading && !error && items.length === 0 && (

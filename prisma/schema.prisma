@@ -90,6 +90,23 @@ model Shop {
   createdAt   DateTime  @default(now())
 
   products    Product[]
+  podConnections PodConnection[]
+}
+
+// Per-shop POD provider credentials, so each seller connects their own
+// Printify/Printful/Peaprint account rather than sharing one platform-wide
+// connection. apiKey/extra are stored encrypted (see src/lib/crypto.ts).
+model PodConnection {
+  id        String   @id @default(cuid())
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId    String
+  provider  String   // "PRINTIFY" | "PRINTFUL" | "PEAPRINT"
+  apiKey    String   // encrypted
+  extra     String?  // encrypted JSON blob for provider-specific fields (e.g. Printify shopId)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([shopId, provider])
 }
 
 // NOTE: SQLite has no native enum support in Prisma, so ProductSource and

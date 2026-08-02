@@ -1,4 +1,4 @@
-import { ImportableProduct, PodAdapter } from "./types";
+import { ImportableProduct, PodAdapter, PodCredentials } from "./types";
 import { stripHtml } from "./html";
 
 // Printify REST API v1. Docs: https://developers.printify.com/docs/
@@ -6,9 +6,15 @@ import { stripHtml } from "./html";
 // plus a required User-Agent header on every request.
 const BASE_URL = "https://api.printify.com/v1";
 
-function headers() {
+function resolveCreds(creds: PodCredentials) {
+  // No env var fallback: each shop must connect its own account, so one
+  // seller's catalog is never used to serve another seller's imports.
+  return { apiKey: creds.apiKey || "", shopId: creds.shopId || "" };
+}
+
+function headers(apiKey: string) {
   return {
-    Authorization: `Bearer ${process.env.PRINTIFY_API_KEY}`,
+    Authorization: `Bearer ${apiKey}`,
     "User-Agent": "mompuffs-app",
     "Content-Type": "application/json",
   };
@@ -17,21 +23,25 @@ function headers() {
 export const printifyAdapter: PodAdapter = {
   id: "PRINTIFY",
   label: "Printify",
+  fields: [
+    { key: "apiKey", label: "Personal Access Token", placeholder: "My Profile → Connections" },
+    { key: "shopId", label: "Shop ID" },
+  ],
 
-  isConfigured() {
-    return Boolean(process.env.PRINTIFY_API_KEY && process.env.PRINTIFY_SHOP_ID);
+  isConfigured(creds: PodCredentials) {
+    const { apiKey, shopId } = resolveCreds(creds);
+    return Boolean(apiKey && shopId);
   },
 
-  async listProducts(): Promise<ImportableProduct[]> {
-    if (!this.isConfigured()) {
-      throw new Error(
-        "Printify isn't configured. Set PRINTIFY_API_KEY and PRINTIFY_SHOP_ID in your .env.local."
-      );
+  async listProducts(creds: PodCredentials): Promise<ImportableProduct[]> {
+    const { apiKey, shopId } = resolveCreds(creds);
+    if (!apiKey || !shopId) {
+      throw new Error("Printify isn't connected. Add your Personal Access Token and Shop ID in Connections.");
     }
 
-    const shopId = process.env.PRINTIFY_SHOP_ID;
+
     const res = await fetch(`${BASE_URL}/shops/${shopId}/products.json?limit=25`, {
-      headers: headers(),
+      headers: headers(apiKey),
       cache: "no-store",
     });
 

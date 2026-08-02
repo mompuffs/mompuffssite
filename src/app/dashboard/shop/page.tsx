@@ -43,9 +43,14 @@ export default async function ShopDashboardPage() {
         <div className="mt-6 bg-white rounded-xl shadow p-4">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-semibold text-sm">Your products ({shop.products.length})</h3>
-            <Link href="/dashboard/shop/import" className="text-sm text-brand-600 hover:underline">
-              Import from Printify / Printful / Peaprint →
-            </Link>
+            <div className="flex items-center gap-3">
+              <Link href="/dashboard/shop/connections" className="text-sm text-brand-600 hover:underline">
+                Connections
+              </Link>
+              <Link href="/dashboard/shop/import" className="text-sm text-brand-600 hover:underline">
+                Import from Printify / Printful / Peaprint →
+              </Link>
+            </div>
           </div>
           {shop.products.length === 0 ? (
             <p className="text-sm text-gray-500">No products yet.</p>

@@ -1,13 +1,18 @@
-import { ImportableProduct, PodAdapter } from "./types";
+import { ImportableProduct, PodAdapter, PodCredentials } from "./types";
 import { stripHtml } from "./html";
 
 // Printful API v1. Docs: https://developers.printful.com/docs/
 // Auth: Bearer private token (Developer Portal > Private Token), scoped to one store.
 const BASE_URL = "https://api.printful.com";
 
-function headers() {
+function resolveApiKey(creds: PodCredentials) {
+  // No env var fallback: each shop must connect its own account.
+  return creds.apiKey || "";
+}
+
+function headers(apiKey: string) {
   return {
-    Authorization: `Bearer ${process.env.PRINTFUL_API_KEY}`,
+    Authorization: `Bearer ${apiKey}`,
     "Content-Type": "application/json",
   };
 }
@@ -15,18 +20,20 @@ function headers() {
 export const printfulAdapter: PodAdapter = {
   id: "PRINTFUL",
   label: "Printful",
+  fields: [{ key: "apiKey", label: "Private Token", placeholder: "Developer Portal → Private Token" }],
 
-  isConfigured() {
-    return Boolean(process.env.PRINTFUL_API_KEY);
+  isConfigured(creds: PodCredentials) {
+    return Boolean(resolveApiKey(creds));
   },
 
-  async listProducts(): Promise<ImportableProduct[]> {
-    if (!this.isConfigured()) {
-      throw new Error("Printful isn't configured. Set PRINTFUL_API_KEY in your .env.local.");
+  async listProducts(creds: PodCredentials): Promise<ImportableProduct[]> {
+    const apiKey = resolveApiKey(creds);
+    if (!apiKey) {
+      throw new Error("Printful isn't connected. Add your Private Token in Connections.");
     }
 
     const listRes = await fetch(`${BASE_URL}/store/products`, {
-      headers: headers(),
+      headers: headers(apiKey),
       cache: "no-store",
     });
     if (!listRes.ok) {
@@ -42,7 +49,7 @@ export const printfulAdapter: PodAdapter = {
     const detailed = await Promise.all(
       summaries.map(async (summary: any) => {
         const detailRes = await fetch(`${BASE_URL}/store/products/${summary.id}`, {
-          headers: headers(),
+          headers: headers(apiKey),
           cache: "no-store",
         });
         if (!detailRes.ok) return null;
