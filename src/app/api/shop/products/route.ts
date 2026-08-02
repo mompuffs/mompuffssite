@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   const shop = await db.shop.findUnique({ where: { ownerId: user.id } });
   if (!shop) return NextResponse.json({ error: "You need a shop first." }, { status: 400 });
 
-  const { title, description, priceCents, imageUrl, categoryIds, variants } = await req.json();
+  const { title, description, priceCents, imageUrl, images, categoryIds, variants } = await req.json();
   if (!title) {
     return NextResponse.json({ error: "Title is required." }, { status: 400 });
   }
@@ -37,6 +37,10 @@ export async function POST(req: Request) {
         Array.isArray(categoryIds) && categoryIds.length > 0
           ? { connect: categoryIds.map((id: string) => ({ id })) }
           : undefined,
+      images:
+        Array.isArray(images) && images.length > 0
+          ? { create: images.map((url: string, i: number) => ({ url, position: i })) }
+          : undefined,
       variants: hasVariants
         ? {
             create: variants.map((v: any) => ({
@@ -50,7 +54,7 @@ export async function POST(req: Request) {
           }
         : undefined,
     },
-    include: { categories: true, variants: true },
+    include: { categories: true, variants: true, images: true },
   });
 
   return NextResponse.json(product, { status: 201 });

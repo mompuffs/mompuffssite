@@ -4,16 +4,23 @@ import { db } from "@/lib/db";
 import { formatCents } from "@/lib/money";
 import AddToCartButton from "@/components/AddToCartButton";
 import ProductViewer from "@/components/ProductViewer";
+import ProductGallery from "@/components/ProductGallery";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProductPage({ params }: { params: { id: string } }) {
   const product = await db.product.findUnique({
     where: { id: params.id },
-    include: { shop: { select: { name: true, slug: true } }, variants: true },
+    include: {
+      shop: { select: { name: true, slug: true } },
+      variants: true,
+      images: { orderBy: { position: "asc" } },
+    },
   });
 
   if (!product) notFound();
+
+  const galleryImages = product.images.map((i) => i.url);
 
   return (
     <div className="max-w-3xl mx-auto bg-white rounded-xl shadow p-6 grid sm:grid-cols-2 gap-6">
@@ -24,6 +31,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
           description={product.description}
           source={product.source}
           baseImageUrl={product.imageUrl}
+          galleryImages={galleryImages}
           variants={product.variants.map((v) => ({
             id: v.id,
             label: v.label,
@@ -36,14 +44,10 @@ export default async function ProductPage({ params }: { params: { id: string } }
         />
       ) : (
         <>
-          <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-            {product.imageUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={product.imageUrl} alt={product.title} className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-gray-400">No image</span>
-            )}
-          </div>
+          <ProductGallery
+            title={product.title}
+            images={Array.from(new Set([product.imageUrl, ...galleryImages].filter((u): u is string => Boolean(u))))}
+          />
           <div>
             <h1 className="text-2xl font-bold">{product.title}</h1>
             <Link href={`/shop/${product.shop.slug}`} className="text-sm text-brand-600 hover:underline">

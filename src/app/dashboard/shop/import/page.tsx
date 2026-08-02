@@ -16,6 +16,7 @@ type CatalogItem = {
   title: string;
   description?: string;
   imageUrl?: string;
+  images?: string[];
   priceCents: number;
   currency: string;
   variants?: unknown[];

@@ -16,6 +16,8 @@ export type ImportableProduct = {
   title: string;
   description?: string;
   imageUrl?: string;
+  // Extra gallery photos (e.g. front/back/lifestyle angles), beyond imageUrl
+  images?: string[];
   priceCents: number;
   currency: string;
   variants: ImportableVariant[];

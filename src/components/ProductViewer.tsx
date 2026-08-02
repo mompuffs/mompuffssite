@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/components/CartContext";
 import { formatCents } from "@/lib/money";
@@ -21,6 +21,7 @@ export default function ProductViewer({
   description,
   source,
   baseImageUrl,
+  galleryImages,
   variants,
 }: {
   product: { id: string; title: string };
@@ -28,6 +29,7 @@ export default function ProductViewer({
   description: string | null;
   source: string;
   baseImageUrl: string | null;
+  galleryImages: string[];
   variants: Variant[];
 }) {
   const { addItem } = useCart();
@@ -35,9 +37,22 @@ export default function ProductViewer({
     variants.find((v) => v.isAvailable)?.id ?? variants[0].id
   );
   const [added, setAdded] = useState(false);
+  const [previewOverride, setPreviewOverride] = useState<string | null>(null);
 
   const selected = variants.find((v) => v.id === selectedId) ?? variants[0];
-  const displayImage = selected.imageUrl || baseImageUrl;
+  const variantDefaultImage = selected.imageUrl || baseImageUrl;
+  const displayImage = previewOverride ?? variantDefaultImage;
+
+  // Clicking a thumbnail previews that shot; switching colors/sizes goes
+  // back to that variant's own photo instead of staying on the old preview.
+  useEffect(() => setPreviewOverride(null), [selectedId]);
+
+  const thumbnails = useMemo(() => {
+    const all = [variantDefaultImage, baseImageUrl, ...galleryImages].filter(
+      (url): url is string => Boolean(url)
+    );
+    return Array.from(new Set(all));
+  }, [variantDefaultImage, baseImageUrl, galleryImages]);
 
   // Group the picker by whichever option looks like a color, falling back to
   // the first option name present; ungrouped if variants carry no option data.
@@ -86,12 +101,31 @@ export default function ProductViewer({
 
   return (
     <>
-      <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-        {displayImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={displayImage} alt={product.title} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-gray-400">No image</span>
+      <div>
+        <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+          {displayImage ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={displayImage} alt={product.title} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-gray-400">No image</span>
+          )}
+        </div>
+        {thumbnails.length > 1 && (
+          <div className="flex gap-2 mt-2 overflow-x-auto">
+            {thumbnails.map((url) => (
+              <button
+                key={url}
+                type="button"
+                onClick={() => setPreviewOverride(url)}
+                className={`flex-shrink-0 w-14 h-14 rounded overflow-hidden border-2 ${
+                  displayImage === url ? "border-brand-600" : "border-transparent"
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
         )}
       </div>
       <div>

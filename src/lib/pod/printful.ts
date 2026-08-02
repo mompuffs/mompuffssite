@@ -69,11 +69,19 @@ export const printfulAdapter: PodAdapter = {
           };
         });
 
+        // Gather every distinct mockup angle Printful generated for the
+        // default variant (front/back/etc.) as the product's photo gallery.
+        const firstVariantFiles = Array.isArray(syncVariants[0]?.files) ? syncVariants[0].files : [];
+        const gallery = Array.from(
+          new Set(firstVariantFiles.map((f: any) => f.preview_url).filter((url: any) => typeof url === "string"))
+        );
+
         return {
           externalId: String(summary.id),
           title: syncProduct?.name ?? summary.name,
           description: stripHtml(syncProduct?.description),
           imageUrl: syncProduct?.thumbnail ?? summary.thumbnail_url,
+          images: gallery,
           priceCents: variants[0]?.priceCents ?? 0,
           currency: variants[0]?.currency ?? "USD",
           variants,

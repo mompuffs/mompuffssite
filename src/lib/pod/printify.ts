@@ -91,16 +91,33 @@ export const printifyAdapter: PodAdapter = {
         };
       });
 
-      const defaultImage =
-        images.find((img: any) => /camera_label=person/i.test(img.src))?.src ??
-        images.find((img: any) => img.is_default)?.src ??
-        images[0]?.src;
+      const defaultImageObj =
+        images.find((img: any) => /camera_label=person/i.test(img.src)) ??
+        images.find((img: any) => img.is_default) ??
+        images[0];
+
+      // Images sharing the exact same variant_ids array come from the same
+      // photoshoot (front/back/closeup/lifestyle angles of the same color),
+      // unlike is_default which only ever points at one shot. Use that group
+      // as the gallery so the product page shows all the angles Printify has
+      // for the default color, without pulling in every other color's shots.
+      const galleryGroupKey = defaultImageObj?.variant_ids ? JSON.stringify(defaultImageObj.variant_ids) : undefined;
+      const gallery = galleryGroupKey
+        ? Array.from(
+            new Set(
+              images
+                .filter((img: any) => JSON.stringify(img.variant_ids) === galleryGroupKey)
+                .map((img: any) => img.src)
+            )
+          )
+        : [];
 
       return {
         externalId: String(p.id),
         title: p.title,
         description: stripHtml(p.description),
-        imageUrl: defaultImage,
+        imageUrl: defaultImageObj?.src,
+        images: gallery,
         priceCents: variants[0]?.priceCents ?? 0,
         currency: "USD",
         variants,

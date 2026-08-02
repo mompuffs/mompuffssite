@@ -12,8 +12,21 @@ export default function AddProductForm({ categories }: { categories: Category[] 
   const [form, setForm] = useState({ title: "", description: "", price: "", imageUrl: "" });
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
   const [variantRows, setVariantRows] = useState<VariantRow[]>([]);
+  const [galleryUrls, setGalleryUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  function addGalleryRow() {
+    setGalleryUrls((urls) => [...urls, ""]);
+  }
+
+  function updateGalleryRow(i: number, url: string) {
+    setGalleryUrls((urls) => urls.map((u, idx) => (idx === i ? url : u)));
+  }
+
+  function removeGalleryRow(i: number) {
+    setGalleryUrls((urls) => urls.filter((_, idx) => idx !== i));
+  }
 
   function update(field: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -65,6 +78,7 @@ export default function AddProductForm({ categories }: { categories: Category[] 
         description: form.description,
         priceCents: basePriceCents,
         imageUrl: form.imageUrl,
+        images: galleryUrls.filter(Boolean),
         categoryIds,
         variants,
       }),
@@ -78,6 +92,7 @@ export default function AddProductForm({ categories }: { categories: Category[] 
     setForm({ title: "", description: "", price: "", imageUrl: "" });
     setCategoryIds([]);
     setVariantRows([]);
+    setGalleryUrls([]);
     router.refresh();
   }
 
@@ -101,6 +116,33 @@ export default function AddProductForm({ categories }: { categories: Category[] 
         onChange={(url) => setForm((f) => ({ ...f, imageUrl: url }))}
         placeholder={variantRows.length > 0 ? "Image URL (fallback)" : "Image URL"}
       />
+
+      <div>
+        <div className="flex items-center justify-between mb-1">
+          <label className="text-xs font-medium text-gray-700">Additional photos (optional)</label>
+          <button type="button" onClick={addGalleryRow} className="text-brand-600 hover:underline text-xs">
+            + Add photo
+          </button>
+        </div>
+        {galleryUrls.length > 0 && (
+          <div className="space-y-2 border rounded p-2">
+            {galleryUrls.map((url, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <div className="flex-1">
+                  <ImageInput value={url} onChange={(u) => updateGalleryRow(i, u)} />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => removeGalleryRow(i)}
+                  className="text-red-500 text-xs hover:underline mt-1.5"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <div>
         <div className="flex items-center justify-between mb-1">
