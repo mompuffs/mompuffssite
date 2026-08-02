@@ -60,16 +60,19 @@ export const printifyAdapter: PodAdapter = {
       }
 
       // Each catalog image lists which variant IDs it depicts (usually one per
-      // color). Prefer whichever of those Printify itself flags as the
-      // representative shot (is_default) rather than just the first match --
-      // some designs are back-print only, so "first in array" can land on a
-      // blank front angle instead of the one showing the actual print.
+      // color). Printify's own `is_default` pick is unreliable here: for some
+      // colors the flat "back"/"front" mockup it flags as default is a stale
+      // template that doesn't show the print at all, while the "person"
+      // lifestyle photo (not flagged default) does. Prefer a person photo
+      // when one exists, then is_default, then whatever matched first.
       function resolveImage(variant: any): string | undefined {
         const matches = images.filter(
           (img: any) => Array.isArray(img.variant_ids) && img.variant_ids.includes(variant.id)
         );
         if (matches.length === 0) return undefined;
-        return (matches.find((img: any) => img.is_default) ?? matches[0]).src;
+        const personShot = matches.find((img: any) => /camera_label=person/i.test(img.src));
+        const defaultShot = matches.find((img: any) => img.is_default);
+        return (personShot ?? defaultShot ?? matches[0]).src;
       }
 
       // Printify variant "price" is already in cents.
@@ -88,7 +91,10 @@ export const printifyAdapter: PodAdapter = {
         };
       });
 
-      const defaultImage = images.find((img: any) => img.is_default)?.src ?? images[0]?.src;
+      const defaultImage =
+        images.find((img: any) => /camera_label=person/i.test(img.src))?.src ??
+        images.find((img: any) => img.is_default)?.src ??
+        images[0]?.src;
 
       return {
         externalId: String(p.id),
