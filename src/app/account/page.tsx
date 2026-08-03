@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ImageInput from "@/components/ImageInput";
+import AccountSidebar from "@/components/AccountSidebar";
 
 type LinkRow = { label: string; url: string };
 
@@ -187,9 +188,10 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="max-w-xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">My account</h1>
-
+    <div className="max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6">My account</h1>
+      <div className="grid md:grid-cols-3 gap-6 items-start">
+        <div className="md:col-span-2 space-y-6">
       <form onSubmit={saveProfile} className="bg-white rounded-xl shadow p-4 space-y-4">
         <div className="space-y-2">
           <h2 className="font-semibold text-sm">Profile</h2>
@@ -418,6 +420,12 @@ export default function AccountPage() {
         <Link href="/orders" className="text-brand-600 hover:underline text-sm">
           View your orders →
         </Link>
+      </div>
+        </div>
+
+        <div className="md:col-span-1">
+          <AccountSidebar />
+        </div>
       </div>
     </div>
   );

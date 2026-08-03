@@ -1,11 +1,24 @@
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/session";
 import PostComposer from "@/components/PostComposer";
 import PostCard from "@/components/PostCard";
 
 export const dynamic = "force-dynamic";
 
 export default async function FeedPage() {
+  const user = await getCurrentUser();
+
+  let excludedAuthorIds: string[] = [];
+  if (user) {
+    const blocks = await db.block.findMany({
+      where: { OR: [{ blockerId: user.id }, { blockedId: user.id }] },
+      select: { blockerId: true, blockedId: true },
+    });
+    excludedAuthorIds = blocks.map((b) => (b.blockerId === user.id ? b.blockedId : b.blockerId));
+  }
+
   const posts = await db.post.findMany({
+    where: excludedAuthorIds.length > 0 ? { authorId: { notIn: excludedAuthorIds } } : undefined,
     orderBy: { createdAt: "desc" },
     take: 50,
     include: {

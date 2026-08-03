@@ -40,8 +40,62 @@ model User {
   following     Follow[]  @relation("Follower")
   followers     Follow[]  @relation("Following")
 
+  sentFriendRequests     FriendRequest[] @relation("SentFriendRequests")
+  receivedFriendRequests FriendRequest[] @relation("ReceivedFriendRequests")
+  blocking               Block[]         @relation("BlockingUsers")
+  blockedBy              Block[]         @relation("BlockedUsers")
+  sentMessages           Message[]       @relation("SentMessages")
+  receivedMessages       Message[]       @relation("ReceivedMessages")
+
   shop          Shop?
   orders        Order[]
+}
+
+// Mutual, approval-based relationship (distinct from the one-way Follow
+// above). A single row represents the relationship in both directions --
+// "are A and B friends" is answered by matching either sender/receiver
+// order with status ACCEPTED, so unfriending/cancelling just touches one row.
+model FriendRequest {
+  id          String    @id @default(cuid())
+  sender      User      @relation("SentFriendRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId    String
+  receiver    User      @relation("ReceivedFriendRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId  String
+  status      String    @default("PENDING") // "PENDING" | "ACCEPTED" | "DECLINED"
+  createdAt   DateTime  @default(now())
+  respondedAt DateTime?
+
+  @@unique([senderId, receiverId])
+}
+
+// One-directional block. Blocking someone tears down any existing Follow
+// (both directions) and FriendRequest between the two users, and prevents
+// new follows/friend requests/messages either way while active.
+model Block {
+  id        String   @id @default(cuid())
+  blocker   User     @relation("BlockingUsers", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockerId String
+  blocked   User     @relation("BlockedUsers", fields: [blockedId], references: [id], onDelete: Cascade)
+  blockedId String
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+}
+
+// Private direct message. Conversations are derived on read (grouped by the
+// other participant) rather than tracked in a separate model.
+model Message {
+  id          String    @id @default(cuid())
+  sender      User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId    String
+  recipient   User      @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  recipientId String
+  body        String
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([senderId, recipientId])
+  @@index([recipientId, senderId])
 }
 
 model Follow {

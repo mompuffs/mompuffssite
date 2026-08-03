@@ -2,8 +2,11 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { isBlockedEitherWay } from "@/lib/relationships";
 import PostCard from "@/components/PostCard";
 import FollowButton from "@/components/FollowButton";
+import FriendButton, { FriendState } from "@/components/FriendButton";
+import BlockButton from "@/components/BlockButton";
 
 export const dynamic = "force-dynamic";
 
@@ -55,6 +58,37 @@ export default async function ProfilePage({ params }: { params: { username: stri
       }))
     : false;
 
+  let friendState: FriendState = "NONE";
+  let friendRequestId: string | null = null;
+  let isBlocked = false;
+  let myBlockOfThem = false;
+
+  if (currentUser && !isOwnProfile) {
+    const [friendRequest, blockRow] = await Promise.all([
+      db.friendRequest.findFirst({
+        where: {
+          OR: [
+            { senderId: currentUser.id, receiverId: profileUser.id },
+            { senderId: profileUser.id, receiverId: currentUser.id },
+          ],
+        },
+      }),
+      db.block.findUnique({
+        where: { blockerId_blockedId: { blockerId: currentUser.id, blockedId: profileUser.id } },
+      }),
+    ]);
+
+    if (friendRequest) {
+      friendRequestId = friendRequest.id;
+      if (friendRequest.status === "ACCEPTED") friendState = "FRIENDS";
+      else if (friendRequest.status === "PENDING") {
+        friendState = friendRequest.senderId === currentUser.id ? "OUTGOING" : "INCOMING";
+      }
+    }
+    myBlockOfThem = !!blockRow;
+    isBlocked = await isBlockedEitherWay(currentUser.id, profileUser.id);
+  }
+
   return (
     <div className="max-w-xl mx-auto">
       <div className="bg-white rounded-xl shadow p-6 mb-4">
@@ -78,9 +112,33 @@ export default async function ProfilePage({ params }: { params: { username: stri
             </div>
           </div>
           {!isOwnProfile && currentUser && (
-            <FollowButton targetUserId={profileUser.id} initiallyFollowing={isFollowing} />
+            <div className="flex flex-wrap items-center gap-1.5 justify-end">
+              {!isBlocked && (
+                <>
+                  <Link
+                    href={`/messages/${profileUser.username}`}
+                    className="px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-50"
+                  >
+                    Message
+                  </Link>
+                  <FriendButton
+                    targetUserId={profileUser.id}
+                    initialState={friendState}
+                    initialRequestId={friendRequestId}
+                  />
+                  <FollowButton targetUserId={profileUser.id} initiallyFollowing={isFollowing} />
+                </>
+              )}
+              <BlockButton targetUserId={profileUser.id} initiallyBlocked={myBlockOfThem} />
+            </div>
           )}
         </div>
+
+        {isBlocked && currentUser && !isOwnProfile && (
+          <p className="text-xs text-gray-500 bg-gray-50 border rounded p-2 mt-3">
+            Interactions are unavailable between you and this user.
+          </p>
+        )}
 
         {profileUser.bio && <p className="mt-3 text-sm">{profileUser.bio}</p>}
 

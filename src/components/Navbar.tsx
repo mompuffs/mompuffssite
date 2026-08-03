@@ -51,6 +51,37 @@ function MarketplaceMenu({ children }: { children: React.ReactNode }) {
   );
 }
 
+function MessagesLink() {
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    function load() {
+      fetch("/api/messages")
+        .then((r) => r.json())
+        .then((conversations) => {
+          if (Array.isArray(conversations)) {
+            setUnreadCount(conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0));
+          }
+        })
+        .catch(() => {});
+    }
+    load();
+    const interval = setInterval(load, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <Link href="/messages" className="hover:text-brand-600 relative">
+      Messages
+      {unreadCount > 0 && (
+        <span className="absolute -top-2 -right-3 bg-brand-600 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center">
+          {unreadCount > 9 ? "9+" : unreadCount}
+        </span>
+      )}
+    </Link>
+  );
+}
+
 export default function Navbar() {
   const { data: session, status } = useSession();
 
@@ -81,6 +112,7 @@ export default function Navbar() {
 
           {status === "authenticated" && session?.user ? (
             <>
+              <MessagesLink />
               <Link href="/dashboard/shop" className="hover:text-brand-600">My Shop</Link>
               <Link href={`/profile/${session.user.username}`} className="hover:text-brand-600">
                 {session.user.name}
