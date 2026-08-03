@@ -16,6 +16,8 @@ type Post = {
   id: string;
   body: string;
   imageUrl: string | null;
+  videoUrl: string | null;
+  videoThumbnailUrl: string | null;
   createdAt: string;
   author: { id: string; username: string; displayName: string; avatarUrl: string | null };
   product: { id: string; title: string; priceCents: number; currency: string; imageUrl: string | null } | null;
@@ -72,9 +74,18 @@ export default function PostCard({ post }: { post: Post }) {
 
       <p className="whitespace-pre-wrap mb-2">{post.body}</p>
 
-      {post.imageUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={post.imageUrl} alt="" className="rounded-lg w-full max-h-96 object-cover mb-2" />
+      {post.videoUrl ? (
+        <video
+          src={post.videoUrl}
+          poster={post.videoThumbnailUrl ?? undefined}
+          controls
+          className="rounded-lg w-full max-h-96 mb-2 bg-black"
+        />
+      ) : (
+        post.imageUrl && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={post.imageUrl} alt="" className="rounded-lg w-full max-h-96 object-cover mb-2" />
+        )
       )}
 
       {post.product && (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { upload } from "@vercel/blob/client";
+import { uploadMedia } from "@/lib/mediaUpload";
 
 export default function ImageInput({
   value,
@@ -21,14 +21,8 @@ export default function ImageInput({
     setUploading(true);
     setError(null);
     try {
-      // Uploads straight from the browser to Blob storage rather than
-      // through our own serverless function, so large images (e.g. a
-      // full-resolution logo export) don't hit Vercel's request body limit.
-      const blob = await upload(`products/${Date.now()}-${file.name}`, file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
-      });
-      onChange(blob.url);
+      const { url } = await uploadMedia(file, "image");
+      onChange(url);
     } catch (err: any) {
       setError(err.message ?? "Upload failed.");
     } finally {

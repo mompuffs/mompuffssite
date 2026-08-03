@@ -61,6 +61,8 @@ model Post {
   authorId  String
   body      String
   imageUrl  String?
+  videoUrl          String?
+  videoThumbnailUrl String?
   // Optional: a post can showcase a product from the author's shop
   product   Product?  @relation(fields: [productId], references: [id])
   productId String?

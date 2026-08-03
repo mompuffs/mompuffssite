@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
-  const { body, imageUrl, productId } = await req.json();
+  const { body, imageUrl, videoUrl, videoThumbnailUrl, productId } = await req.json();
   if (!body || typeof body !== "string" || !body.trim()) {
     return NextResponse.json({ error: "Post body is required." }, { status: 400 });
   }
@@ -33,6 +33,8 @@ export async function POST(req: Request) {
       authorId: user.id,
       body: body.trim(),
       imageUrl: imageUrl || undefined,
+      videoUrl: videoUrl || undefined,
+      videoThumbnailUrl: videoThumbnailUrl || undefined,
       productId: productId || undefined,
     },
   });
