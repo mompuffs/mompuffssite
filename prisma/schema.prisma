@@ -235,7 +235,7 @@ model Coupon {
 // NOTE: SQLite has no native enum support in Prisma, so ProductSource and
 // OrderStatus are plain strings here instead of `enum` blocks. The
 // application code treats them as closed sets:
-//   Product.source -> "MANUAL" | "PRINTIFY" | "PRINTFUL" | "PEAPRINT"
+//   Product.source -> "MANUAL" | "PRINTIFY" | "PRINTFUL" | "PEAPRINT" | "CSV" | "URL"
 //   Order.status   -> "PENDING" | "PAID" | "FULFILLED" | "CANCELLED"
 // If you migrate to Postgres/MySQL for production, you can convert these
 // back to real `enum` types.

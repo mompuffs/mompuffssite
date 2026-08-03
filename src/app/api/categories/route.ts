@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { slugifyCategoryName } from "@/lib/categories";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -15,14 +16,6 @@ export async function GET() {
     select: { id: true, name: true, parentId: true },
   });
   return NextResponse.json(categories);
-}
-
-function slugify(s: string) {
-  return s
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
 }
 
 export async function POST(req: Request) {
@@ -44,7 +37,7 @@ export async function POST(req: Request) {
     }
   }
 
-  const baseSlug = slugify(String(name).trim());
+  const baseSlug = slugifyCategoryName(String(name).trim());
   let slug = baseSlug;
   let n = 1;
   while (await db.category.findUnique({ where: { shopId_slug: { shopId: shop.id, slug } } })) {

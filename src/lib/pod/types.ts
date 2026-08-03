@@ -22,6 +22,10 @@ export type ImportableProduct = {
   currency: string;
   variants: ImportableVariant[];
   raw: unknown; // original provider payload, stored for debugging/reference
+  // Category name(s) detected from the source (e.g. a scraped URL's JSON-LD
+  // category field). Not auto-applied -- the UI uses it to pre-select a
+  // matching existing category in the picker, nothing more.
+  categoryHint?: string[];
 };
 
 // Credentials keyed by field name, e.g. { apiKey: "...", shopId: "..." }
