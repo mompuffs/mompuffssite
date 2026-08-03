@@ -32,6 +32,10 @@ model User {
   showLinks     Boolean  @default(false)
   showContact   Boolean  @default(false)
   createdAt     DateTime @default(now())
+  // Last time this user opened the notification bell -- used to compute
+  // "new since you last checked" for friend posts (unread messages already
+  // have their own per-message readAt).
+  notificationsCheckedAt DateTime?
 
   posts         Post[]
   comments      Comment[]

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 import { CartProvider } from "@/components/CartContext";
+import OverlayProvider from "@/components/OverlayProvider";
 import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
@@ -15,8 +16,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <SessionProviderWrapper>
           <CartProvider>
-            <Navbar />
-            <main className="max-w-6xl mx-auto px-4 py-6">{children}</main>
+            <OverlayProvider>
+              <Navbar />
+              <main className="max-w-6xl mx-auto px-4 py-6">{children}</main>
+            </OverlayProvider>
           </CartProvider>
         </SessionProviderWrapper>
       </body>

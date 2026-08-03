@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
+import NotificationBell from "@/components/NotificationBell";
 
 type ShopSummary = { id: string; name: string; slug: string; productCount: number };
 
@@ -112,6 +113,7 @@ export default function Navbar() {
 
           {status === "authenticated" && session?.user ? (
             <>
+              <NotificationBell />
               <MessagesLink />
               <Link href="/dashboard/shop" className="hover:text-brand-600">My Shop</Link>
               <Link href={`/profile/${session.user.username}`} className="hover:text-brand-600">
