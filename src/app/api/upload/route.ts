@@ -1,28 +1,35 @@
 import { NextResponse } from "next/server";
-import { put } from "@vercel/blob";
+import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { getCurrentUser } from "@/lib/session";
 
-const MAX_SIZE = 5 * 1024 * 1024;
+const MAX_SIZE = 20 * 1024 * 1024;
 
+// The browser uploads the file bytes straight to Blob storage -- this route
+// only hands out a short-lived signed token first. Routing the file itself
+// through our own serverless function would hit Vercel's ~4.5MB request body
+// limit (that's what was causing "Upload failed." on larger images like a
+// full-resolution logo export).
 export async function POST(req: Request) {
-  const user = await getCurrentUser();
-  if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+  const body = (await req.json()) as HandleUploadBody;
 
-  const formData = await req.formData();
-  const file = formData.get("file");
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: "No file provided." }, { status: 400 });
-  }
-  if (!file.type.startsWith("image/")) {
-    return NextResponse.json({ error: "Only image files are allowed." }, { status: 400 });
-  }
-  if (file.size > MAX_SIZE) {
-    return NextResponse.json({ error: "Image must be under 5MB." }, { status: 400 });
-  }
+  try {
+    const jsonResponse = await handleUpload({
+      body,
+      request: req,
+      onBeforeGenerateToken: async () => {
+        const user = await getCurrentUser();
+        if (!user) throw new Error("Not authenticated.");
 
-  const blob = await put(`products/${user.id}-${Date.now()}-${file.name}`, file, {
-    access: "public",
-  });
+        return {
+          allowedContentTypes: ["image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml"],
+          maximumSizeInBytes: MAX_SIZE,
+          addRandomSuffix: true,
+        };
+      },
+    });
 
-  return NextResponse.json({ url: blob.url }, { status: 201 });
+    return NextResponse.json(jsonResponse);
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message ?? "Upload failed." }, { status: 400 });
+  }
 }
