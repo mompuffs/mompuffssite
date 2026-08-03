@@ -64,7 +64,6 @@ export default function CheckoutPage() {
   const [shippingAddr, setShippingAddr] = useState<AddressForm>(EMPTY_ADDRESS);
   const [addressError, setAddressError] = useState<string | null>(null);
 
-  const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [couponInput, setCouponInput] = useState("");
@@ -74,6 +73,7 @@ export default function CheckoutPage() {
 
   const [paypalClientId, setPaypalClientId] = useState<string | null>(null);
   const [stripePublishableKey, setStripePublishableKey] = useState<string | null>(null);
+  const [configChecked, setConfigChecked] = useState(false);
   const [shippingCents, setShippingCents] = useState(0);
 
   const discountCents = appliedCoupon?.discountCents ?? 0;
@@ -87,21 +87,19 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (!singleShopId) {
       setPaypalClientId(null);
-      return;
-    }
-    fetch(`/api/checkout/paypal/config?shopId=${encodeURIComponent(singleShopId)}`)
-      .then((r) => r.json())
-      .then((data) => setPaypalClientId(data.available ? data.clientId : null));
-  }, [singleShopId]);
-
-  useEffect(() => {
-    if (!singleShopId) {
       setStripePublishableKey(null);
+      setConfigChecked(true);
       return;
     }
-    fetch(`/api/checkout/stripe/config?shopId=${encodeURIComponent(singleShopId)}`)
-      .then((r) => r.json())
-      .then((data) => setStripePublishableKey(data.available ? data.publishableKey : null));
+    setConfigChecked(false);
+    Promise.all([
+      fetch(`/api/checkout/paypal/config?shopId=${encodeURIComponent(singleShopId)}`).then((r) => r.json()),
+      fetch(`/api/checkout/stripe/config?shopId=${encodeURIComponent(singleShopId)}`).then((r) => r.json()),
+    ]).then(([paypal, stripe]) => {
+      setPaypalClientId(paypal.available ? paypal.clientId : null);
+      setStripePublishableKey(stripe.available ? stripe.publishableKey : null);
+      setConfigChecked(true);
+    });
   }, [singleShopId]);
 
   useEffect(() => {
@@ -167,30 +165,6 @@ export default function CheckoutPage() {
   function removeCoupon() {
     setAppliedCoupon(null);
     setCouponError(null);
-  }
-
-  async function placeSimulatedOrder() {
-    setPlacing(true);
-    setError(null);
-    const res = await fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        items,
-        couponCode: appliedCoupon?.code,
-        billing: addressPayload(billing),
-        shipping: addressPayload(effectiveShipping),
-        contactPhone: billing.phone || undefined,
-      }),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error ?? "Could not place order.");
-      setPlacing(false);
-      return;
-    }
-    clear();
-    router.push("/orders");
   }
 
   function handlePaymentSuccess() {
@@ -385,8 +359,8 @@ export default function CheckoutPage() {
 
       {shopIds.length > 1 && (
         <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 mb-4">
-          Your cart has items from multiple shops. Real payment checkout supports one shop at a time -- you can
-          still place a simulated order, or remove items so only one shop remains.
+          Your cart has items from multiple shops. Checkout supports one shop at a time -- please remove items so
+          only one shop remains, or complete each shop's items as a separate order.
         </p>
       )}
 
@@ -443,60 +417,52 @@ export default function CheckoutPage() {
 
       {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
 
-      {stripePublishableKey && (
-        <StripeCheckoutForm
-          items={items}
-          couponCode={appliedCoupon?.code}
-          publishableKey={stripePublishableKey}
-          amountCents={finalTotalCents}
-          billing={addressPayload(billing)}
-          shipping={addressPayload(effectiveShipping)}
-          contactPhone={billing.phone || undefined}
-          onSuccess={handlePaymentSuccess}
-          onError={setError}
-        />
-      )}
+      {!configChecked && shopIds.length === 1 && <p className="text-sm text-gray-500 text-center py-2">Loading payment options…</p>}
 
-      {paypalClientId && stripePublishableKey && (
-        <div className="flex items-center gap-2 my-3">
-          <div className="flex-1 border-t" />
-          <span className="text-xs text-gray-400">or</span>
-          <div className="flex-1 border-t" />
-        </div>
-      )}
+      {configChecked && shopIds.length === 1 && (
+        <>
+          {stripePublishableKey && (
+            <StripeCheckoutForm
+              items={items}
+              couponCode={appliedCoupon?.code}
+              publishableKey={stripePublishableKey}
+              amountCents={finalTotalCents}
+              billing={addressPayload(billing)}
+              shipping={addressPayload(effectiveShipping)}
+              contactPhone={billing.phone || undefined}
+              onSuccess={handlePaymentSuccess}
+              onError={setError}
+            />
+          )}
 
-      {paypalClientId && (
-        <PayPalCheckoutButton
-          items={items}
-          couponCode={appliedCoupon?.code}
-          clientId={paypalClientId}
-          billing={addressPayload(billing)}
-          shipping={addressPayload(effectiveShipping)}
-          contactPhone={billing.phone || undefined}
-          onSuccess={handlePaymentSuccess}
-          onError={setError}
-        />
-      )}
+          {paypalClientId && stripePublishableKey && (
+            <div className="flex items-center gap-2 my-3">
+              <div className="flex-1 border-t" />
+              <span className="text-xs text-gray-400">or</span>
+              <div className="flex-1 border-t" />
+            </div>
+          )}
 
-      {hasRealPayment && (
-        <div className="flex items-center gap-2 my-3">
-          <div className="flex-1 border-t" />
-          <span className="text-xs text-gray-400">or</span>
-          <div className="flex-1 border-t" />
-        </div>
-      )}
+          {paypalClientId && (
+            <PayPalCheckoutButton
+              items={items}
+              couponCode={appliedCoupon?.code}
+              clientId={paypalClientId}
+              billing={addressPayload(billing)}
+              shipping={addressPayload(effectiveShipping)}
+              contactPhone={billing.phone || undefined}
+              onSuccess={handlePaymentSuccess}
+              onError={setError}
+            />
+          )}
 
-      <button
-        onClick={placeSimulatedOrder}
-        disabled={placing}
-        className="w-full bg-brand-600 text-white rounded py-2 font-medium hover:bg-brand-700 disabled:opacity-60"
-      >
-        {placing ? "Placing order…" : hasRealPayment ? "Place order (simulated, no real payment)" : "Place order (simulated)"}
-      </button>
-      {!hasRealPayment && (
-        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 mt-3">
-          No real payment processor connected for this order yet -- this simulates a successful payment.
-        </p>
+          {!hasRealPayment && (
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-3 text-center">
+              This shop hasn't set up a payment method yet, so it can't accept orders right now. Please check back
+              soon.
+            </p>
+          )}
+        </>
       )}
     </div>
   );

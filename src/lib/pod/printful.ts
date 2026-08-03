@@ -38,6 +38,14 @@ export const printfulAdapter: PodAdapter = {
     });
     if (!listRes.ok) {
       const text = await listRes.text().catch(() => "");
+      if (text.includes("Manual Order")) {
+        throw new Error(
+          "Your Printful store isn't set up as a Manual Order/API store, so it can't be synced this way. " +
+            "In Printful, this happens when your store is connected to a native platform (Etsy, Shopify, etc.) " +
+            "instead of created as an API store. Go to your Printful dashboard → Stores → Add store → choose " +
+            '"Manual order platform / API", then generate a Private Token scoped to that store and reconnect it here.'
+        );
+      }
       throw new Error(`Printful API error (${listRes.status}): ${text || listRes.statusText}`);
     }
     const listData = await listRes.json();

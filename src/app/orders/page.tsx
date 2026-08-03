@@ -12,7 +12,7 @@ export default async function OrdersPage() {
   const orders = await db.order.findMany({
     where: { buyerId: user.id },
     orderBy: { createdAt: "desc" },
-    include: { items: { include: { product: true } } },
+    include: { items: { include: { product: { include: { shop: { select: { name: true, slug: true } } } } } } },
   });
 
   return (
@@ -30,7 +30,10 @@ export default async function OrdersPage() {
               <li key={item.id} className="flex justify-between">
                 <span>
                   {item.product.title}
-                  {item.variantLabel ? ` (${item.variantLabel})` : ""} × {item.quantity}
+                  {item.variantLabel ? ` (${item.variantLabel})` : ""} × {item.quantity}{" "}
+                  <a href={`/shop/${item.product.shop.slug}`} className="text-xs text-gray-400 hover:text-brand-600">
+                    ({item.product.shop.name})
+                  </a>
                 </span>
                 <span>{formatCents(item.unitPriceCents * item.quantity)}</span>
               </li>

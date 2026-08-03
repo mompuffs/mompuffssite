@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { priceCartItems } from "@/lib/checkout";
 import { evaluateCoupon } from "@/lib/coupons";
 import { calculateShippingCents } from "@/lib/shipping";
+import { sendSaleNotification } from "@/lib/email";
 
 export type AddressInput = {
   name?: string;
@@ -26,8 +27,8 @@ function addressFields(prefix: "billing" | "shipping", address?: AddressInput) {
   };
 }
 
-// Shared by the simulated checkout flow and every real processor's capture
-// step, so all of them price, discount, ship, and record orders identically.
+// Shared by every real payment processor's capture step, so all of them
+// price, discount, ship, and record orders identically.
 export async function createPaidOrder({
   buyerId,
   items,
@@ -100,6 +101,33 @@ export async function createPaidOrder({
       include: { items: { include: { product: true } } },
     });
   });
+
+  // Let each shop owner represented in this order know they made a sale.
+  const buyer = await db.user.findUnique({ where: { id: buyerId }, select: { displayName: true } });
+  const shopIds = Array.from(new Set(order.items.map((i) => i.product.shopId)));
+  const shops = await db.shop.findMany({
+    where: { id: { in: shopIds } },
+    select: { id: true, name: true, owner: { select: { email: true } } },
+  });
+  await Promise.all(
+    shops.map((shop) => {
+      const shopItems = order.items.filter((i) => i.product.shopId === shop.id);
+      const subtotalCents = shopItems.reduce((sum, i) => sum + i.unitPriceCents * i.quantity, 0);
+      return sendSaleNotification({
+        to: shop.owner.email,
+        shopName: shop.name,
+        buyerName: buyer?.displayName ?? "A buyer",
+        items: shopItems.map((i) => ({
+          title: i.product.title,
+          variantLabel: i.variantLabel,
+          quantity: i.quantity,
+          unitPriceCents: i.unitPriceCents,
+        })),
+        subtotalCents,
+        orderId: order.id,
+      });
+    })
+  );
 
   return { order, finalTotalCents, shippingCents, priced };
 }

@@ -30,13 +30,24 @@ export default async function ShopPage({
     ? [activeCategory.id, ...childrenOf(activeCategory.id).map((c) => c.id)]
     : undefined;
 
-  const products = await db.product.findMany({
-    where: {
-      shopId: shop.id,
-      ...(activeCategoryIds ? { categories: { some: { id: { in: activeCategoryIds } } } } : {}),
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const [products, shopProductsForCounts] = await Promise.all([
+    db.product.findMany({
+      where: {
+        shopId: shop.id,
+        ...(activeCategoryIds ? { categories: { some: { id: { in: activeCategoryIds } } } } : {}),
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    db.product.findMany({ where: { shopId: shop.id }, select: { id: true, categories: { select: { id: true } } } }),
+  ]);
+
+  function countForCategoryIds(ids: string[]) {
+    const matched = new Set<string>();
+    for (const p of shopProductsForCounts) {
+      if (p.categories.some((c) => ids.includes(c.id))) matched.add(p.id);
+    }
+    return matched.size;
+  }
 
   return (
     <div>
@@ -56,41 +67,50 @@ export default async function ShopPage({
           <div className="bg-white rounded-xl shadow p-4 text-sm space-y-3">
             <Link
               href={`/shop/${shop.slug}`}
-              className={!activeCategory ? "font-semibold text-brand-600" : "text-gray-700 hover:text-brand-600"}
+              className={`flex justify-between ${
+                !activeCategory ? "font-semibold text-brand-600" : "text-gray-700 hover:text-brand-600"
+              }`}
             >
-              All Products
+              <span>All Products</span>
+              <span className="text-gray-400">{shopProductsForCounts.length}</span>
             </Link>
-            {topLevel.map((top) => (
-              <div key={top.id}>
-                <Link
-                  href={`/shop/${shop.slug}?category=${top.slug}`}
-                  className={
-                    activeCategory?.id === top.id
-                      ? "font-semibold text-brand-600 block"
-                      : "font-medium text-gray-800 hover:text-brand-600 block"
-                  }
-                >
-                  {top.name}
-                </Link>
-                {childrenOf(top.id).length > 0 && (
-                  <div className="pl-3 mt-1 space-y-1 border-l">
-                    {childrenOf(top.id).map((child) => (
-                      <Link
-                        key={child.id}
-                        href={`/shop/${shop.slug}?category=${child.slug}`}
-                        className={
-                          activeCategory?.id === child.id
-                            ? "font-semibold text-brand-600 block pl-2"
-                            : "text-gray-600 hover:text-brand-600 block pl-2"
-                        }
-                      >
-                        {child.name}
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+            {topLevel.map((top) => {
+              const kids = childrenOf(top.id);
+              const topCount = countForCategoryIds([top.id, ...kids.map((c) => c.id)]);
+              return (
+                <div key={top.id}>
+                  <Link
+                    href={`/shop/${shop.slug}?category=${top.slug}`}
+                    className={`flex justify-between ${
+                      activeCategory?.id === top.id
+                        ? "font-semibold text-brand-600"
+                        : "font-medium text-gray-800 hover:text-brand-600"
+                    }`}
+                  >
+                    <span>{top.name}</span>
+                    <span className="text-gray-400 font-normal">{topCount}</span>
+                  </Link>
+                  {kids.length > 0 && (
+                    <div className="pl-3 mt-1 space-y-1 border-l">
+                      {kids.map((child) => (
+                        <Link
+                          key={child.id}
+                          href={`/shop/${shop.slug}?category=${child.slug}`}
+                          className={`flex justify-between pl-2 ${
+                            activeCategory?.id === child.id
+                              ? "font-semibold text-brand-600"
+                              : "text-gray-600 hover:text-brand-600"
+                          }`}
+                        >
+                          <span>{child.name}</span>
+                          <span className="text-gray-400">{countForCategoryIds([child.id])}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </aside>
 

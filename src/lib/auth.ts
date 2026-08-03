@@ -37,10 +37,20 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = (user as any).id;
         token.username = (user as any).username;
+      }
+      // Client called useSession().update() after an account/profile
+      // change -- re-read the latest name/avatar from the database since
+      // the token otherwise only carries what was true at sign-in.
+      if (trigger === "update" && token.id) {
+        const fresh = await db.user.findUnique({ where: { id: token.id as string } });
+        if (fresh) {
+          token.name = fresh.displayName;
+          token.picture = fresh.avatarUrl ?? undefined;
+        }
       }
       return token;
     },
