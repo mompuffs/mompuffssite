@@ -98,6 +98,14 @@ export default function PaymentsPage() {
       <input
         key={field.key}
         type={field.password ? "password" : "text"}
+        name={`processor-credential-${field.key}`}
+        // Text-input-followed-by-password-input reads as a login form to
+        // browser autofill, which then overwrites these with a saved
+        // email/password instead of the actual API credentials -- these
+        // attributes opt back out of that.
+        autoComplete={field.password ? "new-password" : "off"}
+        data-1p-ignore
+        data-lpignore="true"
         placeholder={field.placeholder ?? field.label}
         value={formValues[field.key] ?? ""}
         onChange={(e) => setFormValues((v) => ({ ...v, [field.key]: e.target.value }))}
