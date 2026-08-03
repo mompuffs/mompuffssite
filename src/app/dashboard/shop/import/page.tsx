@@ -69,7 +69,10 @@ export default function ImportPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-1">
+      <Link href="/dashboard/shop" className="text-sm text-brand-600 hover:underline">
+        ← Back to shop
+      </Link>
+      <div className="flex items-center justify-between mb-1 mt-2">
         <h1 className="text-2xl font-bold">Import products</h1>
         <Link href="/dashboard/shop/connections" className="text-sm text-brand-600 hover:underline">
           Manage connections →
