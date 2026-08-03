@@ -18,6 +18,19 @@ model User {
   displayName   String
   bio           String?
   avatarUrl     String?
+  // Optional profile-detail sections, each with its own show/hide flag so a
+  // member can fill one in without it appearing on their public profile.
+  work          String?
+  location      String?
+  birthdate     DateTime?
+  links         String?  // JSON array of {label, url}
+  contactEmail  String?
+  contactPhone  String?
+  showWork      Boolean  @default(false)
+  showLocation  Boolean  @default(false)
+  showBirthdate Boolean  @default(false)
+  showLinks     Boolean  @default(false)
+  showContact   Boolean  @default(false)
   createdAt     DateTime @default(now())
 
   posts         Post[]

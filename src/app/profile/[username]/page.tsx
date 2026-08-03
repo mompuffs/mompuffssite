@@ -20,6 +20,20 @@ export default async function ProfilePage({ params }: { params: { username: stri
 
   if (!profileUser) notFound();
 
+  const profileLinks: { label: string; url: string }[] =
+    profileUser.showLinks && profileUser.links ? JSON.parse(profileUser.links) : [];
+  const birthdateDisplay =
+    profileUser.showBirthdate && profileUser.birthdate
+      ? // Stored as a bare date (no time-of-day); force UTC when formatting
+        // so it doesn't shift a day in timezones behind UTC.
+        new Date(profileUser.birthdate).toLocaleDateString(undefined, {
+          timeZone: "UTC",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      : null;
+
   const posts = await db.post.findMany({
     where: { authorId: profileUser.id },
     orderBy: { createdAt: "desc" },
@@ -46,9 +60,18 @@ export default async function ProfilePage({ params }: { params: { username: stri
       <div className="bg-white rounded-xl shadow p-6 mb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-2xl font-semibold">
-              {profileUser.displayName.charAt(0).toUpperCase()}
-            </div>
+            {profileUser.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={profileUser.avatarUrl}
+                alt={profileUser.displayName}
+                className="w-16 h-16 rounded-full object-cover flex-shrink-0"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-2xl font-semibold flex-shrink-0">
+                {profileUser.displayName.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div>
               <h1 className="text-xl font-bold">{profileUser.displayName}</h1>
               <p className="text-gray-500 text-sm">@{profileUser.username}</p>
@@ -60,6 +83,51 @@ export default async function ProfilePage({ params }: { params: { username: stri
         </div>
 
         {profileUser.bio && <p className="mt-3 text-sm">{profileUser.bio}</p>}
+
+        {(profileUser.showWork && profileUser.work) ||
+        (profileUser.showLocation && profileUser.location) ||
+        birthdateDisplay ||
+        (profileUser.showContact && (profileUser.contactEmail || profileUser.contactPhone)) ||
+        profileLinks.length > 0 ? (
+          <div className="mt-3 text-sm text-gray-700 space-y-1">
+            {profileUser.showWork && profileUser.work && (
+              <p>
+                💼 <span>{profileUser.work}</span>
+              </p>
+            )}
+            {profileUser.showLocation && profileUser.location && (
+              <p>
+                📍 <span>{profileUser.location}</span>
+              </p>
+            )}
+            {birthdateDisplay && (
+              <p>
+                🎂 <span>{birthdateDisplay}</span>
+              </p>
+            )}
+            {profileUser.showContact && (profileUser.contactEmail || profileUser.contactPhone) && (
+              <p>
+                ✉️{" "}
+                {[profileUser.contactEmail, profileUser.contactPhone].filter(Boolean).join(" · ")}
+              </p>
+            )}
+            {profileLinks.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1">
+                {profileLinks.map((link, i) => (
+                  <a
+                    key={i}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer nofollow"
+                    className="text-brand-600 hover:underline bg-brand-50 px-2 py-1 rounded-full text-xs"
+                  >
+                    {link.label || link.url}
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
 
         <div className="flex gap-4 mt-4 text-sm text-gray-600">
           <span><strong>{profileUser._count.posts}</strong> posts</span>
