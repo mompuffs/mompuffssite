@@ -40,6 +40,13 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
   }
 
+  if (categoryIds !== undefined && categoryIds.length > 0) {
+    const ownedCount = await db.category.count({ where: { id: { in: categoryIds }, shopId: shop.id } });
+    if (ownedCount !== categoryIds.length) {
+      return NextResponse.json({ error: "One or more categories don't belong to your shop." }, { status: 400 });
+    }
+  }
+
   const updated = await db.product.update({
     where: { id: params.id },
     data: {

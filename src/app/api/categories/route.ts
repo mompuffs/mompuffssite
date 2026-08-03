@@ -3,7 +3,14 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 
 export async function GET() {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+
+  const shop = await db.shop.findUnique({ where: { ownerId: user.id } });
+  if (!shop) return NextResponse.json([]);
+
   const categories = await db.category.findMany({
+    where: { shopId: shop.id },
     orderBy: [{ parentId: "asc" }, { name: "asc" }],
     select: { id: true, name: true, parentId: true },
   });
@@ -32,19 +39,21 @@ export async function POST(req: Request) {
 
   if (parentId) {
     const parent = await db.category.findUnique({ where: { id: parentId } });
-    if (!parent) return NextResponse.json({ error: "Parent category not found." }, { status: 400 });
+    if (!parent || parent.shopId !== shop.id) {
+      return NextResponse.json({ error: "Parent category not found." }, { status: 400 });
+    }
   }
 
   const baseSlug = slugify(String(name).trim());
   let slug = baseSlug;
   let n = 1;
-  while (await db.category.findUnique({ where: { slug } })) {
+  while (await db.category.findUnique({ where: { shopId_slug: { shopId: shop.id, slug } } })) {
     n++;
     slug = `${baseSlug}-${n}`;
   }
 
   const category = await db.category.create({
-    data: { name: String(name).trim(), slug, parentId: parentId || undefined },
+    data: { name: String(name).trim(), slug, parentId: parentId || undefined, shopId: shop.id },
   });
 
   return NextResponse.json(category, { status: 201 });

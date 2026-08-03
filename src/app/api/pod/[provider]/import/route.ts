@@ -19,6 +19,13 @@ export async function POST(req: Request, { params }: { params: { provider: strin
     return NextResponse.json({ error: "Missing product fields." }, { status: 400 });
   }
 
+  if (Array.isArray(categoryIds) && categoryIds.length > 0) {
+    const ownedCount = await db.category.count({ where: { id: { in: categoryIds }, shopId: shop.id } });
+    if (ownedCount !== categoryIds.length) {
+      return NextResponse.json({ error: "One or more categories don't belong to your shop." }, { status: 400 });
+    }
+  }
+
   const product = await db.product.create({
     data: {
       shopId: shop.id,

@@ -19,7 +19,10 @@ export default async function ShopPage({
 
   if (!shop) notFound();
 
-  const categories = await db.category.findMany({ orderBy: [{ parentId: "asc" }, { name: "asc" }] });
+  const categories = await db.category.findMany({
+    where: { shopId: shop.id },
+    orderBy: [{ parentId: "asc" }, { name: "asc" }],
+  });
   const topLevel = categories.filter((c) => !c.parentId);
   const childrenOf = (id: string) => categories.filter((c) => c.parentId === id);
 

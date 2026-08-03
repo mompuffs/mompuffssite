@@ -169,6 +169,7 @@ model Shop {
   podConnections PodConnection[]
   paymentConnections PaymentConnection[]
   coupons     Coupon[]
+  categories  Category[]
 }
 
 // Per-shop POD provider credentials, so each seller connects their own
@@ -278,19 +279,23 @@ model ProductImage {
   createdAt DateTime @default(now())
 }
 
-// Two-level category tree (e.g. Apparel -> Men's Apparel) shared across all
-// shops. A product can belong to any number of categories at once, so a
-// design "collection" (e.g. "Mom Puffs") and a type category (e.g. "Men's
-// Apparel") can both apply to the same product.
+// Two-level category tree (e.g. Apparel -> Men's Apparel), scoped per shop.
+// A product can belong to any number of categories at once, so a design
+// "collection" (e.g. "Mom Puffs") and a type category (e.g. "Men's Apparel")
+// can both apply to the same product.
 model Category {
   id        String     @id @default(cuid())
+  shop      Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId    String
   name      String
-  slug      String     @unique
+  slug      String
   parent    Category?  @relation("CategoryChildren", fields: [parentId], references: [id], onDelete: Cascade)
   parentId  String?
   children  Category[] @relation("CategoryChildren")
   products  Product[]  @relation("ProductCategories")
   createdAt DateTime   @default(now())
+
+  @@unique([shopId, slug])
 }
 
 // Imported POD products may have multiple purchasable options (e.g. size/color),

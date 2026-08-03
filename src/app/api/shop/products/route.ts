@@ -27,6 +27,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Each variation needs a positive price." }, { status: 400 });
   }
 
+  if (Array.isArray(categoryIds) && categoryIds.length > 0) {
+    const ownedCount = await db.category.count({ where: { id: { in: categoryIds }, shopId: shop.id } });
+    if (ownedCount !== categoryIds.length) {
+      return NextResponse.json({ error: "One or more categories don't belong to your shop." }, { status: 400 });
+    }
+  }
+
   const basePriceCents = hasVariants ? Math.round(Number(variants[0].priceCents)) : Math.round(Number(priceCents));
   const baseImageUrl = hasVariants ? variants[0].imageUrl || imageUrl || undefined : imageUrl || undefined;
 

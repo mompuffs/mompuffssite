@@ -12,13 +12,17 @@ export default async function ShopDashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [shop, categories] = await Promise.all([
-    db.shop.findUnique({
-      where: { ownerId: user.id },
-      include: { products: { orderBy: { createdAt: "desc" }, include: { categories: true } } },
-    }),
-    db.category.findMany({ orderBy: [{ parentId: "asc" }, { name: "asc" }] }),
-  ]);
+  const shop = await db.shop.findUnique({
+    where: { ownerId: user.id },
+    include: { products: { orderBy: { createdAt: "desc" }, include: { categories: true } } },
+  });
+
+  const categories = shop
+    ? await db.category.findMany({
+        where: { shopId: shop.id },
+        orderBy: [{ parentId: "asc" }, { name: "asc" }],
+      })
+    : [];
 
   if (!shop) {
     return (
