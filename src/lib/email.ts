@@ -12,7 +12,11 @@ export async function sendPasswordResetEmail({ to, resetUrl }: { to: string; res
   }
 
   try {
-    await resend.emails.send({
+    // resend.emails.send() does NOT throw on API-level failures (bad API
+    // key, unverified sender domain, rate limits, etc.) -- it always
+    // resolves with { data, error }. A try/catch alone silently swallows
+    // those, so `error` has to be checked explicitly too.
+    const { error } = await resend.emails.send({
       from: FROM,
       to,
       subject: "Reset your Mompuffs password",
@@ -22,6 +26,9 @@ Reset your password: ${resetUrl}
 
 This link expires in 1 hour and only works once. If you didn't request this, you can safely ignore this email -- your password won't change.`,
     });
+    if (error) {
+      console.error("Resend rejected the password reset email:", error);
+    }
   } catch (err) {
     console.error("Failed to send password reset email:", err);
   }
@@ -52,7 +59,7 @@ export async function sendSaleNotification({
     .join("\n");
 
   try {
-    await resend.emails.send({
+    const { error } = await resend.emails.send({
       from: FROM,
       to,
       subject: `You made a sale on Mompuffs! (${shopName})`,
@@ -66,6 +73,9 @@ Order ID: ${orderId}
 
 View and fulfill this order: ${SITE_URL}/dashboard/shop/orders`,
     });
+    if (error) {
+      console.error("Resend rejected the sale notification email:", error);
+    }
   } catch (err) {
     console.error("Failed to send sale notification email:", err);
   }
