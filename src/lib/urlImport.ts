@@ -128,6 +128,35 @@ function extractJsonLdProductNodes(html: string): any[] {
   return nodes;
 }
 
+// Heuristic for "this is a category/shop page, not a single product page" --
+// such pages commonly mark themselves up as a CollectionPage/ItemList, or
+// simply list more than one Product node. Used only to give a clearer error
+// message when extraction otherwise comes up empty.
+function looksLikeListingPage(html: string, productNodeCount: number): boolean {
+  if (productNodeCount > 1) return true;
+  const re = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    let parsed: any;
+    try {
+      parsed = JSON.parse(m[1].trim());
+    } catch {
+      continue;
+    }
+    const candidates = Array.isArray(parsed)
+      ? parsed
+      : Array.isArray(parsed?.["@graph"])
+        ? parsed["@graph"]
+        : [parsed];
+    for (const node of candidates) {
+      const type = node?.["@type"];
+      const types = Array.isArray(type) ? type : [type];
+      if (types.includes("CollectionPage") || types.includes("ItemList")) return true;
+    }
+  }
+  return false;
+}
+
 function extractMeta(html: string, property: string): string | undefined {
   const escaped = property.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const patterns = [
@@ -172,8 +201,16 @@ export async function scrapeProductFromUrl(rawUrl: string): Promise<ImportablePr
     const img = Array.isArray(ld.image) ? ld.image[0] : ld.image;
     imageUrl = typeof img === "string" ? img : img?.url;
     const offers = Array.isArray(ld.offers) ? ld.offers[0] : ld.offers;
-    priceCents = parsePriceCents(offers?.price ?? offers?.lowPrice);
-    if (offers?.priceCurrency) currency = String(offers.priceCurrency);
+    // Most sites put the price directly on the Offer (offers.price), but some
+    // WooCommerce/Yoast setups nest it a level deeper under a
+    // priceSpecification (array or single object) instead -- check both.
+    const priceSpec = Array.isArray(offers?.priceSpecification)
+      ? offers.priceSpecification[0]
+      : offers?.priceSpecification;
+    priceCents = parsePriceCents(offers?.price ?? offers?.lowPrice ?? priceSpec?.price);
+    if (offers?.priceCurrency || priceSpec?.priceCurrency) {
+      currency = String(offers?.priceCurrency ?? priceSpec?.priceCurrency);
+    }
     if (typeof ld.category === "string") categoryHint = [ld.category];
     else if (Array.isArray(ld.category)) categoryHint = ld.category.filter((c: unknown) => typeof c === "string");
   }
@@ -193,7 +230,12 @@ export async function scrapeProductFromUrl(rawUrl: string): Promise<ImportablePr
   }
 
   if (!title || priceCents === undefined) {
-    throw new Error("Couldn't find product details (title and price) on that page.");
+    if (looksLikeListingPage(html, ldNodes.length)) {
+      throw new Error("That looks like a shop/category page listing multiple products. Paste a single product's page URL instead.");
+    }
+    throw new Error(
+      "Couldn't find product details on that page. Make sure it's a single product's page (not a shop/category listing), and that the site exposes standard product info."
+    );
   }
 
   return {
