@@ -53,6 +53,22 @@ model User {
 
   shop          Shop?
   orders        Order[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+// Single-use, short-lived tokens for the "forgot password" flow. Only the
+// SHA-256 hash is stored -- the raw token exists only in the emailed link,
+// same principle as a password hash, so a DB read alone can't be used to
+// take over an account.
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 // Mutual, approval-based relationship (distinct from the one-way Follow
