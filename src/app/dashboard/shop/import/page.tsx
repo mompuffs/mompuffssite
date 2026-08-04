@@ -102,6 +102,12 @@ export default function ImportPage() {
   const [urlLoading, setUrlLoading] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
 
+  // Website URL import -- bulk from a shop/category listing page
+  const [listingUrl, setListingUrl] = useState("");
+  const [listingMaxCount, setListingMaxCount] = useState(10);
+  const [listingLoading, setListingLoading] = useState(false);
+  const [listingError, setListingError] = useState<string | null>(null);
+
   // CSV bulk import
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvUploading, setCsvUploading] = useState(false);
@@ -148,6 +154,21 @@ export default function ImportPage() {
     router.refresh();
   }
 
+  function applyUrlResults(results: UrlPreviewResult[]) {
+    setUrlResults(results);
+
+    const preselected: Record<string, string[]> = {};
+    for (const r of results) {
+      if (r.ok && r.item) {
+        const matches = categoriesMatchingHint(r.item.categoryHint);
+        if (matches.length > 0) preselected[r.item.externalId] = matches;
+      }
+    }
+    if (Object.keys(preselected).length > 0) {
+      setSelectedCategories((prev) => ({ ...preselected, ...prev }));
+    }
+  }
+
   async function fetchUrlPreviews() {
     const urls = urlInput
       .split("\n")
@@ -169,18 +190,26 @@ export default function ImportPage() {
       setUrlError(data.error ?? "Failed to fetch those URLs.");
       return;
     }
-    setUrlResults(data.results);
+    applyUrlResults(data.results);
+  }
 
-    const preselected: Record<string, string[]> = {};
-    for (const r of data.results as UrlPreviewResult[]) {
-      if (r.ok && r.item) {
-        const matches = categoriesMatchingHint(r.item.categoryHint);
-        if (matches.length > 0) preselected[r.item.externalId] = matches;
-      }
+  async function discoverFromListing() {
+    if (!listingUrl.trim()) return;
+    setListingLoading(true);
+    setListingError(null);
+    setUrlResults([]);
+    const res = await fetch("/api/shop/import-url/discover", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: listingUrl.trim(), maxCount: listingMaxCount }),
+    });
+    const data = await res.json();
+    setListingLoading(false);
+    if (!res.ok) {
+      setListingError(data.error ?? "Failed to find products on that page.");
+      return;
     }
-    if (Object.keys(preselected).length > 0) {
-      setSelectedCategories((prev) => ({ ...preselected, ...prev }));
-    }
+    applyUrlResults(data.results);
   }
 
   async function importUrlItem(item: CatalogItem) {
@@ -325,6 +354,41 @@ export default function ImportPage() {
           >
             {urlLoading ? "Fetching…" : "Fetch products"}
           </button>
+        </div>
+
+        <div className="mt-5 pt-5 border-t max-w-xl">
+          <p className="text-sm font-medium mb-1">Or pull every product from a shop/category page</p>
+          <p className="text-xs text-gray-500 mb-2">
+            Paste the page that lists the products (e.g. a shop or category page) and how many to grab — we'll
+            find the product links on it (following "next page" if needed) and preview each one below.
+          </p>
+          <div className="flex gap-2">
+            <input
+              value={listingUrl}
+              onChange={(e) => setListingUrl(e.target.value)}
+              placeholder="https://example.com/shop/"
+              className="flex-1 border rounded px-3 py-1.5 text-sm"
+            />
+            <input
+              type="number"
+              min={1}
+              max={50}
+              value={listingMaxCount}
+              onChange={(e) => setListingMaxCount(Number(e.target.value))}
+              className="w-20 border rounded px-2 py-1.5 text-sm"
+              aria-label="Maximum products to import"
+            />
+            <button
+              onClick={discoverFromListing}
+              disabled={listingLoading || !listingUrl.trim()}
+              className="bg-brand-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-brand-700 disabled:opacity-60 flex-shrink-0"
+            >
+              {listingLoading ? "Finding…" : "Find products"}
+            </button>
+          </div>
+          {listingError && (
+            <p className="mt-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3">{listingError}</p>
+          )}
         </div>
 
         {urlError && (

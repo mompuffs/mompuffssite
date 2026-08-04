@@ -250,3 +250,84 @@ export async function scrapeProductFromUrl(rawUrl: string): Promise<ImportablePr
     raw: { sourceUrl: url.toString() },
   };
 }
+
+const MAX_LISTING_PAGES_TO_FOLLOW = 3;
+export const MAX_DISCOVER_COUNT = 50;
+
+// Pulls same-origin links whose path looks like an individual product page
+// (contains "/product/" or "/products/" as a path segment -- covers
+// WooCommerce and Shopify's conventions, the two most common storefront
+// platforms). Dedupes and strips query/hash so the same product linked
+// several times (image, title, "select options") only counts once.
+function extractProductLinks(html: string, baseUrl: URL): string[] {
+  const links: string[] = [];
+  const seen = new Set<string>();
+  const re = /<a\s[^>]*href=["']([^"']+)["']/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html))) {
+    let resolved: URL;
+    try {
+      resolved = new URL(m[1], baseUrl);
+    } catch {
+      continue;
+    }
+    if (resolved.origin !== baseUrl.origin) continue;
+    if (!/\/products?\//i.test(resolved.pathname)) continue;
+    resolved.search = "";
+    resolved.hash = "";
+    const key = resolved.toString();
+    if (!seen.has(key)) {
+      seen.add(key);
+      links.push(key);
+    }
+  }
+  return links;
+}
+
+// Standard WordPress/WooCommerce (and many other platforms') pagination
+// marks the "next page" link with rel="next" -- check both attribute orders.
+function extractNextPageUrl(html: string, baseUrl: URL): URL | null {
+  const m =
+    html.match(/<a\s[^>]*rel=["']next["'][^>]*href=["']([^"']+)["']/i) ||
+    html.match(/<a\s[^>]*href=["']([^"']+)["'][^>]*rel=["']next["']/i);
+  if (!m) return null;
+  try {
+    const resolved = new URL(m[1], baseUrl);
+    return resolved.origin === baseUrl.origin ? resolved : null;
+  } catch {
+    return null;
+  }
+}
+
+// Finds up to `maxCount` product page URLs starting from a shop/category
+// listing page, following "next page" pagination (bounded) if more are
+// needed. Used to bulk-populate the URL importer from one shop page instead
+// of pasting every product URL by hand.
+export async function discoverProductUrls(rawListingUrl: string, maxCount: number): Promise<string[]> {
+  const cappedMax = Math.max(1, Math.min(Math.floor(maxCount) || 1, MAX_DISCOVER_COUNT));
+  let currentUrl = await assertSafeUrl(rawListingUrl);
+  const found: string[] = [];
+  const visitedPages = new Set<string>();
+
+  for (let page = 0; page < MAX_LISTING_PAGES_TO_FOLLOW && found.length < cappedMax; page++) {
+    const pageKey = currentUrl.toString();
+    if (visitedPages.has(pageKey)) break;
+    visitedPages.add(pageKey);
+
+    const html = await fetchTextCapped(pageKey);
+    for (const link of extractProductLinks(html, currentUrl)) {
+      if (found.length >= cappedMax) break;
+      if (!found.includes(link)) found.push(link);
+    }
+    if (found.length >= cappedMax) break;
+
+    const nextUrl = extractNextPageUrl(html, currentUrl);
+    if (!nextUrl) break;
+    currentUrl = await assertSafeUrl(nextUrl.toString());
+  }
+
+  if (found.length === 0) {
+    throw new Error("Couldn't find any product links on that page.");
+  }
+  return found.slice(0, cappedMax);
+}
