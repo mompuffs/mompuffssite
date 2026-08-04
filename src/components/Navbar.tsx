@@ -85,6 +85,7 @@ function MessagesLink() {
 
 export default function Navbar() {
   const { data: session, status } = useSession();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <nav className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
@@ -104,7 +105,9 @@ export default function Navbar() {
           </MarketplaceMenu>
         </div>
 
-        <div className="flex items-center gap-3 text-sm">
+        {/* Full nav row -- overflows on narrow screens, so it's desktop-only;
+            the hamburger button below covers the same links stacked. */}
+        <div className="hidden md:flex items-center gap-3 text-sm">
           <Link href="/feed" className="hover:text-brand-600">Feed</Link>
           <MarketplaceMenu>
             <Link href="/marketplace" className="hover:text-brand-600">Marketplace</Link>
@@ -139,7 +142,82 @@ export default function Navbar() {
             </>
           ) : null}
         </div>
+
+        <button
+          onClick={() => setMobileOpen((o) => !o)}
+          className="md:hidden text-xl text-gray-600 hover:text-brand-600 leading-none px-1"
+          aria-label={mobileOpen ? "Close menu" : "Open menu"}
+        >
+          {mobileOpen ? "✕" : "☰"}
+        </button>
       </div>
+
+      {mobileOpen && (
+        <div className="md:hidden border-t border-gray-200 px-4 py-3 space-y-1 text-sm bg-white">
+          <Link
+            href="/marketplace"
+            onClick={() => setMobileOpen(false)}
+            className="block bg-gray-100 rounded-full px-4 py-1.5 text-gray-500 mb-2"
+          >
+            Browse the marketplace…
+          </Link>
+          <Link href="/feed" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
+            Feed
+          </Link>
+          <Link href="/marketplace" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
+            Marketplace
+          </Link>
+          <Link href="/cart" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
+            Cart
+          </Link>
+
+          {status === "authenticated" && session?.user ? (
+            <>
+              <div className="py-2">
+                <NotificationBell />
+              </div>
+              <div className="py-2">
+                <MessagesLink />
+              </div>
+              <Link href="/dashboard/shop" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
+                My Shop
+              </Link>
+              <Link
+                href={`/profile/${session.user.username}`}
+                onClick={() => setMobileOpen(false)}
+                className="block py-2 hover:text-brand-600"
+              >
+                {session.user.name}
+              </Link>
+              <Link href="/account" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
+                My Account
+              </Link>
+              <button
+                onClick={() => {
+                  setMobileOpen(false);
+                  signOut({ callbackUrl: "/login" });
+                }}
+                className="block w-full text-left py-2 text-gray-500 hover:text-red-600"
+              >
+                Sign out
+              </button>
+            </>
+          ) : status === "unauthenticated" ? (
+            <>
+              <Link href="/login" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
+                Log in
+              </Link>
+              <Link
+                href="/register"
+                onClick={() => setMobileOpen(false)}
+                className="block bg-brand-600 text-white px-3 py-1.5 rounded-full text-center mt-1"
+              >
+                Sign up
+              </Link>
+            </>
+          ) : null}
+        </div>
+      )}
     </nav>
   );
 }
