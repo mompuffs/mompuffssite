@@ -25,7 +25,7 @@ type CatalogItem = {
   categoryHint?: string[];
 };
 
-type UrlPreviewResult = { url: string; ok: boolean; item?: CatalogItem; error?: string };
+type UrlPreviewResult = { url: string; ok: boolean; item?: CatalogItem; error?: string; alreadyImported?: boolean };
 
 function ImportItemCard({
   item,
@@ -36,6 +36,7 @@ function ImportItemCard({
   onCategoriesChange,
   onImport,
   importing,
+  alreadyImported,
 }: {
   item: CatalogItem;
   categories: Category[];
@@ -45,15 +46,21 @@ function ImportItemCard({
   onCategoriesChange: (ids: string[]) => void;
   onImport: () => void;
   importing: boolean;
+  alreadyImported?: boolean;
 }) {
   return (
     <div className="bg-white rounded-xl shadow overflow-hidden">
-      <div className="aspect-square bg-gray-100 flex items-center justify-center">
+      <div className="aspect-square bg-gray-100 flex items-center justify-center relative">
         {item.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
         ) : (
           <span className="text-gray-400 text-xs">No image</span>
+        )}
+        {alreadyImported && (
+          <span className="absolute top-1.5 left-1.5 bg-gray-900/80 text-white text-[10px] px-2 py-0.5 rounded-full">
+            Already imported
+          </span>
         )}
       </div>
       <div className="p-3">
@@ -71,10 +78,10 @@ function ImportItemCard({
 
         <button
           onClick={onImport}
-          disabled={importing}
-          className="mt-2 w-full bg-brand-600 text-white rounded py-1 text-sm font-medium hover:bg-brand-700 disabled:opacity-60"
+          disabled={importing || alreadyImported}
+          className="mt-2 w-full bg-brand-600 text-white rounded py-1 text-sm font-medium hover:bg-brand-700 disabled:opacity-50"
         >
-          {importing ? "Importing…" : "Import to my shop"}
+          {alreadyImported ? "Already imported" : importing ? "Importing…" : "Import to my shop"}
         </button>
       </div>
     </div>
@@ -95,13 +102,8 @@ export default function ImportPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Website URL import
-  const [urlInput, setUrlInput] = useState("");
-  const [urlResults, setUrlResults] = useState<UrlPreviewResult[]>([]);
-  const [urlLoading, setUrlLoading] = useState(false);
-  const [urlError, setUrlError] = useState<string | null>(null);
-
   // Website URL import -- bulk from a shop/category listing page
+  const [urlResults, setUrlResults] = useState<UrlPreviewResult[]>([]);
   const [listingUrl, setListingUrl] = useState("");
   const [listingMaxCount, setListingMaxCount] = useState(10);
   const [listingLoading, setListingLoading] = useState(false);
@@ -168,30 +170,6 @@ export default function ImportPage() {
     }
   }
 
-  async function fetchUrlPreviews() {
-    const urls = urlInput
-      .split("\n")
-      .map((u) => u.trim())
-      .filter(Boolean);
-    if (urls.length === 0) return;
-
-    setUrlLoading(true);
-    setUrlError(null);
-    setUrlResults([]);
-    const res = await fetch("/api/shop/import-url/preview", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ urls }),
-    });
-    const data = await res.json();
-    setUrlLoading(false);
-    if (!res.ok) {
-      setUrlError(data.error ?? "Failed to fetch those URLs.");
-      return;
-    }
-    applyUrlResults(data.results);
-  }
-
   async function discoverFromListing() {
     if (!listingUrl.trim()) return;
     setListingLoading(true);
@@ -213,7 +191,7 @@ export default function ImportPage() {
 
   async function importUrlItem(item: CatalogItem) {
     setImportingId(item.externalId);
-    await fetch("/api/shop/import-url", {
+    const res = await fetch("/api/shop/import-url", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -227,6 +205,12 @@ export default function ImportPage() {
       }),
     });
     setImportingId(null);
+    if (res.status === 409) {
+      // Someone else (or another tab) imported this exact URL in the meantime --
+      // reflect that in this preview instead of silently failing.
+      setUrlResults((prev) => prev.map((r) => (r.url === item.externalId ? { ...r, alreadyImported: true } : r)));
+      return;
+    }
     router.refresh();
   }
 
@@ -333,66 +317,38 @@ export default function ImportPage() {
       {/* Website URL import */}
       <section className="mb-10 border-t pt-6">
         <h2 className="text-lg font-semibold mb-1">From a website</h2>
-        <p className="text-sm text-gray-500 mb-3">
-          Paste one or more public product page URLs (one per line) and we'll pull the title, description, price,
-          and image straight from the page — no login needed. Works best on sites that expose standard product
-          info (most storefronts do).
+        <p className="text-sm text-gray-500 mb-3 max-w-xl">
+          Paste a shop or category page from a public storefront and how many products to grab — we'll find the
+          product links on it (following "next page" if needed) and preview each one below. No login needed.
         </p>
-        <textarea
-          value={urlInput}
-          onChange={(e) => setUrlInput(e.target.value)}
-          placeholder={"https://example.com/products/some-item\nhttps://example.com/products/another-item"}
-          rows={3}
-          className="w-full border rounded px-3 py-2 text-sm max-w-xl"
-        />
-        <div>
+        <div className="flex gap-2 max-w-xl">
+          <input
+            value={listingUrl}
+            onChange={(e) => setListingUrl(e.target.value)}
+            placeholder="https://example.com/shop/"
+            className="flex-1 border rounded px-3 py-1.5 text-sm"
+          />
+          <input
+            type="number"
+            min={1}
+            max={50}
+            value={listingMaxCount}
+            onChange={(e) => setListingMaxCount(Number(e.target.value))}
+            className="w-20 border rounded px-2 py-1.5 text-sm"
+            aria-label="Maximum products to import"
+          />
           <button
-            onClick={fetchUrlPreviews}
-            disabled={urlLoading || !urlInput.trim()}
-            className="mt-2 bg-brand-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-brand-700 disabled:opacity-60"
+            onClick={discoverFromListing}
+            disabled={listingLoading || !listingUrl.trim()}
+            className="bg-brand-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-brand-700 disabled:opacity-60 flex-shrink-0"
           >
-            {urlLoading ? "Fetching…" : "Fetch products"}
+            {listingLoading ? "Finding…" : "Find products"}
           </button>
         </div>
-
-        <div className="mt-5 pt-5 border-t max-w-xl">
-          <p className="text-sm font-medium mb-1">Or pull every product from a shop/category page</p>
-          <p className="text-xs text-gray-500 mb-2">
-            Paste the page that lists the products (e.g. a shop or category page) and how many to grab — we'll
-            find the product links on it (following "next page" if needed) and preview each one below.
-          </p>
-          <div className="flex gap-2">
-            <input
-              value={listingUrl}
-              onChange={(e) => setListingUrl(e.target.value)}
-              placeholder="https://example.com/shop/"
-              className="flex-1 border rounded px-3 py-1.5 text-sm"
-            />
-            <input
-              type="number"
-              min={1}
-              max={50}
-              value={listingMaxCount}
-              onChange={(e) => setListingMaxCount(Number(e.target.value))}
-              className="w-20 border rounded px-2 py-1.5 text-sm"
-              aria-label="Maximum products to import"
-            />
-            <button
-              onClick={discoverFromListing}
-              disabled={listingLoading || !listingUrl.trim()}
-              className="bg-brand-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-brand-700 disabled:opacity-60 flex-shrink-0"
-            >
-              {listingLoading ? "Finding…" : "Find products"}
-            </button>
-          </div>
-          {listingError && (
-            <p className="mt-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3">{listingError}</p>
-          )}
-        </div>
-
-        {urlError && (
-          <p className="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3 max-w-lg">{urlError}</p>
+        {listingError && (
+          <p className="mt-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3 max-w-xl">{listingError}</p>
         )}
+
         {urlFailedResults.length > 0 && (
           <div className="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3 max-w-xl space-y-1">
             {urlFailedResults.map((r) => (
@@ -418,6 +374,7 @@ export default function ImportPage() {
                   onCategoriesChange={(ids) => setSelectedCategories((prev) => ({ ...prev, [item.externalId]: ids }))}
                   onImport={() => importUrlItem(item)}
                   importing={importingId === item.externalId}
+                  alreadyImported={r.alreadyImported}
                 />
               );
             })}

@@ -21,6 +21,14 @@ export async function POST(req: Request) {
     }
   }
 
+  const existing = await db.product.findFirst({ where: { shopId: shop.id, externalId: String(sourceUrl) } });
+  if (existing) {
+    return NextResponse.json(
+      { error: "You've already imported this product.", existingProductId: existing.id },
+      { status: 409 }
+    );
+  }
+
   const product = await db.product.create({
     data: {
       shopId: shop.id,

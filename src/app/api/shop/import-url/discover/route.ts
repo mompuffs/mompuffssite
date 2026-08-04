@@ -27,11 +27,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: e?.message || "Couldn't find products on that page." }, { status: 400 });
   }
 
+  const existingExternalIds = new Set(
+    (
+      await db.product.findMany({
+        where: { shopId: shop.id, externalId: { in: productUrls } },
+        select: { externalId: true },
+      })
+    ).map((p) => p.externalId)
+  );
+
   const results = await Promise.all(
     productUrls.map(async (productUrl) => {
       try {
         const item = await scrapeProductFromUrl(productUrl);
-        return { url: productUrl, ok: true as const, item };
+        return { url: productUrl, ok: true as const, item, alreadyImported: existingExternalIds.has(productUrl) };
       } catch (e: any) {
         return { url: productUrl, ok: false as const, error: e?.message || "Couldn't import that page." };
       }
