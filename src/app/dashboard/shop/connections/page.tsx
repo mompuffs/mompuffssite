@@ -69,7 +69,7 @@ export default function ConnectionsPage() {
         </Link>
       </div>
       <p className="text-sm text-gray-500 mb-4">
-        Connect your own Printify, Printful, or Peaprint account. Credentials are yours alone -- other shops on
+        Connect your own Printify or Printful account. Credentials are yours alone -- other shops on
         Mompuffs never see or use them.
       </p>
 

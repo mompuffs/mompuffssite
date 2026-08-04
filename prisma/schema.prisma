@@ -173,13 +173,13 @@ model Shop {
 }
 
 // Per-shop POD provider credentials, so each seller connects their own
-// Printify/Printful/Peaprint account rather than sharing one platform-wide
+// Printify/Printful account rather than sharing one platform-wide
 // connection. apiKey/extra are stored encrypted (see src/lib/crypto.ts).
 model PodConnection {
   id        String   @id @default(cuid())
   shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
   shopId    String
-  provider  String   // "PRINTIFY" | "PRINTFUL" | "PEAPRINT"
+  provider  String   // "PRINTIFY" | "PRINTFUL"
   apiKey    String   // encrypted
   extra     String?  // encrypted JSON blob for provider-specific fields (e.g. Printify shopId)
   createdAt DateTime @default(now())
@@ -235,7 +235,7 @@ model Coupon {
 // NOTE: SQLite has no native enum support in Prisma, so ProductSource and
 // OrderStatus are plain strings here instead of `enum` blocks. The
 // application code treats them as closed sets:
-//   Product.source -> "MANUAL" | "PRINTIFY" | "PRINTFUL" | "PEAPRINT" | "CSV" | "URL"
+//   Product.source -> "MANUAL" | "PRINTIFY" | "PRINTFUL" | "CSV" | "URL"
 //   Order.status   -> "PENDING" | "PAID" | "FULFILLED" | "CANCELLED"
 // If you migrate to Postgres/MySQL for production, you can convert these
 // back to real `enum` types.

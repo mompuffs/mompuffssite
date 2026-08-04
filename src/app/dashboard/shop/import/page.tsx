@@ -10,7 +10,6 @@ import { buildProductCsvTemplate } from "@/lib/csvProducts";
 const PROVIDERS = [
   { id: "printify", label: "Printify" },
   { id: "printful", label: "Printful" },
-  { id: "peaprint", label: "Peaprint" },
 ];
 
 type CatalogItem = {
@@ -284,7 +283,7 @@ export default function ImportPage() {
 
       {/* Print-on-demand catalog import */}
       <section className="mb-10">
-        <h2 className="text-lg font-semibold mb-2">From Printify / Printful / Peaprint</h2>
+        <h2 className="text-lg font-semibold mb-2">From Printify / Printful</h2>
         <div className="flex gap-2 mb-4">
           {PROVIDERS.map((p) => (
             <button

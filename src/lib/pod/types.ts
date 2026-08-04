@@ -38,7 +38,7 @@ export type PodFieldDef = {
 };
 
 export interface PodAdapter {
-  id: "PRINTIFY" | "PRINTFUL" | "PEAPRINT";
+  id: "PRINTIFY" | "PRINTFUL";
   label: string;
   /** Describes the inputs a "connect" form needs to collect for this provider. */
   fields: PodFieldDef[];

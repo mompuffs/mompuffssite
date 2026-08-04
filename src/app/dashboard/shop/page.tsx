@@ -65,7 +65,7 @@ export default async function ShopDashboardPage() {
             </li>
             <li>
               <Link href="/dashboard/shop/import" className="text-brand-600 hover:underline">
-                Import from Printify / Printful / Peaprint
+                Import products
               </Link>
             </li>
             <li>
@@ -96,7 +96,7 @@ export default async function ShopDashboardPage() {
           <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
             <li>Products you add here show up instantly on the public marketplace.</li>
             <li>Link a product to a post from the feed composer to promote it (coming soon).</li>
-            <li>Import catalog items from Printify, Printful, or Peaprint from the import page.</li>
+            <li>Import products from Printify, Printful, a public product URL, or a CSV file from the import page.</li>
           </ul>
         </div>
       </div>

@@ -3,7 +3,7 @@
 A prototype of a Facebook-style social feed with a marketplace attached:
 member profiles, posts/likes/comments, follows, member-run shops, a
 marketplace to browse all shops' products, a simulated checkout, and
-product-import adapters for Printify, Printful, and Peaprint.
+product-import adapters for Printify and Printful, plus CSV and public-URL import.
 
 This is a **working prototype**, not a production deployment: authentication,
 data model, and core flows are real and functional, but checkout is
@@ -78,16 +78,9 @@ which provider is active.
 - **Printful** (`src/lib/pod/printful.ts`) — real integration against the
   Printful REST API v1 (`https://api.printful.com/`), Bearer private token.
   Needs `PRINTFUL_API_KEY` (Developer Portal → Private Token).
-- **Peaprint** (`src/lib/pod/peaprint.ts`) — **placeholder only.** As of this
-  build, Peaprint doesn't have a public developer portal or published API
-  reference the way Printify/Printful do. The adapter is wired into the same
-  interface and will light up automatically once you have real
-  docs/credentials from Peaprint — see the comments at the top of that file
-  for exactly what to change.
-
 Add credentials to `.env.local` (never commit real keys) and restart the dev
-server; the "Import from Printify / Printful / Peaprint" page in the seller
-dashboard will start returning live data instead of a "not configured" error.
+server; the "Import products" page in the seller dashboard will start
+returning live data instead of a "not configured" error.
 
 ## Known limitations / next steps
 
@@ -101,7 +94,6 @@ dashboard will start returning live data instead of a "not configured" error.
 - **SQLite is for local dev only.** For production, change the `datasource`
   provider in `prisma/schema.prisma` to `postgresql` and point
   `DATABASE_URL` at a real database (e.g. Vercel Postgres, Supabase, Neon).
-- **Peaprint adapter is a stub** — finish it once you have real API docs.
 - No direct messaging, notifications, or media feed (photos/reels) yet —
   the schema (`User`, `Post`, `Comment`, `Like`, `Follow`) is intentionally
   simple to extend.
