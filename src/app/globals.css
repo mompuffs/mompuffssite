@@ -3,7 +3,20 @@
 @tailwind utilities;
 
 html, body {
-  height: 100%;
+  /* min-height, not height: `height: 100%` caps body's own box at exactly
+     one viewport tall. Since position:sticky can only stick within its
+     containing block's box, a `sticky top-0` nav (a direct child of body)
+     would run out of room the moment page content exceeds one viewport and
+     start scrolling away with the rest of the page instead of staying
+     pinned. min-height still guarantees a full-height background on short
+     pages, but lets the box (and the sticky nav's room to stick) grow with
+     taller content instead of capping it.
+     Viewport units, not `100%`: a percentage min-height only resolves if
+     every ancestor up the chain also has a definite height, and in testing
+     that chain didn't reliably hold (body rendered shorter than the
+     viewport on a short page). vh isn't relative to any ancestor, so it
+     doesn't depend on that chain at all. */
+  min-height: 100vh;
 }
 
 body {
