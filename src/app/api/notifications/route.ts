@@ -22,11 +22,20 @@ export async function GET() {
     await db.user.update({ where: { id: (user as any).id }, data: { notificationsCheckedAt: since } });
   }
 
-  const friendRows = await db.friendRequest.findMany({
-    where: { status: "ACCEPTED", OR: [{ senderId: (user as any).id }, { receiverId: (user as any).id }] },
-    select: { senderId: true, receiverId: true },
-  });
+  const [friendRows, followingRows] = await Promise.all([
+    db.friendRequest.findMany({
+      where: { status: "ACCEPTED", OR: [{ senderId: (user as any).id }, { receiverId: (user as any).id }] },
+      select: { senderId: true, receiverId: true },
+    }),
+    db.follow.findMany({
+      where: { followerId: (user as any).id },
+      select: { followingId: true },
+    }),
+  ]);
   const friendIds = friendRows.map((r) => (r.senderId === (user as any).id ? r.receiverId : r.senderId));
+  // Union of friends and people followed -- a one-way Follow shouldn't need
+  // to also be an accepted Friend for their posts to show up here.
+  const relevantAuthorIds = Array.from(new Set([...friendIds, ...followingRows.map((f) => f.followingId)]));
 
   const [unreadMessages, friendPosts] = await Promise.all([
     db.message.findMany({
@@ -34,9 +43,9 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
       include: { sender: { select: PROFILE_SELECT } },
     }),
-    friendIds.length > 0
+    relevantAuthorIds.length > 0
       ? db.post.findMany({
-          where: { authorId: { in: friendIds }, createdAt: { gt: since } },
+          where: { authorId: { in: relevantAuthorIds }, createdAt: { gt: since } },
           orderBy: { createdAt: "desc" },
           take: 20,
           include: { author: { select: PROFILE_SELECT } },

@@ -5,6 +5,7 @@ import { CartProvider } from "@/components/CartContext";
 import OverlayProvider from "@/components/OverlayProvider";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
+import PresenceHeartbeat from "@/components/PresenceHeartbeat";
 
 export const metadata: Metadata = {
   title: "Mompuffs",
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SessionProviderWrapper>
           <CartProvider>
             <OverlayProvider>
+              <PresenceHeartbeat />
               <Navbar />
               <div className="max-w-6xl mx-auto px-4 py-6 flex gap-6">
                 <Sidebar />

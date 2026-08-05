@@ -36,6 +36,12 @@ model User {
   // "new since you last checked" for friend posts (unread messages already
   // have their own per-message readAt).
   notificationsCheckedAt DateTime?
+  // Bumped by a periodic client-side heartbeat while the app is open in a
+  // tab; someone is considered "online" if this is within the last few
+  // minutes (see src/lib/presence.ts) rather than a true persistent
+  // connection -- good enough for a "Friends Online" list without adding
+  // websockets.
+  lastActiveAt  DateTime?
 
   posts         Post[]
   comments      Comment[]
