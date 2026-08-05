@@ -155,6 +155,7 @@ model Post {
   group     Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
   groupId   String?
   createdAt DateTime  @default(now())
+  editedAt  DateTime?
 
   comments  Comment[]
   likes     Like[]

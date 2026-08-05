@@ -37,7 +37,7 @@ export async function GET() {
   // to also be an accepted Friend for their posts to show up here.
   const relevantAuthorIds = Array.from(new Set([...friendIds, ...followingRows.map((f) => f.followingId)]));
 
-  const [unreadMessages, friendPosts] = await Promise.all([
+  const [unreadMessages, friendPosts, pendingGroupRequests] = await Promise.all([
     db.message.findMany({
       where: { recipientId: (user as any).id, readAt: null },
       orderBy: { createdAt: "desc" },
@@ -51,6 +51,17 @@ export async function GET() {
           include: { author: { select: PROFILE_SELECT } },
         })
       : Promise.resolve([]),
+    // Always the live current count, not gated by "since" -- this is an
+    // actionable item (approve/decline), not a feed post, so it shouldn't
+    // disappear just because the bell was opened once.
+    db.groupMembership.findMany({
+      where: { status: "PENDING", group: { ownerId: (user as any).id } },
+      orderBy: { joinedAt: "asc" },
+      include: {
+        user: { select: PROFILE_SELECT },
+        group: { select: { id: true, name: true, slug: true } },
+      },
+    }),
   ]);
 
   const messagesBySender = new Map<string, { sender: (typeof unreadMessages)[number]["sender"]; count: number; latestBody: string; latestAt: Date }>();
@@ -68,5 +79,11 @@ export async function GET() {
     messagePreviews: Array.from(messagesBySender.values()),
     friendPosts,
     friendPostCount: friendPosts.length,
+    groupJoinRequests: pendingGroupRequests.map((r) => ({
+      user: r.user,
+      group: r.group,
+      requestedAt: r.joinedAt,
+    })),
+    groupJoinRequestCount: pendingGroupRequests.length,
   });
 }

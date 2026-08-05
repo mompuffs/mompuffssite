@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,7 @@ type Post = {
   videoUrl: string | null;
   videoThumbnailUrl: string | null;
   createdAt: string;
+  editedAt?: string | null;
   author: { id: string; username: string; displayName: string; avatarUrl: string | null };
   product: { id: string; title: string; priceCents: number; currency: string; imageUrl: string | null } | null;
   group: { id: string; name: string; slug: string } | null;
@@ -26,9 +27,10 @@ type Post = {
   comments: Comment[];
 };
 
-export default function PostCard({ post }: { post: Post }) {
+export default function PostCard({ post: initialPost }: { post: Post }) {
   const { data: session } = useSession();
   const router = useRouter();
+  const [post, setPost] = useState(initialPost);
   const [liked, setLiked] = useState(
     !!session?.user && post.likes.some((l) => l.userId === (session.user as any).id)
   );
@@ -36,6 +38,54 @@ export default function PostCard({ post }: { post: Post }) {
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState(post.comments);
   const [showComments, setShowComments] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editBody, setEditBody] = useState(post.body);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleted, setDeleted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const isOwnPost = !!session?.user && (session.user as any).id === post.author.id;
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function onClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+    }
+    document.addEventListener("mousedown", onClickOutside);
+    return () => document.removeEventListener("mousedown", onClickOutside);
+  }, []);
+
+  async function saveEdit() {
+    if (!editBody.trim()) return;
+    setSaving(true);
+    setError(null);
+    const res = await fetch(`/api/posts/${post.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ body: editBody }),
+    });
+    const data = await res.json();
+    setSaving(false);
+    if (!res.ok) {
+      setError(data.error ?? "Couldn't save changes.");
+      return;
+    }
+    setPost((p) => ({ ...p, body: data.body, editedAt: data.editedAt }));
+    setEditing(false);
+  }
+
+  async function deletePost() {
+    if (!confirm("Delete this post? This can't be undone.")) return;
+    setDeleting(true);
+    const res = await fetch(`/api/posts/${post.id}`, { method: "DELETE" });
+    setDeleting(false);
+    if (res.ok) {
+      setDeleted(true);
+      router.refresh();
+    }
+  }
 
   async function toggleLike() {
     if (!session) return router.push("/login");
@@ -59,32 +109,105 @@ export default function PostCard({ post }: { post: Post }) {
     setCommentText("");
   }
 
+  if (deleted) return null;
+
   return (
     <div className="bg-white rounded-xl shadow p-4 mb-4">
-      <div className="flex items-center gap-2 mb-2">
-        <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-semibold">
-          {post.author.displayName.charAt(0).toUpperCase()}
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center font-semibold">
+            {post.author.displayName.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <Link href={`/profile/${post.author.username}`} className="font-semibold hover:underline">
+              {post.author.displayName}
+            </Link>
+            {post.group && (
+              <>
+                {" "}
+                <span className="text-xs text-gray-500">
+                  → posted in{" "}
+                  <Link href={`/groups/${post.group.slug}`} className="text-brand-600 hover:underline">
+                    {post.group.name}
+                  </Link>
+                </span>
+              </>
+            )}
+            <p className="text-xs text-gray-500">
+              {new Date(post.createdAt).toLocaleString()}
+              {post.editedAt && " · edited"}
+            </p>
+          </div>
         </div>
-        <div>
-          <Link href={`/profile/${post.author.username}`} className="font-semibold hover:underline">
-            {post.author.displayName}
-          </Link>
-          {post.group && (
-            <>
-              {" "}
-              <span className="text-xs text-gray-500">
-                → posted in{" "}
-                <Link href={`/groups/${post.group.slug}`} className="text-brand-600 hover:underline">
-                  {post.group.name}
-                </Link>
-              </span>
-            </>
-          )}
-          <p className="text-xs text-gray-500">{new Date(post.createdAt).toLocaleString()}</p>
-        </div>
+
+        {isOwnPost && !editing && (
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              className="text-gray-400 hover:text-gray-700 px-2 leading-none"
+              aria-label="Post options"
+            >
+              ⋯
+            </button>
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-100 py-1 text-sm z-10 w-28">
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setEditBody(post.body);
+                    setEditing(true);
+                  }}
+                  className="block w-full text-left px-3 py-1.5 hover:bg-gray-50"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    deletePost();
+                  }}
+                  disabled={deleting}
+                  className="block w-full text-left px-3 py-1.5 hover:bg-gray-50 text-red-600"
+                >
+                  {deleting ? "Deleting…" : "Delete"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      <p className="whitespace-pre-wrap mb-2">{post.body}</p>
+      {editing ? (
+        <div className="mb-2 space-y-1.5">
+          <textarea
+            value={editBody}
+            onChange={(e) => setEditBody(e.target.value)}
+            rows={3}
+            className="w-full border rounded px-3 py-2 text-sm resize-none"
+          />
+          {error && <p className="text-red-600 text-xs">{error}</p>}
+          <div className="flex gap-2">
+            <button
+              onClick={saveEdit}
+              disabled={saving || !editBody.trim()}
+              className="bg-brand-600 text-white px-3 py-1 rounded-full text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
+            >
+              {saving ? "Saving…" : "Save"}
+            </button>
+            <button
+              onClick={() => {
+                setEditing(false);
+                setError(null);
+              }}
+              className="text-gray-500 text-xs hover:underline"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <p className="whitespace-pre-wrap mb-2">{post.body}</p>
+      )}
 
       {post.videoUrl ? (
         <video

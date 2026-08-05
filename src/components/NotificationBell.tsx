@@ -7,12 +7,14 @@ import { useOverlay } from "@/components/OverlayProvider";
 type Person = { id: string; username: string; displayName: string; avatarUrl: string | null };
 type MessagePreview = { sender: Person; count: number; latestBody: string; latestAt: string };
 type FriendPost = { id: string; body: string; author: Person; createdAt: string };
+type GroupJoinRequest = { user: Person; group: { id: string; name: string; slug: string }; requestedAt: string };
 
 export default function NotificationBell() {
   const { openPost, openChat } = useOverlay();
   const [open, setOpen] = useState(false);
   const [messagePreviews, setMessagePreviews] = useState<MessagePreview[]>([]);
   const [friendPosts, setFriendPosts] = useState<FriendPost[]>([]);
+  const [groupJoinRequests, setGroupJoinRequests] = useState<GroupJoinRequest[]>([]);
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [friendPostCount, setFriendPostCount] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -23,6 +25,7 @@ export default function NotificationBell() {
       .then((data) => {
         setMessagePreviews(data.messagePreviews ?? []);
         setFriendPosts(data.friendPosts ?? []);
+        setGroupJoinRequests(data.groupJoinRequests ?? []);
         setUnreadMessageCount(data.unreadMessageCount ?? 0);
         setFriendPostCount(data.friendPostCount ?? 0);
       })
@@ -51,7 +54,7 @@ export default function NotificationBell() {
     }
   }
 
-  const totalCount = unreadMessageCount + friendPostCount;
+  const totalCount = unreadMessageCount + friendPostCount + groupJoinRequests.length;
 
   return (
     <div className="relative" ref={containerRef}>
@@ -66,7 +69,7 @@ export default function NotificationBell() {
 
       {open && (
         <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 py-2 text-sm z-40 max-h-96 overflow-y-auto">
-          {messagePreviews.length === 0 && friendPosts.length === 0 ? (
+          {messagePreviews.length === 0 && friendPosts.length === 0 && groupJoinRequests.length === 0 ? (
             <p className="px-3 py-4 text-gray-500 text-center text-xs">You're all caught up.</p>
           ) : (
             <>
@@ -104,8 +107,39 @@ export default function NotificationBell() {
                 </div>
               )}
 
-              {friendPosts.length > 0 && (
+              {groupJoinRequests.length > 0 && (
                 <div className={messagePreviews.length > 0 ? "border-t mt-1 pt-1" : ""}>
+                  <p className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">
+                    Group requests
+                  </p>
+                  {groupJoinRequests.map((r) => (
+                    <Link
+                      key={`${r.group.id}-${r.user.id}`}
+                      href={`/groups/${r.group.slug}`}
+                      onClick={() => setOpen(false)}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50"
+                    >
+                      {r.user.avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={r.user.avatarUrl} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                      ) : (
+                        <div className="w-7 h-7 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                          {r.user.displayName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs">
+                          <span className="font-medium">{r.user.displayName}</span> wants to join
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">{r.group.name}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+
+              {friendPosts.length > 0 && (
+                <div className={messagePreviews.length > 0 || groupJoinRequests.length > 0 ? "border-t mt-1 pt-1" : ""}>
                   <p className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wide">
                     Friend posts
                   </p>

@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
+// No auth check here (public route), so nothing forces Next.js to treat it
+// as dynamic by default -- without this it gets statically cached at build/
+// first-request time and never reflects new groups.
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const groups = await db.group.findMany({
     where: { visibility: "PUBLIC" },
