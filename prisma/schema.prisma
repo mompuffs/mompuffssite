@@ -32,6 +32,10 @@ model User {
   showLinks     Boolean  @default(false)
   showContact   Boolean  @default(false)
   createdAt     DateTime @default(now())
+  // Grants access to the /admin area (user/content moderation, platform-wide
+  // stats). Not settable from any user-facing form -- only ever flipped by
+  // another admin from the admin Users page, or directly in the database.
+  isAdmin       Boolean  @default(false)
   // Last time this user opened the notification bell -- used to compute
   // "new since you last checked" for friend posts (unread messages already
   // have their own per-message readAt).

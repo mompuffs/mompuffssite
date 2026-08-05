@@ -32,6 +32,7 @@ export const authOptions: NextAuthOptions = {
           name: user.displayName,
           username: user.username,
           image: user.avatarUrl ?? undefined,
+          isAdmin: (user as any).isAdmin ?? false,
         } as any;
       },
     }),
@@ -41,6 +42,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = (user as any).id;
         token.username = (user as any).username;
+        token.isAdmin = (user as any).isAdmin ?? false;
       }
       // Client called useSession().update() after an account/profile
       // change -- re-read the latest name/avatar from the database since
@@ -50,6 +52,7 @@ export const authOptions: NextAuthOptions = {
         if (fresh) {
           token.name = fresh.displayName;
           token.picture = fresh.avatarUrl ?? undefined;
+          token.isAdmin = (fresh as any).isAdmin ?? false;
         }
       }
       return token;
@@ -58,6 +61,7 @@ export const authOptions: NextAuthOptions = {
       if (session.user) {
         (session.user as any).id = token.id;
         (session.user as any).username = token.username;
+        (session.user as any).isAdmin = token.isAdmin ?? false;
       }
       return session;
     },
