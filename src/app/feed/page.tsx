@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/session";
 import PostComposer from "@/components/PostComposer";
 import PostCard from "@/components/PostCard";
 import FriendsOnline from "@/components/FriendsOnline";
+import TopStores from "@/components/TopStores";
 
 export const dynamic = "force-dynamic";
 
@@ -59,11 +60,10 @@ export default async function FeedPage() {
           <PostCard key={post.id} post={post as any} />
         ))}
       </div>
-      {user && (
-        <aside className="hidden lg:block w-64 flex-shrink-0 sticky top-[4.5rem]">
-          <FriendsOnline />
-        </aside>
-      )}
+      <aside className="hidden lg:flex lg:flex-col gap-3 w-64 flex-shrink-0 sticky top-[4.5rem]">
+        {user && <FriendsOnline />}
+        <TopStores />
+      </aside>
     </div>
   );
 }

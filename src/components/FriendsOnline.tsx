@@ -16,7 +16,7 @@ export default function FriendsOnline() {
     function load() {
       fetch("/api/friends/online")
         .then((r) => r.json())
-        .then((data) => setFriends(Array.isArray(data.friends) ? data.friends : []))
+        .then((data) => setFriends(Array.isArray(data.friends) ? data.friends.slice(0, 10) : []))
         .catch(() => {});
     }
     load();
@@ -56,8 +56,8 @@ export default function FriendsOnline() {
           ))}
         </ul>
       )}
-      <Link href="/messages" className="block mt-3 text-xs text-brand-600 hover:underline">
-        View all messages →
+      <Link href="/friends" className="block mt-3 text-xs text-brand-600 hover:underline">
+        View more →
       </Link>
     </div>
   );
