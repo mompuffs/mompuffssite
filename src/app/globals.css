@@ -7,6 +7,43 @@ html, body {
 }
 
 body {
-  background-color: #f0f2f5;
-  color: #1c1e21;
+  background-color: #e8e2ee; /* main content area background, per brand palette */
+  color: #241f28; /* brand-tinted near-black, replaces flat #1c1e21 */
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+::selection {
+  background-color: #d0bfcc;
+  color: #482444;
+}
+
+/* Thin, brand-tinted scrollbar (Firefox + WebKit) instead of the default
+   system gray, so the chrome matches the rest of the UI. */
+* {
+  scrollbar-color: #b89aa8 #f1eef4;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1eef4;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #b89aa8;
+  border-radius: 9999px;
+  border: 2px solid #f1eef4;
+}
+
+/* No component in the codebase sets its own focus ring, so links/buttons/
+   inputs fell back to the browser's default blue outline -- clashing with
+   the plum theme and inconsistent between browsers. This gives every
+   focusable element a matching brand-colored ring, keyboard-nav only. */
+:focus-visible {
+  outline: 2px solid #8d6e8d;
+  outline-offset: 2px;
+  border-radius: 2px;
 }

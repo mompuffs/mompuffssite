@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import NotificationBell from "@/components/NotificationBell";
 
@@ -86,19 +87,51 @@ function MessagesLink() {
 export default function Navbar() {
   const { data: session, status } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Shrinks the bar from its full 232px (200px logo + py-4) down to 75px
+  // (59px logo + py-2) once the page scrolls past the fold, while staying
+  // pinned via `sticky top-0`. Threshold is a little past 0 so it doesn't
+  // flicker at the very top from sub-pixel scroll bounce.
+  useEffect(() => {
+    function onScroll() {
+      setScrolled(window.scrollY > 20);
+    }
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <nav className="sticky top-0 z-30 bg-white border-b border-gray-200 shadow-sm">
-      <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-        <Link href="/feed" className="text-xl font-bold text-brand-600">
-          Mompuffs
+    <nav className="sticky top-0 z-30 bg-brand-500 shadow-sm">
+      <div
+        className={`max-w-6xl mx-auto px-4 flex items-center justify-between gap-4 transition-[padding] duration-300 ease-in-out ${
+          scrolled ? "py-2" : "py-4"
+        }`}
+      >
+        {/* Logo area is 200px tall by default, 59px once scrolled (75px bar
+            total) -- everything below (Sidebar's sticky top-offset, feed
+            page's right-rail offset) is measured off the *scrolled* bar
+            height, since that's the state sticky positioning is visible in.
+            Keep those in sync with this if it changes. */}
+        <Link href="/feed" className="flex items-center shrink-0">
+          <Image
+            src="/logo.png"
+            alt="Mompuffs"
+            width={250}
+            height={250}
+            className={`rounded-full w-auto transition-[height] duration-300 ease-in-out ${
+              scrolled ? "h-[59px]" : "h-[200px]"
+            }`}
+            priority
+          />
         </Link>
 
         <div className="flex-1 max-w-md hidden sm:block">
           <MarketplaceMenu>
             <Link
               href="/marketplace"
-              className="block w-full bg-gray-100 rounded-full px-4 py-1.5 text-sm text-gray-500 hover:bg-gray-200 transition"
+              className="block w-full bg-white/90 rounded-full px-4 py-1.5 text-sm text-gray-500 hover:bg-white transition"
             >
               Browse the marketplace…
             </Link>
@@ -107,36 +140,39 @@ export default function Navbar() {
 
         {/* Full nav row -- overflows on narrow screens, so it's desktop-only;
             the hamburger button below covers the same links stacked. */}
-        <div className="hidden md:flex items-center gap-3 text-sm">
-          <Link href="/feed" className="hover:text-brand-600">Feed</Link>
+        <div className="hidden md:flex items-center gap-3 text-sm font-semibold text-[#43203F]">
+          <Link href="/feed" className="hover:text-white">Feed</Link>
           <MarketplaceMenu>
-            <Link href="/marketplace" className="hover:text-brand-600">Marketplace</Link>
+            <Link href="/marketplace" className="hover:text-white">Marketplace</Link>
           </MarketplaceMenu>
-          <Link href="/groups" className="hover:text-brand-600">Groups</Link>
-          <Link href="/cart" className="hover:text-brand-600">Cart</Link>
+          <Link href="/groups" className="hover:text-white">Groups</Link>
+          <Link href="/cart" className="hover:text-white">Cart</Link>
 
           {status === "authenticated" && session?.user ? (
             <>
               <NotificationBell />
               <MessagesLink />
-              <Link href="/dashboard/shop" className="hover:text-brand-600">My Shop</Link>
-              <Link href={`/profile/${session.user.username}`} className="hover:text-brand-600">
+              <Link href="/dashboard/shop" className="hover:text-white">My Shop</Link>
+              <Link href={`/profile/${session.user.username}`} className="hover:text-white">
                 {session.user.name}
               </Link>
-              <Link href="/account" className="hover:text-brand-600">My Account</Link>
+              <Link href="/account" className="hover:text-white">My Account</Link>
+              {(session.user as any).isAdmin && (
+                <Link href="/admin" className="hover:text-white">Admin</Link>
+              )}
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
-                className="text-gray-500 hover:text-red-600"
+                className="hover:text-red-100"
               >
                 Sign out
               </button>
             </>
           ) : status === "unauthenticated" ? (
             <>
-              <Link href="/login" className="hover:text-brand-600">Log in</Link>
+              <Link href="/login" className="hover:text-white">Log in</Link>
               <Link
                 href="/register"
-                className="bg-brand-600 text-white px-3 py-1.5 rounded-full hover:bg-brand-700"
+                className="bg-white text-brand-700 px-3 py-1.5 rounded-full hover:bg-brand-50"
               >
                 Sign up
               </Link>
@@ -146,7 +182,7 @@ export default function Navbar() {
 
         <button
           onClick={() => setMobileOpen((o) => !o)}
-          className="md:hidden text-xl text-gray-600 hover:text-brand-600 leading-none px-1"
+          className="md:hidden text-xl text-[#43203F] hover:text-white leading-none px-1"
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
         >
           {mobileOpen ? "✕" : "☰"}
@@ -196,6 +232,11 @@ export default function Navbar() {
               <Link href="/account" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
                 My Account
               </Link>
+              {(session.user as any).isAdmin && (
+                <Link href="/admin" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
+                  Admin
+                </Link>
+              )}
               <button
                 onClick={() => {
                   setMobileOpen(false);

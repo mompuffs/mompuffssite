@@ -1,11 +1,24 @@
 import type { Metadata, Viewport } from "next";
+import { Nunito } from "next/font/google";
 import "./globals.css";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 import { CartProvider } from "@/components/CartContext";
 import OverlayProvider from "@/components/OverlayProvider";
 import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
+import PageShell from "@/components/PageShell";
 import PresenceHeartbeat from "@/components/PresenceHeartbeat";
+
+// Self-hosted at build time via next/font -- no runtime request to Google
+// Fonts, so this doesn't add a third-party network call. Nunito's rounded,
+// friendly letterforms suit the community/marketplace tone; the CSS
+// variable feeds tailwind's `font-sans` so every existing className picks
+// it up with no per-file changes.
+const nunito = Nunito({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  variable: "--font-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Mompuffs",
@@ -22,17 +35,14 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={nunito.variable}>
       <body>
         <SessionProviderWrapper>
           <CartProvider>
             <OverlayProvider>
               <PresenceHeartbeat />
               <Navbar />
-              <div className="max-w-6xl mx-auto px-4 py-6 flex gap-6">
-                <Sidebar />
-                <main className="flex-1 min-w-0">{children}</main>
-              </div>
+              <PageShell>{children}</PageShell>
             </OverlayProvider>
           </CartProvider>
         </SessionProviderWrapper>
