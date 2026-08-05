@@ -24,19 +24,44 @@ export default function LoginPage() {
   // already-authenticated visitor landing here directly (browser back
   // button, stale /login render mid-navigation, etc).
   useEffect(() => {
-    if (status === "authenticated") {
-      router.replace("/feed");
-    }
+    if (status !== "authenticated") return;
+    router.replace("/feed");
+    // Belt-and-suspenders: reported live (2026-08-05) that after a
+    // successful sign-in the header/sidebar correctly flip to the
+    // authenticated state (they read the session directly, independent of
+    // routing) but the page never actually leaves /login -- router.replace()
+    // above not completing for reasons that didn't reproduce in testing.
+    // If we're still sitting on /login a beat later, force a real browser
+    // navigation instead of a client-side one; that always works since it's
+    // just a fresh GET with the now-valid session cookie, no Next.js
+    // client-router involved at all. Cleared as soon as the soft nav wins.
+    const fallback = setTimeout(() => {
+      if (window.location.pathname === "/login") {
+        window.location.href = "/feed";
+      }
+    }, 1000);
+    return () => clearTimeout(fallback);
   }, [status, router]);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
+    // Read straight from the DOM via FormData rather than trusting the
+    // `email`/`password` React state. Some browser password-manager
+    // autofill paths set the input's value without firing the events
+    // React listens for, so the controlled state can stay "" even though
+    // the field visually shows the filled-in credentials -- submitting
+    // that silently sends empty credentials, fails auth, and looks
+    // exactly like the form "just sitting there" after clicking Log in.
+    const formData = new FormData(e.currentTarget);
+    const submittedEmail = String(formData.get("email") ?? "");
+    const submittedPassword = String(formData.get("password") ?? "");
+
     const res = await signIn("credentials", {
-      email,
-      password,
+      email: submittedEmail,
+      password: submittedPassword,
       redirect: false,
     });
 
@@ -55,6 +80,7 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="space-y-3">
         <input
           type="email"
+          name="email"
           required
           placeholder="Email"
           value={email}
@@ -63,6 +89,7 @@ export default function LoginPage() {
         />
         <input
           type="password"
+          name="password"
           required
           placeholder="Password"
           value={password}
