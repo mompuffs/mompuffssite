@@ -88,42 +88,20 @@ function MessagesLink() {
 export default function Navbar() {
   const { data: session, status } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-
-  // Shrinks the bar from its full 232px (200px logo + py-4) down to 75px
-  // (59px logo + py-2) once the page scrolls past the fold, while staying
-  // pinned via `sticky top-0`. Threshold is a little past 0 so it doesn't
-  // flicker at the very top from sub-pixel scroll bounce.
-  useEffect(() => {
-    function onScroll() {
-      setScrolled(window.scrollY > 20);
-    }
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   return (
     <nav className="sticky top-0 z-30 bg-brand-500 shadow-sm">
-      <div
-        className={`max-w-6xl mx-auto px-4 flex items-center justify-between gap-4 transition-[padding] duration-300 ease-in-out ${
-          scrolled ? "py-2" : "py-4"
-        }`}
-      >
-        {/* Logo area is 200px tall by default, 59px once scrolled (75px bar
-            total) -- everything below (Sidebar's sticky top-offset, feed
-            page's right-rail offset) is measured off the *scrolled* bar
-            height, since that's the state sticky positioning is visible in.
-            Keep those in sync with this if it changes. */}
+      {/* Fixed 150px bar -- everything below (Sidebar's sticky top-offset,
+          feed page's right-rail offset) is measured off this height. Keep
+          those in sync with this if it changes. */}
+      <div className="max-w-6xl mx-auto px-4 h-[150px] flex items-center justify-between gap-4">
         <Link href="/feed" className="flex items-center shrink-0">
           <Image
             src="/logo.png"
             alt="Mompuffs"
             width={250}
             height={250}
-            className={`rounded-full w-auto transition-[height] duration-300 ease-in-out ${
-              scrolled ? "h-[59px]" : "h-[200px]"
-            }`}
+            className="rounded-full w-auto h-[110px]"
             priority
           />
         </Link>

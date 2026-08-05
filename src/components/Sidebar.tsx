@@ -42,11 +42,9 @@ export default function Sidebar() {
 
   return (
     <aside className="hidden md:block w-56 flex-shrink-0">
-      {/* Offset is measured off the navbar's *scrolled* height (59px logo +
-          py-2 padding = 75px), not its full 232px -- sticky positioning
-          only becomes visible once you've scrolled past the fold, and by
-          then the navbar has already shrunk. Keep in sync with Navbar.tsx. */}
-      <div className="sticky top-[5.75rem] max-h-[calc(100vh-7rem)] overflow-y-auto">
+      {/* Offset is measured off the navbar's fixed 150px height. Keep in
+          sync with Navbar.tsx. */}
+      <div className="sticky top-[10.5rem] max-h-[calc(100vh-11.75rem)] overflow-y-auto">
         <div className="bg-white rounded-xl shadow p-3">
           <nav className="space-y-1">
             {NAV_ITEMS_BEFORE_NOTIFICATIONS.map((item) => {

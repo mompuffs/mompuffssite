@@ -60,8 +60,8 @@ export default async function FeedPage() {
           <PostCard key={post.id} post={post as any} />
         ))}
       </div>
-      {/* top offset tracks the navbar's scrolled height -- see Sidebar.tsx */}
-      <aside className="hidden lg:flex lg:flex-col gap-3 w-64 flex-shrink-0 sticky top-[5.75rem]">
+      {/* top offset tracks the navbar's fixed height -- see Sidebar.tsx */}
+      <aside className="hidden lg:flex lg:flex-col gap-3 w-64 flex-shrink-0 sticky top-[10.5rem]">
         {user && <FriendsOnline />}
         <TopStores />
       </aside>
