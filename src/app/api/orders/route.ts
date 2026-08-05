@@ -12,7 +12,11 @@ export async function GET() {
   const orders = await db.order.findMany({
     where: { buyerId: user.id },
     orderBy: { createdAt: "desc" },
-    include: { items: { include: { product: true } } },
+    include: {
+      items: {
+        include: { product: true, refundRequests: { orderBy: { createdAt: "desc" }, take: 1 } },
+      },
+    },
   });
 
   return NextResponse.json(orders);

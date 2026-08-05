@@ -80,3 +80,49 @@ View and fulfill this order: ${SITE_URL}/dashboard/shop/orders`,
     console.error("Failed to send sale notification email:", err);
   }
 }
+
+export async function sendRefundRequestNotification({
+  to,
+  shopName,
+  buyerName,
+  item,
+  reason,
+  orderId,
+}: {
+  to: string;
+  shopName: string;
+  buyerName: string;
+  item: { title: string; variantLabel?: string | null; quantity: number; unitPriceCents: number };
+  reason: string;
+  orderId: string;
+}) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY not set -- skipping refund request email.");
+    return;
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to,
+      subject: `Refund request on ${shopName} (Mompuffs)`,
+      text: `${buyerName} requested a refund on an item from an order on ${shopName}.
+
+Item: ${item.title}${item.variantLabel ? ` (${item.variantLabel})` : ""} x${item.quantity} - ${formatCents(item.unitPriceCents * item.quantity)}
+
+Buyer's reason:
+${reason}
+
+Order ID: ${orderId}
+
+Review and respond to this request: ${SITE_URL}/dashboard/shop/refunds
+
+Approving here only marks the request as approved -- it does not move any money. Issue the actual refund from your own Stripe/PayPal dashboard.`,
+    });
+    if (error) {
+      console.error("Resend rejected the refund request email:", error);
+    }
+  } catch (err) {
+    console.error("Failed to send refund request email:", err);
+  }
+}

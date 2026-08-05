@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { formatCents } from "@/lib/money";
 import { redirect } from "next/navigation";
+import OrderItemRefund from "@/components/OrderItemRefund";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,14 @@ export default async function OrdersPage() {
   const orders = await db.order.findMany({
     where: { buyerId: user.id },
     orderBy: { createdAt: "desc" },
-    include: { items: { include: { product: { include: { shop: { select: { name: true, slug: true } } } } } } },
+    include: {
+      items: {
+        include: {
+          product: { include: { shop: { select: { name: true, slug: true } } } },
+          refundRequests: { orderBy: { createdAt: "desc" }, take: 1 },
+        },
+      },
+    },
   });
 
   return (
@@ -27,15 +35,18 @@ export default async function OrdersPage() {
           </div>
           <ul className="text-sm space-y-1">
             {order.items.map((item) => (
-              <li key={item.id} className="flex justify-between">
-                <span>
-                  {item.product.title}
-                  {item.variantLabel ? ` (${item.variantLabel})` : ""} × {item.quantity}{" "}
-                  <a href={`/shop/${item.product.shop.slug}`} className="text-xs text-gray-400 hover:text-brand-600">
-                    ({item.product.shop.name})
-                  </a>
-                </span>
-                <span>{formatCents(item.unitPriceCents * item.quantity)}</span>
+              <li key={item.id}>
+                <div className="flex justify-between">
+                  <span>
+                    {item.product.title}
+                    {item.variantLabel ? ` (${item.variantLabel})` : ""} × {item.quantity}{" "}
+                    <a href={`/shop/${item.product.shop.slug}`} className="text-xs text-gray-400 hover:text-brand-600">
+                      ({item.product.shop.name})
+                    </a>
+                  </span>
+                  <span>{formatCents(item.unitPriceCents * item.quantity)}</span>
+                </div>
+                <OrderItemRefund orderItemId={item.id} latestRequest={item.refundRequests[0] ?? null} />
               </li>
             ))}
           </ul>

@@ -205,6 +205,7 @@ model Shop {
   paymentConnections PaymentConnection[]
   coupons     Coupon[]
   categories  Category[]
+  refundRequests RefundRequest[]
 }
 
 // A member community with its own post feed. Visibility and join policy
@@ -452,4 +453,33 @@ model OrderItem {
   // Independent per shop, so a multi-vendor order can have one shop's items
   // fulfilled while another shop's are still open.
   fulfilledAt    DateTime?
+
+  refundRequests RefundRequest[]
+}
+
+// A buyer-initiated refund request on a single order line item. Scoped per
+// item (not per whole order) for the same reason OrderItem.fulfilledAt is
+// per-shop, not per-order: a multi-vendor order's shops act independently.
+// Approving/denying here is a status change only -- it does NOT move money.
+// The shop owner still issues the actual refund from their own Stripe/PayPal
+// dashboard (see refundPaymentIntent()/refundCapture() in src/lib/payments,
+// which exist but are intentionally not wired up to this flow).
+model RefundRequest {
+  id            String     @id @default(cuid())
+  orderItem     OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  orderItemId   String
+  // Denormalized so a shop's refund queue can be listed directly, without
+  // joining through OrderItem -> Product -> Shop for every row.
+  shop          Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId        String
+  reason        String
+  // "PENDING" | "APPROVED" | "DENIED"
+  status        String     @default("PENDING")
+  // Optional note from the shop owner explaining the approve/deny decision.
+  responseNote  String?
+  createdAt     DateTime   @default(now())
+  respondedAt   DateTime?
+
+  @@index([shopId, status])
+  @@index([orderItemId])
 }

@@ -64,6 +64,11 @@ export default async function ShopDashboardPage() {
               </Link>
             </li>
             <li>
+              <Link href="/dashboard/shop/refunds" className="text-brand-600 hover:underline">
+                Refund requests
+              </Link>
+            </li>
+            <li>
               <Link href="/dashboard/shop/import" className="text-brand-600 hover:underline">
                 Import products
               </Link>
