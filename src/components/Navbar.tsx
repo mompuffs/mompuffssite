@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import NotificationBell from "@/components/NotificationBell";
+import SearchBar from "@/components/SearchBar";
 
 type ShopSummary = { id: string; name: string; slug: string; productCount: number };
 
@@ -128,24 +129,17 @@ export default function Navbar() {
         </Link>
 
         <div className="flex-1 max-w-md hidden sm:block">
-          <MarketplaceMenu>
-            <Link
-              href="/marketplace"
-              className="block w-full bg-white/90 rounded-full px-4 py-1.5 text-sm text-gray-500 hover:bg-white transition"
-            >
-              Browse the marketplace…
-            </Link>
-          </MarketplaceMenu>
+          <SearchBar />
         </div>
 
         {/* Full nav row -- overflows on narrow screens, so it's desktop-only;
             the hamburger button below covers the same links stacked. */}
         <div className="hidden md:flex items-center gap-3 text-sm font-semibold text-[#43203F]">
           <Link href="/feed" className="hover:text-white">Feed</Link>
+          <Link href="/groups" className="hover:text-white">Groups</Link>
           <MarketplaceMenu>
             <Link href="/marketplace" className="hover:text-white">Marketplace</Link>
           </MarketplaceMenu>
-          <Link href="/groups" className="hover:text-white">Groups</Link>
           <Link href="/cart" className="hover:text-white">Cart</Link>
 
           {status === "authenticated" && session?.user ? (
@@ -154,7 +148,7 @@ export default function Navbar() {
               <MessagesLink />
               <Link href="/dashboard/shop" className="hover:text-white">My Shop</Link>
               <Link href={`/profile/${session.user.username}`} className="hover:text-white">
-                {session.user.name}
+                My Profile
               </Link>
               <Link href="/account" className="hover:text-white">My Account</Link>
               {(session.user as any).isAdmin && (
@@ -191,21 +185,15 @@ export default function Navbar() {
 
       {mobileOpen && (
         <div className="md:hidden border-t border-gray-200 px-4 py-3 space-y-1 text-sm bg-white">
-          <Link
-            href="/marketplace"
-            onClick={() => setMobileOpen(false)}
-            className="block bg-gray-100 rounded-full px-4 py-1.5 text-gray-500 mb-2"
-          >
-            Browse the marketplace…
-          </Link>
+          <SearchBar variant="mobile" onNavigate={() => setMobileOpen(false)} />
           <Link href="/feed" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
             Feed
           </Link>
-          <Link href="/marketplace" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
-            Marketplace
-          </Link>
           <Link href="/groups" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
             Groups
+          </Link>
+          <Link href="/marketplace" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
+            Marketplace
           </Link>
           <Link href="/cart" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
             Cart
@@ -227,7 +215,7 @@ export default function Navbar() {
                 onClick={() => setMobileOpen(false)}
                 className="block py-2 hover:text-brand-600"
               >
-                {session.user.name}
+                My Profile
               </Link>
               <Link href="/account" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
                 My Account

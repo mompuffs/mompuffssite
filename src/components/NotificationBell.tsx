@@ -9,7 +9,14 @@ type MessagePreview = { sender: Person; count: number; latestBody: string; lates
 type FriendPost = { id: string; body: string; author: Person; createdAt: string };
 type GroupJoinRequest = { user: Person; group: { id: string; name: string; slug: string }; requestedAt: string };
 
-export default function NotificationBell() {
+// `align` controls which side the dropdown hangs from, relative to the
+// bell's own (narrow, content-sized) positioning wrapper -- not the panel
+// it happens to sit in. "right" (default) suits the navbar, where the bell
+// sits well clear of the left edge, so a panel extending left from it stays
+// on-screen. In the Sidebar, the bell sits near the *left* edge of a narrow
+// column, so a right-anchored panel would run off-screen to the left;
+// "left" anchors it there instead so it opens rightward, staying in view.
+export default function NotificationBell({ align = "right" }: { align?: "left" | "right" }) {
   const { openPost, openChat } = useOverlay();
   const [open, setOpen] = useState(false);
   const [messagePreviews, setMessagePreviews] = useState<MessagePreview[]>([]);
@@ -68,7 +75,9 @@ export default function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 py-2 text-sm z-40 max-h-96 overflow-y-auto">
+        <div
+          className={`absolute ${align === "left" ? "left-0" : "right-0"} top-full mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 py-2 text-sm z-40 max-h-96 overflow-y-auto`}
+        >
           {messagePreviews.length === 0 && friendPosts.length === 0 && groupJoinRequests.length === 0 ? (
             <p className="px-3 py-4 text-gray-500 text-center text-xs">You're all caught up.</p>
           ) : (
