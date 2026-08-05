@@ -1,16 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useEffect, useState } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { status } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Safety net for an already-authenticated session landing here -- e.g. the
+  // browser back button after logging in, or a stale /login render caught
+  // mid-navigation right after a fresh sign-in. Without this the page just
+  // sits showing the form forever instead of continuing on to the feed.
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.replace("/feed");
+    }
+  }, [status, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

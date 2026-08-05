@@ -3,7 +3,10 @@ import { formatCents } from "@/lib/money";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM = process.env.RESEND_FROM_EMAIL || "Mompuffs <onboarding@resend.dev>";
-const SITE_URL = process.env.NEXTAUTH_URL || "https://mompuffssite.vercel.app";
+// mompuffssite.vercel.app was a duplicate Vercel project deleted 2026-08-04
+// -- don't fall back to it. If NEXTAUTH_URL is ever unset, the real custom
+// domain is a much safer default than a dead one.
+const SITE_URL = process.env.NEXTAUTH_URL || "https://mompuffs.com";
 
 export async function sendPasswordResetEmail({ to, resetUrl }: { to: string; resetUrl: string }) {
   if (!resend) {

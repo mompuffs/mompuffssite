@@ -3,7 +3,10 @@ import { db } from "@/lib/db";
 import { generateResetToken, RESET_TOKEN_TTL_MS } from "@/lib/passwordReset";
 import { sendPasswordResetEmail } from "@/lib/email";
 
-const SITE_URL = process.env.NEXTAUTH_URL || "https://mompuffssite.vercel.app";
+// mompuffssite.vercel.app was a duplicate Vercel project deleted 2026-08-04
+// -- don't fall back to it. If NEXTAUTH_URL is ever unset, the real custom
+// domain is a much safer default than a dead one.
+const SITE_URL = process.env.NEXTAUTH_URL || "https://mompuffs.com";
 
 // Always responds with the same generic message whether or not the email
 // matches an account -- otherwise this endpoint could be used to check
