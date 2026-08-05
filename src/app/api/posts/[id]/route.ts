@@ -7,6 +7,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     include: {
       author: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
       product: { select: { id: true, title: true, priceCents: true, currency: true, imageUrl: true } },
+      group: { select: { id: true, name: true, slug: true } },
       likes: { select: { userId: true } },
       comments: {
         orderBy: { createdAt: "asc" },

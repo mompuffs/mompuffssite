@@ -37,12 +37,22 @@ export default async function ProfilePage({ params }: { params: { username: stri
         })
       : null;
 
+  // Same rule as the main feed: a group post only shows here if the group
+  // is public, or the viewer is an active member of that private group --
+  // otherwise a private group's posts would leak onto the author's public
+  // profile page to anyone.
+  const groupVisibilityOr: object[] = [{ groupId: null }, { group: { visibility: "PUBLIC" } }];
+  if (currentUser) {
+    groupVisibilityOr.push({ group: { members: { some: { userId: currentUser.id, status: "ACTIVE" } } } });
+  }
+
   const posts = await db.post.findMany({
-    where: { authorId: profileUser.id },
+    where: { authorId: profileUser.id, OR: groupVisibilityOr },
     orderBy: { createdAt: "desc" },
     include: {
       author: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
       product: { select: { id: true, title: true, priceCents: true, currency: true, imageUrl: true } },
+      group: { select: { id: true, name: true, slug: true } },
       likes: { select: { userId: true } },
       comments: {
         orderBy: { createdAt: "asc" },

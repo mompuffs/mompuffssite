@@ -60,6 +60,8 @@ model User {
   shop          Shop?
   orders        Order[]
   passwordResetTokens PasswordResetToken[]
+  ownedGroups   Group[]           @relation("OwnedGroups")
+  groupMemberships GroupMembership[]
 }
 
 // Single-use, short-lived tokens for the "forgot password" flow. Only the
@@ -146,6 +148,12 @@ model Post {
   // Optional: a post can showcase a product from the author's shop
   product   Product?  @relation(fields: [productId], references: [id])
   productId String?
+  // Optional: a post made inside a group instead of on the author's own
+  // wall. Visibility in the main feed depends on the group's own
+  // visibility (see Group.visibility) -- handled in the feed query, not
+  // enforced by the schema.
+  group     Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String?
   createdAt DateTime  @default(now())
 
   comments  Comment[]
@@ -185,6 +193,10 @@ model Shop {
   // Default per-order shipping charge, used by any product left on "FLAT"
   // shipping mode (see Product.shippingMode).
   flatShippingCents Int @default(0)
+  // Bumped once per page load on the public shop page -- a loose page-view
+  // count (not deduped per visitor), used only to rank the "Top Shops"
+  // sidebar block, not for anything billing/analytics-critical.
+  visitCount  Int       @default(0)
   createdAt   DateTime  @default(now())
 
   products    Product[]
@@ -192,6 +204,49 @@ model Shop {
   paymentConnections PaymentConnection[]
   coupons     Coupon[]
   categories  Category[]
+}
+
+// A member community with its own post feed. Visibility and join policy
+// are each chosen independently by the owner at creation time:
+//   visibility: "PUBLIC"  -- listed/searchable to everyone, posts also
+//                             surface in every member's (and every other
+//                             user's) main feed, same as a normal post.
+//               "PRIVATE" -- still listed/searchable (like most platforms'
+//                             private groups), but posts only show in the
+//                             group's own page and in members' main feeds.
+//   joinPolicy: "OPEN"     -- joining creates an ACTIVE membership immediately.
+//               "APPROVAL" -- joining creates a PENDING membership; the
+//                             owner approves/declines it (see GroupMembership).
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  topic       String?
+  description String?
+  avatarUrl   String?
+  visibility  String   @default("PUBLIC")
+  joinPolicy  String   @default("OPEN")
+  owner       User     @relation("OwnedGroups", fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId     String
+  createdAt   DateTime @default(now())
+
+  members     GroupMembership[]
+  posts       Post[]
+}
+
+model GroupMembership {
+  id       String   @id @default(cuid())
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId  String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String
+  // "ACTIVE" -- a real member, counts toward the group's member count and
+  // can post/view the group feed. "PENDING" -- requested to join an
+  // APPROVAL group and is waiting on the owner.
+  status   String   @default("ACTIVE")
+  joinedAt DateTime @default(now())
+
+  @@unique([groupId, userId])
 }
 
 // Per-shop POD provider credentials, so each seller connects their own

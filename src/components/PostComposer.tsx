@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import ImageInput from "@/components/ImageInput";
 import VideoInput from "@/components/VideoInput";
 
-export default function PostComposer() {
+export default function PostComposer({ groupId }: { groupId?: string } = {}) {
   const router = useRouter();
   const [body, setBody] = useState("");
   const [imageUrl, setImageUrl] = useState("");
@@ -42,6 +42,7 @@ export default function PostComposer() {
         imageUrl: imageUrl || undefined,
         videoUrl: videoUrl || undefined,
         videoThumbnailUrl: videoThumbnailUrl || undefined,
+        groupId: groupId || undefined,
       }),
     });
     setBody("");

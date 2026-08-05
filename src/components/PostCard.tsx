@@ -21,6 +21,7 @@ type Post = {
   createdAt: string;
   author: { id: string; username: string; displayName: string; avatarUrl: string | null };
   product: { id: string; title: string; priceCents: number; currency: string; imageUrl: string | null } | null;
+  group: { id: string; name: string; slug: string } | null;
   likes: { userId: string }[];
   comments: Comment[];
 };
@@ -68,6 +69,17 @@ export default function PostCard({ post }: { post: Post }) {
           <Link href={`/profile/${post.author.username}`} className="font-semibold hover:underline">
             {post.author.displayName}
           </Link>
+          {post.group && (
+            <>
+              {" "}
+              <span className="text-xs text-gray-500">
+                → posted in{" "}
+                <Link href={`/groups/${post.group.slug}`} className="text-brand-600 hover:underline">
+                  {post.group.name}
+                </Link>
+              </span>
+            </>
+          )}
           <p className="text-xs text-gray-500">{new Date(post.createdAt).toLocaleString()}</p>
         </div>
       </div>

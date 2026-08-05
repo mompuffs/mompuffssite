@@ -19,6 +19,11 @@ export default async function ShopPage({
 
   if (!shop) notFound();
 
+  // Loose page-view counter (not deduped per visitor) -- see Shop.visitCount
+  // in schema.prisma. Only powers the "Top Shops" sidebar ranking, so exact
+  // precision doesn't matter.
+  await db.shop.update({ where: { id: shop.id }, data: { visitCount: { increment: 1 } } });
+
   const categories = await db.category.findMany({
     where: { shopId: shop.id },
     orderBy: [{ parentId: "asc" }, { name: "asc" }],

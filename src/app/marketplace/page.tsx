@@ -4,9 +4,15 @@ import ProductCard from "@/components/ProductCard";
 
 export const dynamic = "force-dynamic";
 
-export default async function MarketplacePage({ searchParams }: { searchParams: { shop?: string } }) {
+export default async function MarketplacePage({
+  searchParams,
+}: {
+  searchParams: { shop?: string; shopSearch?: string };
+}) {
+  const shopSearch = searchParams.shopSearch?.trim();
   const [shops, products] = await Promise.all([
     db.shop.findMany({
+      where: shopSearch ? { name: { contains: shopSearch, mode: "insensitive" } } : undefined,
       orderBy: { name: "asc" },
       select: { id: true, name: true, slug: true, _count: { select: { products: true } } },
     }),
@@ -27,6 +33,15 @@ export default async function MarketplacePage({ searchParams }: { searchParams: 
         <aside className="sm:w-56 flex-shrink-0">
           <div className="bg-white rounded-xl shadow p-4 text-sm space-y-2">
             <p className="font-semibold text-gray-800 mb-1">Shops</p>
+            <form action="/marketplace" method="GET" className="mb-1">
+              <input
+                type="text"
+                name="shopSearch"
+                defaultValue={shopSearch}
+                placeholder="Search shops…"
+                className="w-full border rounded-full px-3 py-1 text-xs"
+              />
+            </form>
             <Link
               href="/marketplace"
               className={`flex justify-between ${
@@ -36,7 +51,9 @@ export default async function MarketplacePage({ searchParams }: { searchParams: 
               <span>All shops</span>
             </Link>
             {shops.length === 0 ? (
-              <p className="text-gray-500 text-xs">No shops yet.</p>
+              <p className="text-gray-500 text-xs">
+                {shopSearch ? `No shops matching "${shopSearch}".` : "No shops yet."}
+              </p>
             ) : (
               shops.map((shop) => (
                 <Link
