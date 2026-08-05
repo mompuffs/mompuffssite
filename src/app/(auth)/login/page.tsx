@@ -13,10 +13,16 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Safety net for an already-authenticated session landing here -- e.g. the
-  // browser back button after logging in, or a stale /login render caught
-  // mid-navigation right after a fresh sign-in. Without this the page just
-  // sits showing the form forever instead of continuing on to the feed.
+  // Single source of truth for the post-login redirect. next-auth's
+  // signIn() (below) internally awaits a session re-fetch before it
+  // resolves, so by the time handleSubmit finished awaiting it, this
+  // status is already (or about to be) "authenticated" -- calling
+  // router.push()/refresh() from handleSubmit too raced this effect's own
+  // navigation and could get cancelled (net::ERR_ABORTED), leaving the
+  // login form on screen despite a valid new session. Routing the
+  // redirect through this one effect covers both that case AND an
+  // already-authenticated visitor landing here directly (browser back
+  // button, stale /login render mid-navigation, etc).
   useEffect(() => {
     if (status === "authenticated") {
       router.replace("/feed");
@@ -34,21 +40,13 @@ export default function LoginPage() {
       redirect: false,
     });
 
-    setLoading(false);
-
     if (res?.error) {
+      setLoading(false);
       setError("Invalid email or password.");
       return;
     }
-    // Just push -- a trailing router.refresh() here used to race the
-    // navigation's own RSC fetch for /feed and could get it cancelled
-    // (net::ERR_ABORTED), leaving the login form on screen. It isn't
-    // needed anyway: /feed is a fresh navigation, so it already reads the
-    // just-set session cookie server-side, and the header/sidebar update
-    // on their own via useSession() the moment the cookie changes. The
-    // useSession()-driven redirect effect above is a second safety net in
-    // case this push is ever lost for some other reason.
-    router.push("/feed");
+    // Success: leave loading=true and let the effect above redirect once
+    // useSession() picks up the new session -- no navigation call here.
   }
 
   return (
