@@ -40,8 +40,15 @@ export default function LoginPage() {
       setError("Invalid email or password.");
       return;
     }
+    // Just push -- a trailing router.refresh() here used to race the
+    // navigation's own RSC fetch for /feed and could get it cancelled
+    // (net::ERR_ABORTED), leaving the login form on screen. It isn't
+    // needed anyway: /feed is a fresh navigation, so it already reads the
+    // just-set session cookie server-side, and the header/sidebar update
+    // on their own via useSession() the moment the cookie changes. The
+    // useSession()-driven redirect effect above is a second safety net in
+    // case this push is ever lost for some other reason.
     router.push("/feed");
-    router.refresh();
   }
 
   return (
