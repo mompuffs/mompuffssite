@@ -8,6 +8,7 @@ import Navbar from "@/components/Navbar";
 import PageShell from "@/components/PageShell";
 import PresenceHeartbeat from "@/components/PresenceHeartbeat";
 import Footer from "@/components/Footer";
+import BackToTopButton from "@/components/BackToTopButton";
 
 // Self-hosted at build time via next/font -- no runtime request to Google
 // Fonts, so this doesn't add a third-party network call. Nunito's rounded,
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Navbar />
               <PageShell>{children}</PageShell>
               <Footer />
+              <BackToTopButton />
             </OverlayProvider>
           </CartProvider>
         </SessionProviderWrapper>
