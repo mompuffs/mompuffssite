@@ -46,7 +46,7 @@ export default async function FeedPage() {
   });
 
   return (
-    <div className="max-w-xl mx-auto lg:mx-0">
+    <div className="max-w-xl mx-auto">
       <PostComposer />
       {posts.length === 0 && (
         <p className="text-center text-gray-500 mt-10">

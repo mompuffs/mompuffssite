@@ -21,8 +21,14 @@ export default function PageShell({ children }: { children: React.ReactNode }) {
 
   // Marketplace/shop pages already have their own left-side shop-list aside
   // plus a wide product grid -- adding the right rail on top crowds them,
-  // so they skip it (still get the left Sidebar and full-width main).
-  const skipRightRail = pathname?.startsWith("/marketplace") || pathname?.startsWith("/shop/");
+  // so they skip it (still get the left Sidebar and full-width main). Same
+  // deal for the seller dashboard (/dashboard/shop and its subpages) --
+  // product management is its own wide two-column layout.
+  const skipRightRail =
+    pathname?.startsWith("/marketplace") ||
+    pathname?.startsWith("/shop/") ||
+    pathname?.startsWith("/dashboard/shop") ||
+    pathname === "/login";
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6 flex gap-6 items-start">
