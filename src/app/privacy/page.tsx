@@ -180,13 +180,25 @@ export default function PrivacyPolicyPage() {
       <Section title="9. Contact us">
         <p className="text-gray-700">
           If you have questions about this Privacy Policy or want to exercise your rights over
-          your data, contact us at{" "}
+          your data, reach us via our{" "}
+          <Link href="/contact" className="text-brand-600 hover:underline">
+            Contact page
+          </Link>{" "}
+          or at{" "}
           <a href="mailto:info@mompuffs.com" className="text-brand-600 hover:underline">
             info@mompuffs.com
           </a>
           .
         </p>
       </Section>
+
+      <p className="text-xs text-gray-400">
+        See also our{" "}
+        <Link href="/terms" className="text-brand-600 hover:underline">
+          Terms of Use
+        </Link>
+        .
+      </p>
     </div>
   );
 }

@@ -7,6 +7,7 @@ const FROM = process.env.RESEND_FROM_EMAIL || "Mompuffs <onboarding@resend.dev>"
 // -- don't fall back to it. If NEXTAUTH_URL is ever unset, the real custom
 // domain is a much safer default than a dead one.
 const SITE_URL = process.env.NEXTAUTH_URL || "https://mompuffs.com";
+const CONTACT_INBOX = "info@mompuffs.com";
 
 export async function sendPasswordResetEmail({ to, resetUrl }: { to: string; resetUrl: string }) {
   if (!resend) {
@@ -127,5 +128,45 @@ Approving here only marks the request as approved -- it does not move any money.
     }
   } catch (err) {
     console.error("Failed to send refund request email:", err);
+  }
+}
+
+export async function sendContactMessage({
+  name,
+  email,
+  subject,
+  message,
+}: {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+}) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY not set -- skipping contact form email.");
+    return;
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to: CONTACT_INBOX,
+      // Lets whoever reads this in the info@ inbox just hit Reply to
+      // respond straight to the person who submitted the form.
+      replyTo: email,
+      subject: `[Contact form] ${subject}`,
+      text: `New message from the Mompuffs contact form.
+
+Name: ${name}
+Email: ${email}
+Subject: ${subject}
+
+${message}`,
+    });
+    if (error) {
+      console.error("Resend rejected the contact form email:", error);
+    }
+  } catch (err) {
+    console.error("Failed to send contact form email:", err);
   }
 }
