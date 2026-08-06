@@ -7,10 +7,12 @@ const LINKS = [
 ];
 
 // Same links as the site footer -- mirrored here since the footer sits
-// below the fold on most pages and isn't always convenient to reach.
+// below the fold on most pages and isn't always convenient to reach. Lives
+// in the right rail (PageShell.tsx), which spaces its children via its own
+// flex gap, so no margin here.
 export default function SidebarLegalLinks() {
   return (
-    <div className="bg-white rounded-xl shadow p-3 mt-3">
+    <div className="bg-white rounded-xl shadow p-3">
       <div className="space-y-0.5">
         {LINKS.map((link) => (
           <Link

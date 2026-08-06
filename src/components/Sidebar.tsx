@@ -6,7 +6,6 @@ import { useSession } from "next-auth/react";
 import NotificationBell from "@/components/NotificationBell";
 import TopGroups from "@/components/TopGroups";
 import TopShops from "@/components/TopShops";
-import SidebarLegalLinks from "@/components/SidebarLegalLinks";
 
 // Split around Notifications, which isn't a plain Link -- it's the same
 // interactive bell (with its own unread-count popover) used in the navbar,
@@ -104,7 +103,6 @@ export default function Sidebar() {
         </div>
         <TopGroups />
         <TopShops />
-        <SidebarLegalLinks />
       </div>
     </aside>
   );

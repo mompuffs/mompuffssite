@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import Sidebar from "@/components/Sidebar";
 import FriendsOnline from "@/components/FriendsOnline";
 import TopStores from "@/components/TopStores";
+import SidebarLegalLinks from "@/components/SidebarLegalLinks";
 
 // The admin area (/admin/*) gets its own full-width chrome (see
 // AdminSidebar) instead of the public max-w-7xl/Sidebar layout every other
@@ -43,6 +44,7 @@ export default function PageShell({ children }: { children: React.ReactNode }) {
         <aside className="hidden lg:flex lg:flex-col gap-3 w-64 flex-shrink-0 sticky top-[10.5rem]">
           {status === "authenticated" && <FriendsOnline />}
           <TopStores />
+          <SidebarLegalLinks />
         </aside>
       )}
     </div>
