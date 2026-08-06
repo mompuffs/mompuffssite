@@ -2,8 +2,6 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import PostComposer from "@/components/PostComposer";
 import PostCard from "@/components/PostCard";
-import FriendsOnline from "@/components/FriendsOnline";
-import TopStores from "@/components/TopStores";
 
 export const dynamic = "force-dynamic";
 
@@ -48,23 +46,16 @@ export default async function FeedPage() {
   });
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 items-start">
-      <div className="max-w-xl mx-auto lg:mx-0 flex-1 min-w-0 w-full">
-        <PostComposer />
-        {posts.length === 0 && (
-          <p className="text-center text-gray-500 mt-10">
-            No posts yet. Be the first to share something!
-          </p>
-        )}
-        {posts.map((post) => (
-          <PostCard key={post.id} post={post as any} />
-        ))}
-      </div>
-      {/* top offset tracks the navbar's fixed height -- see Sidebar.tsx */}
-      <aside className="hidden lg:flex lg:flex-col gap-3 w-64 flex-shrink-0 sticky top-[10.5rem]">
-        {user && <FriendsOnline />}
-        <TopStores />
-      </aside>
+    <div className="max-w-xl mx-auto lg:mx-0">
+      <PostComposer />
+      {posts.length === 0 && (
+        <p className="text-center text-gray-500 mt-10">
+          No posts yet. Be the first to share something!
+        </p>
+      )}
+      {posts.map((post) => (
+        <PostCard key={post.id} post={post as any} />
+      ))}
     </div>
   );
 }
