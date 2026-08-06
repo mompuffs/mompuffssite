@@ -91,9 +91,7 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-30 bg-brand-500 shadow-sm">
-      {/* Fixed 150px bar -- everything below (Sidebar's sticky top-offset,
-          feed page's right-rail offset) is measured off this height. Keep
-          those in sync with this if it changes. */}
+      {/* Fixed 150px bar. */}
       <div className="max-w-6xl mx-auto px-4 h-[150px] flex items-center justify-between gap-4">
         <Link href="/feed" className="flex items-center shrink-0">
           <Image

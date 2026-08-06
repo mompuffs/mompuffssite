@@ -38,10 +38,9 @@ export default function PageShell({ children }: { children: React.ReactNode }) {
       {/* Right rail -- was feed-only, now every page gets it (except
           marketplace/shop, see above). Friends Online only makes sense
           signed in; Top Stores is public info and hides itself if there's
-          nothing to show (see TopStores.tsx). Top offset tracks the
-          navbar's fixed height -- see Navbar.tsx. */}
+          nothing to show (see TopStores.tsx). */}
       {!skipRightRail && (
-        <aside className="hidden lg:flex lg:flex-col gap-3 w-64 flex-shrink-0 sticky top-[10.5rem]">
+        <aside className="hidden lg:flex lg:flex-col gap-3 w-64 flex-shrink-0">
           {status === "authenticated" && <FriendsOnline />}
           <TopStores />
           <SidebarLegalLinks />

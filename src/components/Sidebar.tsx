@@ -42,68 +42,64 @@ export default function Sidebar() {
 
   return (
     <aside className="hidden md:block w-56 flex-shrink-0">
-      {/* Offset is measured off the navbar's fixed 150px height. Keep in
-          sync with Navbar.tsx. */}
-      <div className="sticky top-[10.5rem] max-h-[calc(100vh-11.75rem)] overflow-y-auto">
-        <div className="bg-white rounded-xl shadow p-3">
-          <nav className="space-y-1">
-            {NAV_ITEMS_BEFORE_NOTIFICATIONS.map((item) => {
-              const active = isActive(pathname, item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                    active ? "bg-brand-50 text-brand-600" : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  <span className="text-base leading-none">{item.icon}</span>
-                  {item.label}
-                </Link>
-              );
-            })}
-            <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
-              <NotificationBell align="left" />
-              Notifications
-            </div>
-            {NAV_ITEMS_AFTER_NOTIFICATIONS.map((item) => {
-              const active = isActive(pathname, item.href);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                    active ? "bg-brand-50 text-brand-600" : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  <span className="text-base leading-none">{item.icon}</span>
-                  {item.label}
-                </Link>
-              );
-            })}
-            <Link
-              href={profileHref}
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                isActive(pathname, profileHref) ? "bg-brand-50 text-brand-600" : "text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              <span className="text-base leading-none">👤</span>
-              My Profile
-            </Link>
-            <Link
-              href="/account"
-              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                isActive(pathname, "/account") ? "bg-brand-50 text-brand-600" : "text-gray-700 hover:bg-gray-50"
-              }`}
-            >
-              <span className="text-base leading-none">⚙️</span>
-              My Account
-            </Link>
-          </nav>
-        </div>
-        <TopGroups />
-        <TopShops />
+      <div className="bg-white rounded-xl shadow p-3">
+        <nav className="space-y-1">
+          {NAV_ITEMS_BEFORE_NOTIFICATIONS.map((item) => {
+            const active = isActive(pathname, item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                  active ? "bg-brand-50 text-brand-600" : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <span className="text-base leading-none">{item.icon}</span>
+                {item.label}
+              </Link>
+            );
+          })}
+          <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition">
+            <NotificationBell align="left" />
+            Notifications
+          </div>
+          {NAV_ITEMS_AFTER_NOTIFICATIONS.map((item) => {
+            const active = isActive(pathname, item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                  active ? "bg-brand-50 text-brand-600" : "text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <span className="text-base leading-none">{item.icon}</span>
+                {item.label}
+              </Link>
+            );
+          })}
+          <Link
+            href={profileHref}
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition ${
+              isActive(pathname, profileHref) ? "bg-brand-50 text-brand-600" : "text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <span className="text-base leading-none">👤</span>
+            My Profile
+          </Link>
+          <Link
+            href="/account"
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition ${
+              isActive(pathname, "/account") ? "bg-brand-50 text-brand-600" : "text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <span className="text-base leading-none">⚙️</span>
+            My Account
+          </Link>
+        </nav>
       </div>
+      <TopGroups />
+      <TopShops />
     </aside>
   );
 }
