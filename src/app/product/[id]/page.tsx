@@ -41,12 +41,16 @@ export default async function ProductPage({ params }: { params: { id: string } }
             imageUrl: v.imageUrl,
             options: v.optionsJson ? JSON.parse(v.optionsJson) : null,
           }))}
+          videoUrl={product.videoUrl}
+          videoThumbnailUrl={product.videoThumbnailUrl}
         />
       ) : (
         <>
           <ProductGallery
             title={product.title}
             images={Array.from(new Set([product.imageUrl, ...galleryImages].filter((u): u is string => Boolean(u))))}
+            videoUrl={product.videoUrl}
+            videoThumbnailUrl={product.videoThumbnailUrl}
           />
           <div>
             <h1 className="text-2xl font-bold">{product.title}</h1>

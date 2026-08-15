@@ -10,8 +10,19 @@ export async function POST(req: Request) {
   const shop = await db.shop.findUnique({ where: { ownerId: user.id } });
   if (!shop) return NextResponse.json({ error: "You need a shop first." }, { status: 400 });
 
-  const { title, description, priceCents, imageUrl, images, categoryIds, variants, shippingMode, shippingCents } =
-    await req.json();
+  const {
+    title,
+    description,
+    priceCents,
+    imageUrl,
+    images,
+    videoUrl,
+    videoThumbnailUrl,
+    categoryIds,
+    variants,
+    shippingMode,
+    shippingCents,
+  } = await req.json();
   if (!title) {
     return NextResponse.json({ error: "Title is required." }, { status: 400 });
   }
@@ -44,6 +55,8 @@ export async function POST(req: Request) {
       description: description || undefined,
       priceCents: basePriceCents,
       imageUrl: baseImageUrl,
+      videoUrl: videoUrl || undefined,
+      videoThumbnailUrl: videoUrl ? videoThumbnailUrl || undefined : undefined,
       source: "MANUAL",
       shippingMode: shippingMode || "FLAT",
       shippingCents: shippingMode === "PRODUCT" ? Math.round(Number(shippingCents) || 0) : 0,

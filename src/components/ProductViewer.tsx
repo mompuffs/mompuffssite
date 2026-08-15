@@ -23,6 +23,8 @@ export default function ProductViewer({
   baseImageUrl,
   galleryImages,
   variants,
+  videoUrl,
+  videoThumbnailUrl,
 }: {
   product: { id: string; title: string };
   shop: { id: string; name: string; slug: string };
@@ -31,6 +33,8 @@ export default function ProductViewer({
   baseImageUrl: string | null;
   galleryImages: string[];
   variants: Variant[];
+  videoUrl?: string | null;
+  videoThumbnailUrl?: string | null;
 }) {
   const { addItem } = useCart();
   const [selectedId, setSelectedId] = useState(
@@ -128,6 +132,9 @@ export default function ProductViewer({
               </button>
             ))}
           </div>
+        )}
+        {videoUrl && (
+          <video src={videoUrl} poster={videoThumbnailUrl || undefined} controls className="w-full rounded-lg mt-2" />
         )}
       </div>
       <div>

@@ -16,7 +16,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   }
 
   const body = await req.json();
-  const { categoryIds, description, title, shippingMode, shippingCents } = body;
+  const { categoryIds, description, title, shippingMode, shippingCents, videoUrl, videoThumbnailUrl } = body;
 
   if (categoryIds !== undefined && !Array.isArray(categoryIds)) {
     return NextResponse.json({ error: "categoryIds must be an array." }, { status: 400 });
@@ -30,12 +30,16 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   if (shippingMode !== undefined && !SHIPPING_MODES.includes(shippingMode)) {
     return NextResponse.json({ error: `shippingMode must be one of: ${SHIPPING_MODES.join(", ")}.` }, { status: 400 });
   }
+  if (videoUrl !== undefined && typeof videoUrl !== "string") {
+    return NextResponse.json({ error: "videoUrl must be a string." }, { status: 400 });
+  }
   if (
     categoryIds === undefined &&
     description === undefined &&
     title === undefined &&
     shippingMode === undefined &&
-    shippingCents === undefined
+    shippingCents === undefined &&
+    videoUrl === undefined
   ) {
     return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
   }
@@ -55,6 +59,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       ...(title !== undefined ? { title: title.trim() } : {}),
       ...(shippingMode !== undefined ? { shippingMode } : {}),
       ...(shippingCents !== undefined ? { shippingCents: Math.round(Number(shippingCents) || 0) } : {}),
+      ...(videoUrl !== undefined
+        ? { videoUrl: videoUrl || null, videoThumbnailUrl: videoUrl ? videoThumbnailUrl || null : null }
+        : {}),
     },
     include: { categories: true },
   });

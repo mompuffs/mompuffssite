@@ -4,12 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import CategoryPicker, { Category } from "@/components/CategoryPicker";
 import ImageInput from "@/components/ImageInput";
+import VideoInput from "@/components/VideoInput";
 
 type VariantRow = { color: string; size: string; priceAdjustment: string; imageUrl: string };
 
 export default function AddProductForm({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const [form, setForm] = useState({ title: "", description: "", price: "", imageUrl: "" });
+  const [video, setVideo] = useState({ url: "", thumbnailUrl: "" });
   const [shippingMode, setShippingMode] = useState<"FLAT" | "PRODUCT" | "FREE">("FLAT");
   const [shippingCost, setShippingCost] = useState("");
   const [categoryIds, setCategoryIds] = useState<string[]>([]);
@@ -81,6 +83,8 @@ export default function AddProductForm({ categories }: { categories: Category[] 
         priceCents: basePriceCents,
         imageUrl: form.imageUrl,
         images: galleryUrls.filter(Boolean),
+        videoUrl: video.url || undefined,
+        videoThumbnailUrl: video.thumbnailUrl || undefined,
         categoryIds,
         variants,
         shippingMode,
@@ -94,6 +98,7 @@ export default function AddProductForm({ categories }: { categories: Category[] 
       return;
     }
     setForm({ title: "", description: "", price: "", imageUrl: "" });
+    setVideo({ url: "", thumbnailUrl: "" });
     setCategoryIds([]);
     setVariantRows([]);
     setGalleryUrls([]);
@@ -122,6 +127,15 @@ export default function AddProductForm({ categories }: { categories: Category[] 
         onChange={(url) => setForm((f) => ({ ...f, imageUrl: url }))}
         placeholder={variantRows.length > 0 ? "Image URL (fallback)" : "Image URL"}
       />
+
+      <div>
+        <label className="text-xs font-medium text-gray-700 block mb-1">Product video (optional)</label>
+        <VideoInput
+          url={video.url}
+          thumbnailUrl={video.thumbnailUrl}
+          onChange={(v) => setVideo(v)}
+        />
+      </div>
 
       <div>
         <div className="flex items-center justify-between mb-1">

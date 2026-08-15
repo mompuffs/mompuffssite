@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatCents } from "@/lib/money";
 import CategoryPicker, { Category } from "@/components/CategoryPicker";
+import VideoInput from "@/components/VideoInput";
 
 export default function ShopProductRow({
   product,
@@ -18,6 +19,8 @@ export default function ShopProductRow({
     source: string;
     shippingMode: string;
     shippingCents: number;
+    videoUrl: string | null;
+    videoThumbnailUrl: string | null;
     categories: { id: string; name: string }[];
   };
   categories: Category[];
@@ -41,6 +44,10 @@ export default function ShopProductRow({
     product.shippingCents ? (product.shippingCents / 100).toFixed(2) : ""
   );
   const [savingShipping, setSavingShipping] = useState(false);
+
+  const [editingVideo, setEditingVideo] = useState(false);
+  const [video, setVideo] = useState({ url: product.videoUrl ?? "", thumbnailUrl: product.videoThumbnailUrl ?? "" });
+  const [savingVideo, setSavingVideo] = useState(false);
 
   async function handleDelete() {
     if (!confirm(`Remove "${product.title}"?`)) return;
@@ -93,6 +100,14 @@ export default function ShopProductRow({
     router.refresh();
   }
 
+  async function saveVideo() {
+    setSavingVideo(true);
+    await patch({ videoUrl: video.url, videoThumbnailUrl: video.thumbnailUrl });
+    setSavingVideo(false);
+    setEditingVideo(false);
+    router.refresh();
+  }
+
   return (
     <div className="border-b py-2 text-sm">
       <div className="flex items-center justify-between">
@@ -116,6 +131,9 @@ export default function ShopProductRow({
           </button>
           <button onClick={() => setEditingShipping((e) => !e)} className="text-brand-600 hover:underline">
             {editingShipping ? "Cancel" : "Shipping"}
+          </button>
+          <button onClick={() => setEditingVideo((e) => !e)} className="text-brand-600 hover:underline">
+            {editingVideo ? "Cancel" : product.videoUrl ? "Video" : "+ Video"}
           </button>
           <button onClick={handleDelete} className="text-red-500 hover:underline">
             Remove
@@ -188,6 +206,19 @@ export default function ShopProductRow({
             className="bg-brand-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
           >
             {savingShipping ? "Saving…" : "Save"}
+          </button>
+        </div>
+      )}
+
+      {editingVideo && (
+        <div className="mt-2">
+          <VideoInput url={video.url} thumbnailUrl={video.thumbnailUrl} onChange={setVideo} />
+          <button
+            onClick={saveVideo}
+            disabled={savingVideo}
+            className="mt-2 bg-brand-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
+          >
+            {savingVideo ? "Saving…" : "Save video"}
           </button>
         </div>
       )}

@@ -332,6 +332,11 @@ model Product {
   priceCents    Int
   currency      String        @default("USD")
   imageUrl      String?
+  // Optional product video (e.g. a quick demo/unboxing clip), manually
+  // uploaded from the "Add a product" form -- not populated by any of the
+  // import paths (POD/CSV/URL), which have no video source to pull from.
+  videoUrl          String?
+  videoThumbnailUrl String?
   source        String        @default("MANUAL")
   // "FLAT" -- uses the shop's flatShippingCents; "PRODUCT" -- uses this
   // product's own shippingCents instead (e.g. a heavier/oversized item);

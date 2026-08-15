@@ -2,13 +2,28 @@
 
 import { useState } from "react";
 
-export default function ProductGallery({ title, images }: { title: string; images: string[] }) {
+export default function ProductGallery({
+  title,
+  images,
+  videoUrl,
+  videoThumbnailUrl,
+}: {
+  title: string;
+  images: string[];
+  videoUrl?: string | null;
+  videoThumbnailUrl?: string | null;
+}) {
   const [selected, setSelected] = useState(images[0]);
 
   if (images.length === 0) {
     return (
-      <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
-        <span className="text-gray-400">No image</span>
+      <div>
+        <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
+          <span className="text-gray-400">No image</span>
+        </div>
+        {videoUrl && (
+          <video src={videoUrl} poster={videoThumbnailUrl || undefined} controls className="w-full rounded-lg mt-2" />
+        )}
       </div>
     );
   }
@@ -35,6 +50,9 @@ export default function ProductGallery({ title, images }: { title: string; image
             </button>
           ))}
         </div>
+      )}
+      {videoUrl && (
+        <video src={videoUrl} poster={videoThumbnailUrl || undefined} controls className="w-full rounded-lg mt-2" />
       )}
     </div>
   );
