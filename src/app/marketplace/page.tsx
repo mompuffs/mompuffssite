@@ -4,6 +4,8 @@ import ProductCard from "@/components/ProductCard";
 
 export const dynamic = "force-dynamic";
 
+const listedProduct = { archivedAt: null } as const;
+
 export default async function MarketplacePage({
   searchParams,
 }: {
@@ -14,10 +16,13 @@ export default async function MarketplacePage({
     db.shop.findMany({
       where: shopSearch ? { name: { contains: shopSearch, mode: "insensitive" } } : undefined,
       orderBy: { name: "asc" },
-      select: { id: true, name: true, slug: true, _count: { select: { products: true } } },
+      select: { id: true, name: true, slug: true, _count: { select: { products: { where: listedProduct } } } },
     }),
     db.product.findMany({
-      where: searchParams.shop ? { shop: { slug: searchParams.shop } } : undefined,
+      where: {
+        archivedAt: null,
+        ...(searchParams.shop ? { shop: { slug: searchParams.shop } } : {}),
+      },
       orderBy: { createdAt: "desc" },
       include: { shop: { select: { name: true, slug: true } } },
     }),

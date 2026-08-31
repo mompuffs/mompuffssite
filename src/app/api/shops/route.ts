@@ -14,7 +14,7 @@ export async function GET() {
       name: true,
       slug: true,
       bannerUrl: true,
-      _count: { select: { products: true } },
+      _count: { select: { products: { where: { archivedAt: null } } } },
     },
   });
 

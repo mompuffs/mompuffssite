@@ -42,6 +42,7 @@ export async function GET(req: Request) {
     }),
     db.product.findMany({
       where: {
+        archivedAt: null,
         OR: [{ title: { contains: q, mode: "insensitive" } }, { description: { contains: q, mode: "insensitive" } }],
       },
       take: PREVIEW_LIMIT,

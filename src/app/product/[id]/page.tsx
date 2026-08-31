@@ -18,7 +18,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
     },
   });
 
-  if (!product) notFound();
+  if (!product || product.archivedAt) notFound();
 
   const galleryImages = product.images.map((i) => i.url);
 
