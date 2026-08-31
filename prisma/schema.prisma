@@ -347,6 +347,10 @@ model Product {
   externalId    String?
   externalMeta  String?       // raw JSON blob from the provider, for reference/debugging
   createdAt     DateTime      @default(now())
+  // Set when the shop owner hits Remove. OrderItem.productId is required, so
+  // a hard delete fails for anything that has ever sold. Archived products
+  // stay in the DB for order history but are hidden from shop/marketplace.
+  archivedAt    DateTime?
 
   posts         Post[]
   orderItems    OrderItem[]

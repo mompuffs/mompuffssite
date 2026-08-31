@@ -81,6 +81,21 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
-  await db.product.delete({ where: { id: params.id } });
-  return NextResponse.json({ ok: true });
+  try {
+    await db.post.updateMany({ where: { productId: params.id }, data: { productId: null } });
+
+    const orderItemCount = await db.orderItem.count({ where: { productId: params.id } });
+    if (orderItemCount > 0) {
+      await db.product.update({
+        where: { id: params.id },
+        data: { archivedAt: new Date() },
+      });
+    } else {
+      await db.product.delete({ where: { id: params.id } });
+    }
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("Failed to remove product", params.id, err);
+    return NextResponse.json({ error: "Could not remove this product." }, { status: 500 });
+  }
 }
