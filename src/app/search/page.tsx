@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { formatCents } from "@/lib/money";
 import ProductCard from "@/components/ProductCard";
 
 export const dynamic = "force-dynamic";
@@ -61,10 +60,17 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
       where: { name: { contains: q, mode: "insensitive" } },
       take: FULL_LIMIT,
       orderBy: { name: "asc" },
-      select: { id: true, name: true, slug: true, bannerUrl: true, _count: { select: { products: true } } },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        bannerUrl: true,
+        _count: { select: { products: { where: { archivedAt: null } } } },
+      },
     }),
     db.product.findMany({
       where: {
+        archivedAt: null,
         OR: [{ title: { contains: q, mode: "insensitive" } }, { description: { contains: q, mode: "insensitive" } }],
       },
       take: FULL_LIMIT,

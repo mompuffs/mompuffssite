@@ -42,11 +42,15 @@ export default async function ShopPage({
     db.product.findMany({
       where: {
         shopId: shop.id,
+        archivedAt: null,
         ...(activeCategoryIds ? { categories: { some: { id: { in: activeCategoryIds } } } } : {}),
       },
       orderBy: { createdAt: "desc" },
     }),
-    db.product.findMany({ where: { shopId: shop.id }, select: { id: true, categories: { select: { id: true } } } }),
+    db.product.findMany({
+      where: { shopId: shop.id, archivedAt: null },
+      select: { id: true, categories: { select: { id: true } } },
+    }),
   ]);
 
   function countForCategoryIds(ids: string[]) {
