@@ -49,10 +49,28 @@ export default function ShopProductRow({
   const [video, setVideo] = useState({ url: product.videoUrl ?? "", thumbnailUrl: product.videoThumbnailUrl ?? "" });
   const [savingVideo, setSavingVideo] = useState(false);
 
+  const [removing, setRemoving] = useState(false);
+  const [removed, setRemoved] = useState(false);
+  const [removeError, setRemoveError] = useState("");
+
   async function handleDelete() {
     if (!confirm(`Remove "${product.title}"?`)) return;
-    await fetch(`/api/shop/products/${product.id}`, { method: "DELETE" });
-    router.refresh();
+    setRemoving(true);
+    setRemoveError("");
+    try {
+      const res = await fetch(`/api/shop/products/${product.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setRemoveError(typeof data.error === "string" ? data.error : "Could not remove this product.");
+        setRemoving(false);
+        return;
+      }
+      setRemoved(true);
+      router.refresh();
+    } catch {
+      setRemoveError("Could not remove this product.");
+      setRemoving(false);
+    }
   }
 
   async function patch(body: Record<string, unknown>) {
@@ -108,17 +126,20 @@ export default function ShopProductRow({
     router.refresh();
   }
 
+  if (removed) return null;
+
   return (
     <div className="border-b py-2 text-sm">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
           <p className="font-medium">{product.title}</p>
           <p className="text-gray-500 text-xs">
             {product.source}
             {product.categories.length > 0 && ` · ${product.categories.map((c) => c.name).join(", ")}`}
           </p>
+          {removeError && <p className="text-red-500 text-xs mt-1">{removeError}</p>}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-shrink-0 flex-wrap justify-end">
           <span>{formatCents(product.priceCents, product.currency)}</span>
           <button onClick={() => setEditingTitle((e) => !e)} className="text-brand-600 hover:underline">
             {editingTitle ? "Cancel" : "Title"}
@@ -135,8 +156,8 @@ export default function ShopProductRow({
           <button onClick={() => setEditingVideo((e) => !e)} className="text-brand-600 hover:underline">
             {editingVideo ? "Cancel" : product.videoUrl ? "Video" : "+ Video"}
           </button>
-          <button onClick={handleDelete} className="text-red-500 hover:underline">
-            Remove
+          <button onClick={handleDelete} disabled={removing} className="text-red-500 hover:underline disabled:opacity-60">
+            {removing ? "Removing…" : "Remove"}
           </button>
         </div>
       </div>

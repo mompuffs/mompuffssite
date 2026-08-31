@@ -17,7 +17,7 @@ export async function priceCartItems(items: any[]): Promise<PricedCartItem[]> {
   const variantIds = items.filter((i: any) => i.variantId).map((i: any) => i.variantId);
 
   const [products, variants] = await Promise.all([
-    db.product.findMany({ where: { id: { in: productIds } } }),
+    db.product.findMany({ where: { id: { in: productIds }, archivedAt: null } }),
     variantIds.length > 0 ? db.productVariant.findMany({ where: { id: { in: variantIds } } }) : Promise.resolve([]),
   ]);
   const productMap = new Map(products.map((p) => [p.id, p]));

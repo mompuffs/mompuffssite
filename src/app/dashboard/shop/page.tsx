@@ -14,7 +14,13 @@ export default async function ShopDashboardPage() {
 
   const shop = await db.shop.findUnique({
     where: { ownerId: user.id },
-    include: { products: { orderBy: { createdAt: "desc" }, include: { categories: true } } },
+    include: {
+      products: {
+        where: { archivedAt: null },
+        orderBy: { createdAt: "desc" },
+        include: { categories: true },
+      },
+    },
   });
 
   const categories = shop
