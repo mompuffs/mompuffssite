@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { normalizeSourceUrl } from "@/lib/urlImport";
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
@@ -21,7 +22,14 @@ export async function POST(req: Request) {
     }
   }
 
-  const existing = await db.product.findFirst({ where: { shopId: shop.id, externalId: String(sourceUrl) } });
+  const normalized = normalizeSourceUrl(String(sourceUrl));
+  const existingUrlProducts = await db.product.findMany({
+    where: { shopId: shop.id, source: "URL", externalId: { not: null } },
+    select: { id: true, externalId: true },
+  });
+  const existing = existingUrlProducts.find(
+    (p) => p.externalId && normalizeSourceUrl(p.externalId) === normalized
+  );
   if (existing) {
     return NextResponse.json(
       { error: "You've already imported this product.", existingProductId: existing.id },
@@ -37,7 +45,7 @@ export async function POST(req: Request) {
       priceCents: Math.round(Number(priceCents)),
       imageUrl: imageUrl || undefined,
       source: "URL",
-      externalId: String(sourceUrl),
+      externalId: normalized,
       externalMeta: raw ? JSON.stringify(raw).slice(0, 5000) : undefined,
       categories:
         Array.isArray(categoryIds) && categoryIds.length > 0

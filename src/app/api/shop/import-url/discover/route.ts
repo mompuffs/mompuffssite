@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
-import { discoverProductUrls, scrapeProductFromUrl, MAX_DISCOVER_COUNT } from "@/lib/urlImport";
+import { discoverProductUrls, scrapeProductFromUrl, MAX_DISCOVER_COUNT, normalizeSourceUrl } from "@/lib/urlImport";
 
-// Discovering + scraping many product pages can take a while.
 export const maxDuration = 120;
 
 export async function POST(req: Request) {
@@ -19,32 +18,43 @@ export async function POST(req: Request) {
   }
   const count = Number(maxCount) || 10;
 
+  const existingUrlProducts = await db.product.findMany({
+    where: { shopId: shop.id, source: "URL", externalId: { not: null } },
+    select: { externalId: true },
+  });
+  const alreadyImported = new Set(
+    existingUrlProducts.map((p) => normalizeSourceUrl(p.externalId as string)).filter(Boolean)
+  );
+
   let productUrls: string[];
   try {
-    productUrls = await discoverProductUrls(url, count);
+    productUrls = await discoverProductUrls(url, count, alreadyImported);
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Couldn't find products on that page." }, { status: 400 });
   }
-
-  const existingExternalIds = new Set(
-    (
-      await db.product.findMany({
-        where: { shopId: shop.id, externalId: { in: productUrls } },
-        select: { externalId: true },
-      })
-    ).map((p) => p.externalId)
-  );
 
   const results = await Promise.all(
     productUrls.map(async (productUrl) => {
       try {
         const item = await scrapeProductFromUrl(productUrl);
-        return { url: productUrl, ok: true as const, item, alreadyImported: existingExternalIds.has(productUrl) };
+        const normalized = normalizeSourceUrl(item.externalId || productUrl);
+        if (alreadyImported.has(normalized)) {
+          return { url: productUrl, ok: false as const, error: "Already imported." };
+        }
+        return { url: productUrl, ok: true as const, item, alreadyImported: false };
       } catch (e: any) {
         return { url: productUrl, ok: false as const, error: e?.message || "Couldn't import that page." };
       }
     })
   );
 
-  return NextResponse.json({ results, discoveredCount: productUrls.length, cap: MAX_DISCOVER_COUNT });
+  const fresh = results.filter((r) => r.ok);
+  const skipped = productUrls.length - fresh.length;
+
+  return NextResponse.json({
+    results: fresh,
+    discoveredCount: productUrls.length,
+    skippedDuplicates: skipped,
+    cap: MAX_DISCOVER_COUNT,
+  });
 }
