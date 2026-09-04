@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
 import ProductCard from "@/components/ProductCard";
+import ProductPagination from "@/components/ProductPagination";
+import { PRODUCTS_PER_PAGE, pageCount, parsePage } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +12,7 @@ export default async function ShopPage({
   searchParams,
 }: {
   params: { slug: string };
-  searchParams: { category?: string };
+  searchParams: { category?: string; page?: string };
 }) {
   const shop = await db.shop.findUnique({
     where: { slug: params.slug },
@@ -19,9 +21,6 @@ export default async function ShopPage({
 
   if (!shop) notFound();
 
-  // Loose page-view counter (not deduped per visitor) -- see Shop.visitCount
-  // in schema.prisma. Only powers the "Top Shops" sidebar ranking, so exact
-  // precision doesn't matter.
   await db.shop.update({ where: { id: shop.id }, data: { visitCount: { increment: 1 } } });
 
   const categories = await db.category.findMany({
@@ -38,14 +37,21 @@ export default async function ShopPage({
     ? [activeCategory.id, ...childrenOf(activeCategory.id).map((c) => c.id)]
     : undefined;
 
-  const [products, shopProductsForCounts] = await Promise.all([
+  const productWhere = {
+    shopId: shop.id,
+    archivedAt: null,
+    ...(activeCategoryIds ? { categories: { some: { id: { in: activeCategoryIds } } } } : {}),
+  };
+
+  const page = parsePage(searchParams.page);
+
+  const [total, products, shopProductsForCounts] = await Promise.all([
+    db.product.count({ where: productWhere }),
     db.product.findMany({
-      where: {
-        shopId: shop.id,
-        archivedAt: null,
-        ...(activeCategoryIds ? { categories: { some: { id: { in: activeCategoryIds } } } } : {}),
-      },
+      where: productWhere,
       orderBy: { createdAt: "desc" },
+      skip: (page - 1) * PRODUCTS_PER_PAGE,
+      take: PRODUCTS_PER_PAGE,
     }),
     db.product.findMany({
       where: { shopId: shop.id, archivedAt: null },
@@ -53,12 +59,22 @@ export default async function ShopPage({
     }),
   ]);
 
+  const pages = pageCount(total);
+
   function countForCategoryIds(ids: string[]) {
     const matched = new Set<string>();
     for (const p of shopProductsForCounts) {
       if (p.categories.some((c) => ids.includes(c.id))) matched.add(p.id);
     }
     return matched.size;
+  }
+
+  function hrefForPage(p: number) {
+    const q = new URLSearchParams();
+    if (activeCategory) q.set("category", activeCategory.slug);
+    if (p > 1) q.set("page", String(p));
+    const s = q.toString();
+    return s ? `/shop/${shop.slug}?${s}` : `/shop/${shop.slug}`;
   }
 
   return (
@@ -135,16 +151,19 @@ export default async function ShopPage({
               </Link>
             </p>
           )}
-          {products.length === 0 ? (
+          {total === 0 ? (
             <p className="text-gray-500">
               {activeCategory ? "No products in this category yet." : "This shop has no products yet."}
             </p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {products.map((p) => (
-                <ProductCard key={p.id} product={{ ...p, shop: { name: shop.name, slug: shop.slug } } as any} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {products.map((p) => (
+                  <ProductCard key={p.id} product={{ ...p, shop: { name: shop.name, slug: shop.slug } } as any} />
+                ))}
+              </div>
+              <ProductPagination page={Math.min(page, pages)} pageCount={pages} hrefForPage={hrefForPage} />
+            </>
           )}
         </div>
       </div>

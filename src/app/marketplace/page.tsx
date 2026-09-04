@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import ProductCard from "@/components/ProductCard";
+import ProductPagination from "@/components/ProductPagination";
+import { PRODUCTS_PER_PAGE, pageCount, parsePage } from "@/lib/pagination";
 
 export const dynamic = "force-dynamic";
 
@@ -9,26 +11,42 @@ const listedProduct = { archivedAt: null } as const;
 export default async function MarketplacePage({
   searchParams,
 }: {
-  searchParams: { shop?: string; shopSearch?: string };
+  searchParams: { shop?: string; shopSearch?: string; page?: string };
 }) {
   const shopSearch = searchParams.shopSearch?.trim();
-  const [shops, products] = await Promise.all([
+  const page = parsePage(searchParams.page);
+  const productWhere = {
+    archivedAt: null,
+    ...(searchParams.shop ? { shop: { slug: searchParams.shop } } : {}),
+  };
+
+  const [shops, total, products] = await Promise.all([
     db.shop.findMany({
       where: shopSearch ? { name: { contains: shopSearch, mode: "insensitive" } } : undefined,
       orderBy: { name: "asc" },
       select: { id: true, name: true, slug: true, _count: { select: { products: { where: listedProduct } } } },
     }),
+    db.product.count({ where: productWhere }),
     db.product.findMany({
-      where: {
-        archivedAt: null,
-        ...(searchParams.shop ? { shop: { slug: searchParams.shop } } : {}),
-      },
+      where: productWhere,
       orderBy: { createdAt: "desc" },
+      skip: (page - 1) * PRODUCTS_PER_PAGE,
+      take: PRODUCTS_PER_PAGE,
       include: { shop: { select: { name: true, slug: true } } },
     }),
   ]);
 
+  const pages = pageCount(total);
   const activeShop = searchParams.shop ? shops.find((s) => s.slug === searchParams.shop) : undefined;
+
+  function hrefForPage(p: number) {
+    const q = new URLSearchParams();
+    if (searchParams.shop) q.set("shop", searchParams.shop);
+    if (shopSearch) q.set("shopSearch", shopSearch);
+    if (p > 1) q.set("page", String(p));
+    const s = q.toString();
+    return s ? `/marketplace?${s}` : "/marketplace";
+  }
 
   return (
     <div>
@@ -89,14 +107,17 @@ export default async function MarketplacePage({
               </Link>
             </p>
           )}
-          {products.length === 0 ? (
+          {total === 0 ? (
             <p className="text-gray-500">No products yet. Open a shop and add something!</p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {products.map((p) => (
-                <ProductCard key={p.id} product={p as any} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {products.map((p) => (
+                  <ProductCard key={p.id} product={p as any} />
+                ))}
+              </div>
+              <ProductPagination page={Math.min(page, pages)} pageCount={pages} hrefForPage={hrefForPage} />
+            </>
           )}
         </div>
       </div>
