@@ -105,6 +105,11 @@ export default async function ShopDashboardPage() {
               </Link>
             </li>
             <li>
+              <Link href="/dashboard/shop/tax" className="text-brand-600 hover:underline">
+                Sales tax
+              </Link>
+            </li>
+            <li>
               <Link href="/dashboard/shop/admin-settings" className="text-brand-600 hover:underline">
                 Shop settings
               </Link>
