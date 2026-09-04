@@ -105,25 +105,25 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
     slug: "import",
     title: "Import products",
     href: "/dashboard/shop/import",
-    summary: "Bring in products from Printify, Printful, a public website, or a CSV file.",
+    summary: "Bring in products from a connected catalog, a public website, or a CSV file.",
     sections: [
       {
         heading: "What this page is",
         paragraphs: [
-          "Import copies products into your MomPuffs shop. Printify and Printful need Connections first. Website and CSV imports do not.",
+          "Import copies products into your MomPuffs shop. Connected catalogs (Printify, Printful, Shopify, BigCommerce, Wix, Square, Stripe) need keys on Connections first. Website and CSV imports do not.",
         ],
       },
       {
-        heading: "Printify or Printful catalog",
+        heading: "From a connected catalog",
         paragraphs: [
-          "Connect the account on Connections, then come back here and click Printify or Printful to load that catalog. Set categories on a card and click Import to my shop. Already-imported items stay in your catalog; you can import the rest one at a time.",
+          "Save the source on Connections, then open Import and click that source's button. Set categories on a card and click Import to my shop.",
         ],
-        note: "If the catalog fails to load, the usual cause is a missing or expired API token on Connections.",
+        note: "If the catalog fails to load, the usual cause is a missing or expired key on Connections. Open Help → Connections for where to copy each key.",
       },
       {
         heading: "From a website",
         paragraphs: [
-          "Paste a public shop or category URL (for example a Peaprint collection page), set how many products to pull, and click Find products. MomPuffs reads public product data from the page. No login to the other site is required.",
+          "Paste a public shop or category URL (for example a Peaprint collection page), set how many products to pull, and click Find products. No login to the other site is required.",
           "Duplicates of the same source URL are skipped so you do not import the same listing twice.",
         ],
         steps: [
@@ -145,43 +145,99 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
   },
   {
     slug: "connections",
-    title: "Connections (Printify / Printful)",
+    title: "Connections",
     href: "/dashboard/shop/connections",
-    summary: "Store your own print-on-demand API keys. Other shops never see them.",
+    summary: "Store your own catalog API keys. Other shops never see them.",
     sections: [
       {
         heading: "What this page is",
         paragraphs: [
-          "Each shop enters its own Printify and/or Printful credentials. MomPuffs does not use a platform-wide key.",
+          "Each shop enters its own keys for Printify, Printful, Shopify, BigCommerce, Wix, Square, and Stripe. MomPuffs does not use a platform-wide key. After you save a source, load it from Import products.",
         ],
       },
       {
-        heading: "Get a Printify API token",
+        heading: "Printify",
         paragraphs: [],
         steps: [
           "Log in at printify.com with the store you want to import from.",
           "Open Connections in the left menu (or go to https://printify.com/app/connections).",
           "Choose Printify API and generate a Personal access token. Copy it once — Printify may not show it again.",
-          "If the form also asks for a Shop ID, open My Shops, click the shop, and copy the numeric shop id from the page or from the URL.",
-          "On MomPuffs Connections, click Connect next to Printify, paste the token (and shop id if asked), and Save.",
+          "Open My Shops, click the shop, and copy the numeric Shop ID from the page or URL.",
+          "On MomPuffs Connections, Connect Printify, paste the token and Shop ID, and Save.",
         ],
-        note: "Use a token from the same Printify shop that holds the products you want to import.",
       },
       {
-        heading: "Get a Printful API token",
+        heading: "Printful",
         paragraphs: [],
         steps: [
           "Log in at printful.com.",
-          "Open Settings → Stores / API (or go to https://www.printful.com/dashboard/settings).",
-          "Under API, create a private token. Copy it.",
-          "If a Store ID is required, open Stores and copy the store id for the shop you want.",
-          "On MomPuffs Connections, click Connect next to Printful, paste the values, and Save.",
+          "Open Settings → Stores / API (or https://www.printful.com/dashboard/settings).",
+          "Under API, create a private token and copy it.",
+          "On MomPuffs Connections, Connect Printful, paste the token, and Save.",
         ],
+      },
+      {
+        heading: "Shopify",
+        paragraphs: [],
+        steps: [
+          "Log in to the Shopify admin for the store you want to import.",
+          "Go to Settings → Apps and sales channels → Develop apps. Allow custom app development if Shopify asks.",
+          "Create an app. Under Admin API integration, enable read access for Products.",
+          "Install the app and reveal the Admin API access token (starts with shpat_). Copy it once.",
+          "Your shop domain is the .myshopify.com address (example: your-store.myshopify.com).",
+          "On MomPuffs Connections, Connect Shopify, paste the access token and shop domain, and Save.",
+        ],
+        note: "A custom app token is required. The storefront password or a staff login will not work.",
+      },
+      {
+        heading: "BigCommerce",
+        paragraphs: [],
+        steps: [
+          "Log in to the BigCommerce control panel.",
+          "Go to Settings → API → Store-level API accounts (or Settings → API accounts).",
+          "Create an API account with Products read-only (or modify) access. Copy the Access token.",
+          "The Store hash is the short code in API paths, like api.bigcommerce.com/stores/abcdefg — copy abcdefg only.",
+          "On MomPuffs Connections, Connect BigCommerce, paste the access token and store hash, and Save.",
+        ],
+      },
+      {
+        heading: "Wix",
+        paragraphs: [],
+        steps: [
+          "Log in at https://manage.wix.com and open the site that has the products.",
+          "Site ID: Settings → Site details, or the siteId= value in the dashboard URL. Copy that ID.",
+          "API key: go to https://manage.wix.com/account/api-keys (Account settings → API keys). Create a key with Wix Stores permissions.",
+          "On MomPuffs Connections, Connect Wix, paste the API key and Site ID, and Save.",
+        ],
+        note: "The account API key must be allowed to access that specific site.",
+      },
+      {
+        heading: "Square catalog",
+        paragraphs: [
+          "This is the Square product catalog, not the Payments connection. You can reuse the same access token.",
+        ],
+        steps: [
+          "Log in at https://developer.squareup.com/apps and open your application.",
+          "Copy the Access token for Production (real catalog) or Sandbox (test catalog).",
+          "On MomPuffs Connections, Connect Square, paste the token, and type production or sandbox to match. Save.",
+        ],
+      },
+      {
+        heading: "Stripe catalog",
+        paragraphs: [
+          "This reads Products and Prices from Stripe. The secret key can be the same one you saved under Payments.",
+        ],
+        steps: [
+          "Log in at https://dashboard.stripe.com.",
+          "Open Developers → API keys. Reveal and copy the Secret key (sk_live_ or sk_test_).",
+          "On MomPuffs Connections, Connect Stripe, paste that secret key, and Save.",
+        ],
+        note: "sk_test_ only lists test-mode products. Use sk_live_ for the live catalog.",
       },
       {
         heading: "After you connect",
         paragraphs: [
-          "Go to Import products, click Printify or Printful, and load the catalog. Disconnect on this page if you need to rotate a key.",
+          "Go to Import products and click the same source name to load the catalog. Disconnect here if you need to rotate a key.",
         ],
       },
     ],
