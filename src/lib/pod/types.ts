@@ -29,8 +29,17 @@ export type PodFieldDef = {
   placeholder?: string;
 };
 
+export type PodProviderId =
+  | "PRINTIFY"
+  | "PRINTFUL"
+  | "SHOPIFY"
+  | "BIGCOMMERCE"
+  | "WIX"
+  | "SQUARE"
+  | "STRIPE";
+
 export interface PodAdapter {
-  id: "PRINTIFY" | "PRINTFUL";
+  id: PodProviderId;
   label: string;
   fields: PodFieldDef[];
   isConfigured(creds: PodCredentials): boolean;
