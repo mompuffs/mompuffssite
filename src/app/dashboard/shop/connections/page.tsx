@@ -69,8 +69,13 @@ export default function ConnectionsPage() {
         </Link>
       </div>
       <p className="text-sm text-gray-500 mb-4">
-        Connect your own Printify or Printful account. Credentials are yours alone -- other shops on
-        Mompuffs never see or use them.
+        Connect the catalogs you import from. Credentials are yours alone -- other shops on Mompuffs never see or
+        use them. After you save a source, load it from Import products.
+      </p>
+      <p className="text-sm mb-4">
+        <Link href="/dashboard/shop/help/connections" className="text-brand-600 hover:underline">
+          Where to copy each key →
+        </Link>
       </p>
 
       {!connections ? (
