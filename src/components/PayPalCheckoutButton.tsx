@@ -52,7 +52,7 @@ export default function PayPalCheckoutButton({
         const res = await fetch("/api/checkout/paypal/create-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items, couponCode }),
+          body: JSON.stringify({ items, couponCode, shipping }),
         });
         const data = await res.json();
         if (!res.ok) {

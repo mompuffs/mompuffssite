@@ -57,7 +57,7 @@ export default function StripeCheckoutForm({
     fetch("/api/checkout/stripe/create-intent", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ items, couponCode }),
+      body: JSON.stringify({ items, couponCode, shipping }),
     })
       .then(async (res) => {
         const data = await res.json();
@@ -70,7 +70,7 @@ export default function StripeCheckoutForm({
       })
       .catch(() => onError("Could not start Stripe checkout."));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(items), couponCode]);
+  }, [JSON.stringify(items), couponCode, JSON.stringify(shipping)]);
 
   async function finishOrder(confirmedPaymentIntentId: string) {
     const res = await fetch("/api/checkout/stripe/confirm", {
@@ -93,8 +93,6 @@ export default function StripeCheckoutForm({
     onSuccess(order);
   }
 
-  // Handle the return from a redirect-based payment method (e.g. some bank
-  // and wallet methods can't complete inline).
   useEffect(() => {
     if (!sdkReady) return;
     const params = new URLSearchParams(window.location.search);
