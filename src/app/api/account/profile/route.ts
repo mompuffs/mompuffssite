@@ -14,6 +14,7 @@ const PROFILE_SELECT = {
   links: true,
   contactEmail: true,
   contactPhone: true,
+  showBio: true,
   showWork: true,
   showLocation: true,
   showBirthdate: true,
@@ -21,8 +22,6 @@ const PROFILE_SELECT = {
   showContact: true,
 };
 
-// Reads straight from the database rather than the session token, which
-// only carries what was true at sign-in and can go stale after an edit.
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
@@ -56,7 +55,7 @@ export async function PATCH(req: Request) {
   if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
   const body = await req.json();
-  const { displayName, avatarUrl, birthdate, links } = body;
+  const { displayName, birthdate, links } = body;
 
   if (displayName !== undefined && (typeof displayName !== "string" || !displayName.trim())) {
     return NextResponse.json({ error: "displayName must be a non-empty string." }, { status: 400 });
@@ -78,6 +77,7 @@ export async function PATCH(req: Request) {
     }
 
     const boolFields: [string, unknown][] = [
+      ["showBio", body.showBio],
       ["showWork", body.showWork],
       ["showLocation", body.showLocation],
       ["showBirthdate", body.showBirthdate],
@@ -115,9 +115,6 @@ export async function PATCH(req: Request) {
       .slice(0, 10)
       .map((l: any) => {
         let url = String(l.url).trim().slice(0, 500);
-        // Only allow http(s) links -- reject anything else (e.g. a
-        // javascript:/data: URI smuggled in) instead of rendering it as a
-        // clickable link on the public profile.
         if (!/^https?:\/\//i.test(url)) {
           url = url.includes("://") ? "" : `https://${url}`;
         }

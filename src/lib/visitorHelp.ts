@@ -26,6 +26,7 @@ export const VISITOR_HELP_TOPICS: VisitorHelpTopic[] = [
         steps: [
           "My Profile is the public page other people see (posts, about, friends).",
           "My Account is where you edit display name, photo, about, work, location, and what is visible.",
+          "Check Show on profile next to About me and the other blocks so they appear on My Profile.",
           "Username (the @name in the URL) cannot be changed.",
         ],
       },
@@ -38,18 +39,15 @@ export const VISITOR_HELP_TOPICS: VisitorHelpTopic[] = [
   {
     slug: "feed",
     title: "Feed and posts",
-    summary: "Read the home feed, post, comment, and like.",
+    summary: "Read the home feed, post, comment, and react.",
     sections: [
       {
         heading: "How the feed works",
-        paragraphs: [
-          "Feed is the home page after you log in. You see posts from people and groups you can access.",
-        ],
+        paragraphs: ["Feed is the home page after you log in. You see posts from people and groups you can access."],
         steps: [
-          "Write in the composer at the top of the feed to post.",
+          "Write in the composer at the top of the feed to post. Use + Emoji to add an emotion in the text.",
           "Add a photo or video if the composer offers those fields.",
-          "Like or comment on a post from the buttons under it.",
-          "Open a post to see the full thread.",
+          "React with an emotion under the post, or comment.",
         ],
       },
     ],
@@ -57,15 +55,27 @@ export const VISITOR_HELP_TOPICS: VisitorHelpTopic[] = [
   {
     slug: "groups",
     title: "Groups",
-    summary: "Find groups, join them, and post inside a group.",
+    summary: "Create groups, choose public or private, join, and post.",
     sections: [
       {
-        heading: "How to use groups",
+        heading: "Create a group",
         paragraphs: [],
         steps: [
-          "Open Groups in the top or side menu to browse.",
-          "Open a group page and use Join. Public groups let you in right away; private groups wait for a yes from the owner.",
-          "Post inside a group so members of that group see it. Group posts do not always show to the whole site.",
+          "Open Groups and click + Create group.",
+          "Enter a name. Topic, description, and photo are optional.",
+          "Visibility: Public means anyone can see the group's posts in the feed and on the group page. Private means only members see posts.",
+          "Joining: Open lets people join instantly. Approval required means you accept or decline each request.",
+          "Click Create group. You become the owner and can manage it from the group page.",
+        ],
+        note: "A group can be Public with approval, or Private and open. Visibility controls who sees posts; joining controls who can become a member.",
+      },
+      {
+        heading: "Find and join groups",
+        paragraphs: [],
+        steps: [
+          "Browse or search Groups by name or topic.",
+          "Open a group and Join (or Request to join if approval is required).",
+          "Post inside a group so members see it. Private group posts do not show to the whole site.",
         ],
       },
     ],
@@ -81,7 +91,7 @@ export const VISITOR_HELP_TOPICS: VisitorHelpTopic[] = [
         steps: [
           "Open someone's profile and use the friend button to send a request.",
           "Incoming requests show on My Account in the right column. Accept or decline there.",
-          "You can block someone from their profile. Blocked people are listed on My Account so you can unblock.",
+          "You can block someone from your profile. Blocked people are listed on My Account so you can unblock.",
         ],
       },
       {
