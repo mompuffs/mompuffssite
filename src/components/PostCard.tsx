@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { formatCents } from "@/lib/money";
+import EmojiPicker from "@/components/EmojiPicker";
+import { REACTIONS, reactionById } from "@/lib/reactions";
 
 type Comment = {
   id: string;
@@ -23,7 +25,7 @@ type Post = {
   author: { id: string; username: string; displayName: string; avatarUrl: string | null };
   product: { id: string; title: string; priceCents: number; currency: string; imageUrl: string | null } | null;
   group: { id: string; name: string; slug: string } | null;
-  likes: { userId: string }[];
+  likes: { userId: string; emoji?: string }[];
   comments: Comment[];
 };
 
@@ -31,10 +33,19 @@ export default function PostCard({ post: initialPost }: { post: Post }) {
   const { data: session } = useSession();
   const router = useRouter();
   const [post, setPost] = useState(initialPost);
-  const [liked, setLiked] = useState(
-    !!session?.user && post.likes.some((l) => l.userId === (session.user as any).id)
+  const myId = session?.user ? (session.user as any).id : null;
+  const [mine, setMine] = useState<string | null>(
+    post.likes.find((l) => l.userId === myId)?.emoji ?? (post.likes.some((l) => l.userId === myId) ? "like" : null)
   );
-  const [likeCount, setLikeCount] = useState(post.likes.length);
+  const [counts, setCounts] = useState<Record<string, number>>(() => {
+    const next: Record<string, number> = {};
+    for (const like of post.likes) {
+      const key = like.emoji || "like";
+      next[key] = (next[key] ?? 0) + 1;
+    }
+    return next;
+  });
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [comments, setComments] = useState(post.comments);
   const [showComments, setShowComments] = useState(false);
@@ -45,13 +56,16 @@ export default function PostCard({ post: initialPost }: { post: Post }) {
   const [deleting, setDeleting] = useState(false);
   const [deleted, setDeleted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const isOwnPost = !!session?.user && (session.user as any).id === post.author.id;
+  const isOwnPost = !!myId && myId === post.author.id;
   const menuRef = useRef<HTMLDivElement>(null);
+  const reactRef = useRef<HTMLDivElement>(null);
+
+  const total = useMemo(() => Object.values(counts).reduce((sum, n) => sum + n, 0), [counts]);
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
+      if (reactRef.current && !reactRef.current.contains(e.target as Node)) setPickerOpen(false);
     }
     document.addEventListener("mousedown", onClickOutside);
     return () => document.removeEventListener("mousedown", onClickOutside);
@@ -87,12 +101,18 @@ export default function PostCard({ post: initialPost }: { post: Post }) {
     }
   }
 
-  async function toggleLike() {
+  async function setReaction(emoji: string) {
     if (!session) return router.push("/login");
-    const res = await fetch(`/api/posts/${post.id}/like`, { method: "POST" });
+    const res = await fetch(`/api/posts/${post.id}/like`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ emoji }),
+    });
     const data = await res.json();
-    setLiked(data.liked);
-    setLikeCount((c) => c + (data.liked ? 1 : -1));
+    if (!res.ok) return;
+    setMine(data.mine);
+    setCounts(data.counts ?? {});
+    setPickerOpen(false);
   }
 
   async function submitComment(e: React.FormEvent) {
@@ -110,6 +130,8 @@ export default function PostCard({ post: initialPost }: { post: Post }) {
   }
 
   if (deleted) return null;
+
+  const mineMeta = mine ? reactionById(mine) : null;
 
   return (
     <div className="bg-white rounded-xl shadow p-4 mb-4">
@@ -139,38 +161,15 @@ export default function PostCard({ post: initialPost }: { post: Post }) {
             </p>
           </div>
         </div>
-
         {isOwnPost && !editing && (
           <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => setMenuOpen((o) => !o)}
-              className="text-gray-400 hover:text-gray-700 px-2 leading-none"
-              aria-label="Post options"
-            >
+            <button onClick={() => setMenuOpen((o) => !o)} className="text-gray-400 hover:text-gray-700 px-2 leading-none" aria-label="Post options">
               ⋯
             </button>
             {menuOpen && (
               <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-100 py-1 text-sm z-10 w-28">
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setEditBody(post.body);
-                    setEditing(true);
-                  }}
-                  className="block w-full text-left px-3 py-1.5 hover:bg-gray-50"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    deletePost();
-                  }}
-                  disabled={deleting}
-                  className="block w-full text-left px-3 py-1.5 hover:bg-gray-50 text-red-600"
-                >
-                  {deleting ? "Deleting…" : "Delete"}
-                </button>
+                <button onClick={() => { setMenuOpen(false); setEditBody(post.body); setEditing(true); }} className="block w-full text-left px-3 py-1.5 hover:bg-gray-50">Edit</button>
+                <button onClick={() => { setMenuOpen(false); deletePost(); }} disabled={deleting} className="block w-full text-left px-3 py-1.5 hover:bg-gray-50 text-red-600">{deleting ? "Deleting…" : "Delete"}</button>
               </div>
             )}
           </div>
@@ -179,30 +178,12 @@ export default function PostCard({ post: initialPost }: { post: Post }) {
 
       {editing ? (
         <div className="mb-2 space-y-1.5">
-          <textarea
-            value={editBody}
-            onChange={(e) => setEditBody(e.target.value)}
-            rows={3}
-            className="w-full border rounded px-3 py-2 text-sm resize-none"
-          />
+          <textarea value={editBody} onChange={(e) => setEditBody(e.target.value)} rows={3} className="w-full border rounded px-3 py-2 text-sm resize-none" />
+          <EmojiPicker onPick={(emoji) => setEditBody((b) => b + emoji)} />
           {error && <p className="text-red-600 text-xs">{error}</p>}
           <div className="flex gap-2">
-            <button
-              onClick={saveEdit}
-              disabled={saving || !editBody.trim()}
-              className="bg-brand-600 text-white px-3 py-1 rounded-full text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
-            >
-              {saving ? "Saving…" : "Save"}
-            </button>
-            <button
-              onClick={() => {
-                setEditing(false);
-                setError(null);
-              }}
-              className="text-gray-500 text-xs hover:underline"
-            >
-              Cancel
-            </button>
+            <button onClick={saveEdit} disabled={saving || !editBody.trim()} className="bg-brand-600 text-white px-3 py-1 rounded-full text-xs font-medium hover:bg-brand-700 disabled:opacity-60">{saving ? "Saving…" : "Save"}</button>
+            <button onClick={() => { setEditing(false); setError(null); }} className="text-gray-500 text-xs hover:underline">Cancel</button>
           </div>
         </div>
       ) : (
@@ -210,12 +191,7 @@ export default function PostCard({ post: initialPost }: { post: Post }) {
       )}
 
       {post.videoUrl ? (
-        <video
-          src={post.videoUrl}
-          poster={post.videoThumbnailUrl ?? undefined}
-          controls
-          className="rounded-lg w-full max-h-96 mb-2 bg-black"
-        />
+        <video src={post.videoUrl} poster={post.videoThumbnailUrl ?? undefined} controls className="rounded-lg w-full max-h-96 mb-2 bg-black" />
       ) : (
         post.imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -224,10 +200,7 @@ export default function PostCard({ post: initialPost }: { post: Post }) {
       )}
 
       {post.product && (
-        <Link
-          href={`/product/${post.product.id}`}
-          className="flex items-center gap-3 border rounded-lg p-2 mb-2 hover:bg-gray-50"
-        >
+        <Link href={`/product/${post.product.id}`} className="flex items-center gap-3 border rounded-lg p-2 mb-2 hover:bg-gray-50">
           {post.product.imageUrl && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={post.product.imageUrl} alt="" className="w-14 h-14 object-cover rounded" />
@@ -239,10 +212,41 @@ export default function PostCard({ post: initialPost }: { post: Post }) {
         </Link>
       )}
 
+      {total > 0 && (
+        <div className="flex flex-wrap gap-1 mb-2">
+          {REACTIONS.filter((r) => counts[r.id]).map((r) => (
+            <button
+              key={r.id}
+              type="button"
+              onClick={() => setReaction(r.id)}
+              className={`text-xs px-1.5 py-0.5 rounded-full border ${
+                mine === r.id ? "border-brand-600 bg-brand-50" : "border-gray-200 bg-gray-50"
+              }`}
+              title={r.label}
+            >
+              {r.emoji} {counts[r.id]}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="flex gap-4 text-sm text-gray-600 border-t pt-2">
-        <button onClick={toggleLike} className={liked ? "text-brand-600 font-medium" : "hover:text-brand-600"}>
-          👍 Like {likeCount > 0 && `(${likeCount})`}
-        </button>
+        <div className="relative" ref={reactRef}>
+          <button type="button" onClick={() => setPickerOpen((o) => !o)} className={mine ? "text-brand-600 font-medium" : "hover:text-brand-600"}>
+            {mineMeta ? `${mineMeta.emoji} ${mineMeta.label}` : "👍 React"}
+          </button>
+          {pickerOpen && (
+            <div className="absolute left-0 bottom-full mb-1 bg-white border rounded-full shadow-lg px-2 py-1 flex gap-1 z-20">
+              {REACTIONS.map((r) => (
+                <button key={r.id} type="button" title={r.label} onClick={() => setReaction(r.id)} className={`text-lg leading-none p-1 rounded-full hover:bg-gray-100 ${
+                  mine === r.id ? "ring-1 ring-brand-600" : ""
+                }`}>
+                  {r.emoji}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <button onClick={() => setShowComments((s) => !s)} className="hover:text-brand-600">
           💬 Comment {comments.length > 0 && `(${comments.length})`}
         </button>
@@ -252,22 +256,13 @@ export default function PostCard({ post: initialPost }: { post: Post }) {
         <div className="mt-3 space-y-2">
           {comments.map((c) => (
             <div key={c.id} className="text-sm bg-gray-50 rounded px-3 py-1.5">
-              <Link href={`/profile/${c.author.username}`} className="font-semibold hover:underline">
-                {c.author.displayName}
-              </Link>{" "}
-              {c.body}
+              <Link href={`/profile/${c.author.username}`} className="font-semibold hover:underline">{c.author.displayName}</Link>{" "}{c.body}
             </div>
           ))}
-          <form onSubmit={submitComment} className="flex gap-2">
-            <input
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              placeholder="Write a comment…"
-              className="flex-1 border rounded-full px-3 py-1 text-sm"
-            />
-            <button type="submit" className="text-brand-600 text-sm font-medium">
-              Send
-            </button>
+          <form onSubmit={submitComment} className="flex gap-2 items-center">
+            <input value={commentText} onChange={(e) => setCommentText(e.target.value)} placeholder="Write a comment…" className="flex-1 border rounded-full px-3 py-1 text-sm" />
+            <EmojiPicker onPick={(emoji) => setCommentText((t) => t + emoji)} />
+            <button type="submit" className="text-brand-600 text-sm font-medium">Send</button>
           </form>
         </div>
       )}
