@@ -39,7 +39,7 @@ export default async function ShopPage({
 
   const productWhere = {
     shopId: shop.id,
-    archivedAt: null,
+    archivedAt: null as Date | null,
     ...(activeCategoryIds ? { categories: { some: { id: { in: activeCategoryIds } } } } : {}),
   };
 
@@ -67,14 +67,6 @@ export default async function ShopPage({
       if (p.categories.some((c) => ids.includes(c.id))) matched.add(p.id);
     }
     return matched.size;
-  }
-
-  function hrefForPage(p: number) {
-    const q = new URLSearchParams();
-    if (activeCategory) q.set("category", activeCategory.slug);
-    if (p > 1) q.set("page", String(p));
-    const s = q.toString();
-    return s ? `/shop/${shop.slug}?${s}` : `/shop/${shop.slug}`;
   }
 
   return (
@@ -162,7 +154,12 @@ export default async function ShopPage({
                   <ProductCard key={p.id} product={{ ...p, shop: { name: shop.name, slug: shop.slug } } as any} />
                 ))}
               </div>
-              <ProductPagination page={Math.min(page, pages)} pageCount={pages} hrefForPage={hrefForPage} />
+              <ProductPagination
+                page={Math.min(page, pages)}
+                pageCount={pages}
+                basePath={`/shop/${shop.slug}`}
+                query={{ category: activeCategory?.slug }}
+              />
             </>
           )}
         </div>

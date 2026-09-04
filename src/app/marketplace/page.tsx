@@ -16,7 +16,7 @@ export default async function MarketplacePage({
   const shopSearch = searchParams.shopSearch?.trim();
   const page = parsePage(searchParams.page);
   const productWhere = {
-    archivedAt: null,
+    archivedAt: null as Date | null,
     ...(searchParams.shop ? { shop: { slug: searchParams.shop } } : {}),
   };
 
@@ -38,15 +38,6 @@ export default async function MarketplacePage({
 
   const pages = pageCount(total);
   const activeShop = searchParams.shop ? shops.find((s) => s.slug === searchParams.shop) : undefined;
-
-  function hrefForPage(p: number) {
-    const q = new URLSearchParams();
-    if (searchParams.shop) q.set("shop", searchParams.shop);
-    if (shopSearch) q.set("shopSearch", shopSearch);
-    if (p > 1) q.set("page", String(p));
-    const s = q.toString();
-    return s ? `/marketplace?${s}` : "/marketplace";
-  }
 
   return (
     <div>
@@ -116,7 +107,12 @@ export default async function MarketplacePage({
                   <ProductCard key={p.id} product={p as any} />
                 ))}
               </div>
-              <ProductPagination page={Math.min(page, pages)} pageCount={pages} hrefForPage={hrefForPage} />
+              <ProductPagination
+                page={Math.min(page, pages)}
+                pageCount={pages}
+                basePath="/marketplace"
+                query={{ shop: searchParams.shop, shopSearch }}
+              />
             </>
           )}
         </div>
