@@ -88,7 +88,7 @@ export default function ShopProductList({
         <p className="text-sm text-gray-500">No products in that category.</p>
       ) : (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             {paged.map((p) => (
               <ShopProductRow key={p.id} product={p} categories={categories} />
             ))}
