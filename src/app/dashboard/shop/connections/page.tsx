@@ -63,18 +63,18 @@ export default function ConnectionsPage() {
   return (
     <div className="max-w-xl mx-auto">
       <div className="flex items-center justify-between mb-1">
-        <h1 className="text-2xl font-bold">Connections</h1>
+        <h1 className="text-2xl font-bold">Import Connectors</h1>
         <Link href="/dashboard/shop" className="text-sm text-brand-600 hover:underline">
           ← Back to shop
         </Link>
       </div>
       <p className="text-sm text-gray-500 mb-4">
-        Connect the catalogs you import from. Credentials are yours alone -- other shops on Mompuffs never see or
-        use them. After you save a source, load it from Import products.
+        These connectors are only for product import. Paste keys from Shopify, BigCommerce, Wix, Square, Stripe,
+        Printify, or Printful, then load that catalog on Import products. Payment keys stay under Payments.
       </p>
       <p className="text-sm mb-4">
         <Link href="/dashboard/shop/help/connections" className="text-brand-600 hover:underline">
-          Where to copy each key →
+          Where to copy each import key →
         </Link>
       </p>
 
@@ -95,17 +95,11 @@ export default function ConnectionsPage() {
                 </div>
                 <div className="flex gap-3">
                   {c.source === "shop" && (
-                    <button
-                      onClick={() => handleDisconnect(c.provider)}
-                      className="text-red-500 text-xs hover:underline"
-                    >
+                    <button onClick={() => handleDisconnect(c.provider)} className="text-red-500 text-xs hover:underline">
                       Disconnect
                     </button>
                   )}
-                  <button
-                    onClick={() => startEditing(c.provider)}
-                    className="text-brand-600 text-xs hover:underline"
-                  >
+                  <button onClick={() => startEditing(c.provider)} className="text-brand-600 text-xs hover:underline">
                     {c.source === "shop" ? "Update" : "Connect"}
                   </button>
                 </div>
@@ -132,10 +126,7 @@ export default function ConnectionsPage() {
                     >
                       {saving ? "Saving…" : "Save"}
                     </button>
-                    <button
-                      onClick={() => setEditingProvider(null)}
-                      className="text-gray-500 text-sm hover:underline"
-                    >
+                    <button onClick={() => setEditingProvider(null)} className="text-gray-500 text-sm hover:underline">
                       Cancel
                     </button>
                   </div>

@@ -8,7 +8,7 @@ const LINKS = [
   { href: "/dashboard/shop/refunds", label: "Refund requests" },
   { href: "/dashboard/shop/categories", label: "Categories" },
   { href: "/dashboard/shop/import", label: "Import products" },
-  { href: "/dashboard/shop/connections", label: "Connections" },
+  { href: "/dashboard/shop/connections", label: "Import Connectors" },
   { href: "/dashboard/shop/payments", label: "Payments" },
   { href: "/dashboard/shop/coupons", label: "Coupons" },
   { href: "/dashboard/shop/shipping", label: "Shipping" },
@@ -45,7 +45,7 @@ export default function ShopManageSidebar() {
         <h3 className="font-semibold text-sm mb-2">Tips</h3>
         <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
           <li>Products you add here show up instantly on the public marketplace.</li>
-          <li>Import from Printify, Printful, a public product URL, or a CSV on the import page.</li>
+          <li>Connect a catalog under Import Connectors, then pull products on the import page.</li>
           <li>
             See{" "}
             <Link href="/dashboard/shop/help" className="text-brand-600 hover:underline">
