@@ -73,3 +73,29 @@ export async function calculateTaxForShop(
 
   return { taxCents, lines };
 }
+
+export async function calculateCartTax({
+  priced,
+  shippingCents,
+  discountCents = 0,
+  address,
+}: {
+  priced: { shopId: string; unitPriceCents: number; quantity: number }[];
+  shippingCents: number;
+  discountCents?: number;
+  address: TaxAddress;
+}): Promise<{ taxCents: number; lines: TaxLine[] }> {
+  const shopIds = Array.from(new Set(priced.map((i) => i.shopId)));
+  let taxCents = 0;
+  const lines: TaxLine[] = [];
+  for (const shopId of shopIds) {
+    const shopItems = priced.filter((i) => i.shopId === shopId);
+    const subtotal = shopItems.reduce((s, i) => s + i.unitPriceCents * i.quantity, 0);
+    const shopDiscount = shopIds.length === 1 ? discountCents : 0;
+    const shopShipping = shopIds.length === 1 ? shippingCents : 0;
+    const result = await calculateTaxForShop(shopId, Math.max(0, subtotal - shopDiscount), shopShipping, address);
+    taxCents += result.taxCents;
+    lines.push(...result.lines);
+  }
+  return { taxCents, lines };
+}

@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { priceCartItems } from "@/lib/checkout";
 import { evaluateCoupon } from "@/lib/coupons";
 import { calculateShippingCents } from "@/lib/shipping";
+import { calculateCartTax } from "@/lib/tax";
 import { sendSaleNotification } from "@/lib/email";
 
 export type AddressInput = {
@@ -27,8 +28,6 @@ function addressFields(prefix: "billing" | "shipping", address?: AddressInput) {
   };
 }
 
-// Shared by every real payment processor's capture step, so all of them
-// price, discount, ship, and record orders identically.
 export async function createPaidOrder({
   buyerId,
   items,
@@ -68,7 +67,20 @@ export async function createPaidOrder({
     couponCodeSnapshot = result.code;
   }
 
-  const finalTotalCents = Math.max(0, totalCents - discountCents) + shippingCents;
+  const dest = shipping || billing || {};
+  const { taxCents } = await calculateCartTax({
+    priced,
+    shippingCents,
+    discountCents,
+    address: {
+      country: dest.country,
+      state: dest.state,
+      postcode: dest.zip,
+      city: dest.city,
+    },
+  });
+
+  const finalTotalCents = Math.max(0, totalCents - discountCents) + shippingCents + taxCents;
 
   const order = await db.$transaction(async (tx) => {
     if (couponId) {
@@ -81,6 +93,7 @@ export async function createPaidOrder({
         totalCents: finalTotalCents,
         discountCents,
         shippingCents,
+        taxCents,
         couponCode: couponCodeSnapshot,
         couponId,
         paymentProvider,
@@ -102,7 +115,6 @@ export async function createPaidOrder({
     });
   });
 
-  // Let each shop owner represented in this order know they made a sale.
   const buyer = await db.user.findUnique({ where: { id: buyerId }, select: { displayName: true } });
   const shopIds = Array.from(new Set(order.items.map((i) => i.product.shopId)));
   const shops = await db.shop.findMany({
@@ -129,5 +141,5 @@ export async function createPaidOrder({
     })
   );
 
-  return { order, finalTotalCents, shippingCents, priced };
+  return { order, finalTotalCents, shippingCents, taxCents, priced };
 }
