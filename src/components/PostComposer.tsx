@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ImageInput from "@/components/ImageInput";
 import VideoInput from "@/components/VideoInput";
+import EmojiPicker from "@/components/EmojiPicker";
 
 export default function PostComposer({ groupId }: { groupId?: string } = {}) {
   const router = useRouter();
@@ -13,6 +14,24 @@ export default function PostComposer({ groupId }: { groupId?: string } = {}) {
   const [videoThumbnailUrl, setVideoThumbnailUrl] = useState("");
   const [attachmentType, setAttachmentType] = useState<"none" | "image" | "video">("none");
   const [posting, setPosting] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  function insertEmoji(emoji: string) {
+    const el = textareaRef.current;
+    if (!el) {
+      setBody((b) => b + emoji);
+      return;
+    }
+    const start = el.selectionStart ?? body.length;
+    const end = el.selectionEnd ?? body.length;
+    const next = body.slice(0, start) + emoji + body.slice(end);
+    setBody(next);
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = start + emoji.length;
+      el.setSelectionRange(pos, pos);
+    });
+  }
 
   function pickImage() {
     setAttachmentType("image");
@@ -54,6 +73,7 @@ export default function PostComposer({ groupId }: { groupId?: string } = {}) {
   return (
     <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow p-4 mb-4 space-y-2">
       <textarea
+        ref={textareaRef}
         value={body}
         onChange={(e) => setBody(e.target.value)}
         placeholder="What's on your mind?"
@@ -83,7 +103,8 @@ export default function PostComposer({ groupId }: { groupId?: string } = {}) {
       )}
 
       <div className="flex items-center justify-between">
-        <div className="flex gap-3 text-xs">
+        <div className="flex gap-3 text-xs items-center">
+          <EmojiPicker onPick={insertEmoji} />
           {attachmentType === "none" && (
             <>
               <button type="button" onClick={pickImage} className="text-brand-600 hover:underline">
