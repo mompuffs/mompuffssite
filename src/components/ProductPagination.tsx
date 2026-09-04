@@ -1,17 +1,33 @@
+"use client";
+
 import Link from "next/link";
 
 export default function ProductPagination({
   page,
   pageCount,
-  hrefForPage,
+  basePath,
+  query,
   onPage,
 }: {
   page: number;
   pageCount: number;
-  hrefForPage?: (page: number) => string;
+  basePath?: string;
+  query?: Record<string, string | undefined>;
   onPage?: (page: number) => void;
 }) {
   if (pageCount <= 1) return null;
+
+  function hrefFor(target: number) {
+    const q = new URLSearchParams();
+    if (query) {
+      for (const [key, value] of Object.entries(query)) {
+        if (value) q.set(key, value);
+      }
+    }
+    if (target > 1) q.set("page", String(target));
+    const s = q.toString();
+    return s ? `${basePath ?? ""}?${s}` : basePath ?? "?";
+  }
 
   const pages: number[] = [];
   const start = Math.max(1, page - 2);
@@ -41,7 +57,7 @@ export default function ProductPagination({
       );
     }
     return (
-      <Link key={`${label}-${target}`} href={hrefForPage ? hrefForPage(target) : `?page=${target}`} className={className}>
+      <Link key={`${label}-${target}`} href={hrefFor(target)} className={className}>
         {label}
       </Link>
     );
