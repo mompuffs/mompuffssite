@@ -35,3 +35,27 @@ export async function POST(req: Request) {
 
   return NextResponse.json(shop, { status: 201 });
 }
+
+export async function PATCH(req: Request) {
+  const user = await getCurrentUser();
+  if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
+
+  const shop = await db.shop.findUnique({ where: { ownerId: user.id } });
+  if (!shop) return NextResponse.json({ error: "You need a shop first." }, { status: 400 });
+
+  const { name, description, bannerUrl } = await req.json();
+  if (!name || !String(name).trim()) {
+    return NextResponse.json({ error: "Shop name is required." }, { status: 400 });
+  }
+
+  const updated = await db.shop.update({
+    where: { id: shop.id },
+    data: {
+      name: String(name).trim(),
+      description: description ? String(description) : null,
+      bannerUrl: bannerUrl ? String(bannerUrl) : null,
+    },
+  });
+
+  return NextResponse.json(updated);
+}
