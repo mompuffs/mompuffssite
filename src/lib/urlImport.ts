@@ -25,11 +25,6 @@ function isPrivateIp(ip: string): boolean {
   return false;
 }
 
-// Blocks requests to loopback/private/link-local addresses -- both by
-// hostname and by resolving DNS first, so a public hostname that resolves to
-// an internal IP (DNS rebinding) is caught too. This lets sellers point the
-// importer at arbitrary public storefronts without it being usable to probe
-// internal network addresses.
 async function assertSafeUrl(rawUrl: string): Promise<URL> {
   let url: URL;
   try {
@@ -128,10 +123,6 @@ function extractJsonLdProductNodes(html: string): any[] {
   return nodes;
 }
 
-// Heuristic for "this is a category/shop page, not a single product page" --
-// such pages commonly mark themselves up as a CollectionPage/ItemList, or
-// simply list more than one Product node. Used only to give a clearer error
-// message when extraction otherwise comes up empty.
 function looksLikeListingPage(html: string, productNodeCount: number): boolean {
   if (productNodeCount > 1) return true;
   const re = /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
@@ -177,10 +168,6 @@ function parsePriceCents(raw: unknown): number | undefined {
   return Math.round(num * 100);
 }
 
-// Fetches a single public product page and extracts what it can from
-// schema.org JSON-LD (preferred, most structured) or Open Graph meta tags
-// (fallback, widely supported by storefront platforms for social sharing).
-// There's no login involved -- only whatever a normal visitor would see.
 export async function scrapeProductFromUrl(rawUrl: string): Promise<ImportableProduct> {
   const url = await assertSafeUrl(rawUrl);
   const html = await fetchTextCapped(url.toString());
@@ -201,9 +188,6 @@ export async function scrapeProductFromUrl(rawUrl: string): Promise<ImportablePr
     const img = Array.isArray(ld.image) ? ld.image[0] : ld.image;
     imageUrl = typeof img === "string" ? img : img?.url;
     const offers = Array.isArray(ld.offers) ? ld.offers[0] : ld.offers;
-    // Most sites put the price directly on the Offer (offers.price), but some
-    // WooCommerce/Yoast setups nest it a level deeper under a
-    // priceSpecification (array or single object) instead -- check both.
     const priceSpec = Array.isArray(offers?.priceSpecification)
       ? offers.priceSpecification[0]
       : offers?.priceSpecification;
@@ -251,14 +235,9 @@ export async function scrapeProductFromUrl(rawUrl: string): Promise<ImportablePr
   };
 }
 
-const MAX_LISTING_PAGES_TO_FOLLOW = 3;
-export const MAX_DISCOVER_COUNT = 50;
+const MAX_LISTING_PAGES_TO_FOLLOW = 20;
+export const MAX_DISCOVER_COUNT = 100;
 
-// Pulls same-origin links whose path looks like an individual product page
-// (contains "/product/" or "/products/" as a path segment -- covers
-// WooCommerce and Shopify's conventions, the two most common storefront
-// platforms). Dedupes and strips query/hash so the same product linked
-// several times (image, title, "select options") only counts once.
 function extractProductLinks(html: string, baseUrl: URL): string[] {
   const links: string[] = [];
   const seen = new Set<string>();
@@ -284,8 +263,6 @@ function extractProductLinks(html: string, baseUrl: URL): string[] {
   return links;
 }
 
-// Standard WordPress/WooCommerce (and many other platforms') pagination
-// marks the "next page" link with rel="next" -- check both attribute orders.
 function extractNextPageUrl(html: string, baseUrl: URL): URL | null {
   const m =
     html.match(/<a\s[^>]*rel=["']next["'][^>]*href=["']([^"']+)["']/i) ||
@@ -299,10 +276,6 @@ function extractNextPageUrl(html: string, baseUrl: URL): URL | null {
   }
 }
 
-// Finds up to `maxCount` product page URLs starting from a shop/category
-// listing page, following "next page" pagination (bounded) if more are
-// needed. Used to bulk-populate the URL importer from one shop page instead
-// of pasting every product URL by hand.
 export async function discoverProductUrls(rawListingUrl: string, maxCount: number): Promise<string[]> {
   const cappedMax = Math.max(1, Math.min(Math.floor(maxCount) || 1, MAX_DISCOVER_COUNT));
   let currentUrl = await assertSafeUrl(rawListingUrl);
