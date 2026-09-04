@@ -75,6 +75,11 @@ export default async function ShopDashboardPage() {
               </Link>
             </li>
             <li>
+              <Link href="/dashboard/shop/categories" className="text-brand-600 hover:underline">
+                Categories
+              </Link>
+            </li>
+            <li>
               <Link href="/dashboard/shop/import" className="text-brand-600 hover:underline">
                 Import products
               </Link>
@@ -99,6 +104,16 @@ export default async function ShopDashboardPage() {
                 Shipping
               </Link>
             </li>
+            <li>
+              <Link href="/dashboard/shop/admin-settings" className="text-brand-600 hover:underline">
+                Shop settings
+              </Link>
+            </li>
+            <li>
+              <Link href="/dashboard/shop/help" className="text-brand-600 hover:underline">
+                Help &amp; Support
+              </Link>
+            </li>
           </ul>
         </div>
 
@@ -106,8 +121,14 @@ export default async function ShopDashboardPage() {
           <h3 className="font-semibold text-sm mb-2">Tips</h3>
           <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
             <li>Products you add here show up instantly on the public marketplace.</li>
-            <li>Link a product to a post from the feed composer to promote it (coming soon).</li>
-            <li>Import products from Printify, Printful, a public product URL, or a CSV file from the import page.</li>
+            <li>Import from Printify, Printful, a public product URL, or a CSV on the import page.</li>
+            <li>
+              See{" "}
+              <Link href="/dashboard/shop/help" className="text-brand-600 hover:underline">
+                Help &amp; Support
+              </Link>{" "}
+              for what each dashboard page does.
+            </li>
           </ul>
         </div>
       </div>
