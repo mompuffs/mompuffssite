@@ -10,6 +10,11 @@ import { buildProductCsvTemplate } from "@/lib/csvProducts";
 const PROVIDERS = [
   { id: "printify", label: "Printify" },
   { id: "printful", label: "Printful" },
+  { id: "shopify", label: "Shopify" },
+  { id: "bigcommerce", label: "BigCommerce" },
+  { id: "wix", label: "Wix" },
+  { id: "square", label: "Square" },
+  { id: "stripe", label: "Stripe" },
 ];
 
 type CatalogItem = {
@@ -66,7 +71,6 @@ function ImportItemCard({
       <div className="p-3">
         <p className="font-medium text-sm truncate">{item.title}</p>
         <p className="text-brand-600 text-sm font-semibold">{formatCents(item.priceCents, item.currency)}</p>
-
         <button onClick={onToggleExpand} className="mt-2 text-xs text-gray-600 hover:underline">
           {selectedIds.length > 0 ? `Categories (${selectedIds.length}) ▾` : "Set categories ▾"}
         </button>
@@ -75,7 +79,6 @@ function ImportItemCard({
             <CategoryPicker categories={categories} selectedIds={selectedIds} onChange={onCategoriesChange} />
           </div>
         )}
-
         <button
           onClick={onImport}
           disabled={importing || alreadyImported}
@@ -90,32 +93,23 @@ function ImportItemCard({
 
 export default function ImportPage() {
   const router = useRouter();
-
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<Record<string, string[]>>({});
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [importingId, setImportingId] = useState<string | null>(null);
-
-  // Print-on-demand catalog import
   const [provider, setProvider] = useState("printify");
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Website URL import -- bulk from a shop/category listing page
   const [urlResults, setUrlResults] = useState<UrlPreviewResult[]>([]);
   const [listingUrl, setListingUrl] = useState("");
   const [listingMaxCount, setListingMaxCount] = useState(10);
   const [listingLoading, setListingLoading] = useState(false);
   const [listingError, setListingError] = useState<string | null>(null);
-
-  // CSV bulk import
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvUploading, setCsvUploading] = useState(false);
   const [csvError, setCsvError] = useState<string | null>(null);
-  const [csvResult, setCsvResult] = useState<{ created: number; errors: { row: number; reason: string }[] } | null>(
-    null
-  );
+  const [csvResult, setCsvResult] = useState<{ created: number; errors: { row: number; reason: string }[] } | null>(null);
 
   useEffect(() => {
     fetch("/api/categories")
@@ -157,7 +151,6 @@ export default function ImportPage() {
 
   function applyUrlResults(results: UrlPreviewResult[]) {
     setUrlResults(results);
-
     const preselected: Record<string, string[]> = {};
     for (const r of results) {
       if (r.ok && r.item) {
@@ -201,13 +194,11 @@ export default function ImportPage() {
         imageUrl: item.imageUrl,
         priceCents: item.priceCents,
         raw: item.raw,
-        categoryIds: selectedCategories[item.externalId] ?? [],
-      }),
+        categoryIds: selectedCategories[item.externalId] ?? []},
+      ),
     });
     setImportingId(null);
     if (res.status === 409) {
-      // Someone else (or another tab) imported this exact URL in the meantime --
-      // reflect that in this preview instead of silently failing.
       setUrlResults((prev) => prev.map((r) => (r.url === item.externalId ? { ...r, alreadyImported: true } : r)));
       return;
     }
@@ -261,14 +252,11 @@ export default function ImportPage() {
         </Link>
       </div>
       <p className="text-sm text-gray-500 mb-6">
-        Pull products into your Mompuffs shop from a connected print-on-demand account, a public product page, or a
-        CSV file.
+        Pull products from a connected catalog (Printify, Printful, Shopify, BigCommerce, Wix, Square, Stripe), a public page, or a CSV file.
       </p>
-
-      {/* Print-on-demand catalog import */}
       <section className="mb-10">
-        <h2 className="text-lg font-semibold mb-2">From Printify / Printful</h2>
-        <div className="flex gap-2 mb-4">
+        <h2 className="text-lg font-semibold mb-2">From a connected catalog</h2>
+        <div className="flex flex-wrap gap-2 mb-4">
           {PROVIDERS.map((p) => (
             <button
               key={p.id}
@@ -283,7 +271,6 @@ export default function ImportPage() {
             </button>
           ))}
         </div>
-
         {loading && <p className="text-gray-500 text-sm">Loading catalog…</p>}
         {error && (
           <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3 max-w-lg">
@@ -296,7 +283,6 @@ export default function ImportPage() {
         {!loading && !error && items.length === 0 && (
           <p className="text-sm text-gray-500">Click a provider above to load your products from that account.</p>
         )}
-
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-2">
           {items.map((item) => (
             <ImportItemCard
@@ -313,13 +299,10 @@ export default function ImportPage() {
           ))}
         </div>
       </section>
-
-      {/* Website URL import */}
       <section className="mb-10 border-t pt-6">
         <h2 className="text-lg font-semibold mb-1">From a website</h2>
         <p className="text-sm text-gray-500 mb-3 max-w-xl">
-          Paste a shop or category page from a public storefront and how many products to grab — we'll find the
-          product links on it (following "next page" if needed) and preview each one below. No login needed.
+          Paste a shop or category page from a public storefront and how many products to grab.
         </p>
         <div className="flex gap-2 max-w-xl">
           <input
@@ -335,7 +318,6 @@ export default function ImportPage() {
             value={listingMaxCount}
             onChange={(e) => setListingMaxCount(Number(e.target.value))}
             className="w-20 border rounded px-2 py-1.5 text-sm"
-            aria-label="Maximum products to import"
           />
           <button
             onClick={discoverFromListing}
@@ -348,7 +330,6 @@ export default function ImportPage() {
         {listingError && (
           <p className="mt-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3 max-w-xl">{listingError}</p>
         )}
-
         {urlFailedResults.length > 0 && (
           <div className="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3 max-w-xl space-y-1">
             {urlFailedResults.map((r) => (
@@ -358,7 +339,6 @@ export default function ImportPage() {
             ))}
           </div>
         )}
-
         {urlOkResults.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
             {urlOkResults.map((r) => {
@@ -381,19 +361,11 @@ export default function ImportPage() {
           </div>
         )}
       </section>
-
-      {/* CSV bulk import */}
       <section className="border-t pt-6">
         <h2 className="text-lg font-semibold mb-1">From a CSV file</h2>
-        <p className="text-sm text-gray-500 mb-3">
-          Upload a spreadsheet to add many products at once. Categories are created automatically if they don't
-          exist yet — separate multiple with <code>;</code>, and nest one level with <code>&gt;</code> (e.g.{" "}
-          <code>Household &gt; Cups and Mugs</code>).
-        </p>
         <button onClick={downloadCsvTemplate} className="text-sm text-brand-600 hover:underline mb-3 block">
           Download CSV template →
         </button>
-
         <input
           type="file"
           accept=".csv,text/csv"
@@ -413,25 +385,12 @@ export default function ImportPage() {
             {csvUploading ? "Importing…" : "Upload & import"}
           </button>
         </div>
-
-        {csvError && (
-          <p className="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3 max-w-lg">{csvError}</p>
-        )}
+        {csvError && <p className="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3 max-w-lg">{csvError}</p>}
         {csvResult && (
           <div className="mt-3 text-sm max-w-xl">
             <p className="text-green-700 bg-green-50 border border-green-200 rounded p-3">
               Imported {csvResult.created} product{csvResult.created === 1 ? "" : "s"}.
             </p>
-            {csvResult.errors.length > 0 && (
-              <div className="mt-2 text-red-700 bg-red-50 border border-red-200 rounded p-3 space-y-1">
-                <p className="font-medium">{csvResult.errors.length} row(s) skipped:</p>
-                {csvResult.errors.map((e, i) => (
-                  <p key={i}>
-                    Row {e.row}: {e.reason}
-                  </p>
-                ))}
-              </div>
-            )}
           </div>
         )}
       </section>
