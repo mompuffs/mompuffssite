@@ -5,6 +5,20 @@ import { stripHtml } from "@/lib/pod/html";
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_RESPONSE_BYTES = 3_000_000;
 
+export function normalizeSourceUrl(raw: string): string {
+  try {
+    const u = new URL(raw.trim());
+    u.hash = "";
+    u.hostname = u.hostname.toLowerCase();
+    if (u.pathname.length > 1 && u.pathname.endsWith("/")) {
+      u.pathname = u.pathname.slice(0, -1);
+    }
+    return u.toString();
+  } catch {
+    return raw.trim();
+  }
+}
+
 function isPrivateIp(ip: string): boolean {
   const v4 = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (v4) {
@@ -222,8 +236,9 @@ export async function scrapeProductFromUrl(rawUrl: string): Promise<ImportablePr
     );
   }
 
+  const sourceUrl = normalizeSourceUrl(url.toString());
   return {
-    externalId: url.toString(),
+    externalId: sourceUrl,
     title: (stripHtml(title) || title).trim(),
     description: description ? stripHtml(description) : undefined,
     imageUrl,
@@ -231,7 +246,7 @@ export async function scrapeProductFromUrl(rawUrl: string): Promise<ImportablePr
     currency,
     variants: [],
     categoryHint,
-    raw: { sourceUrl: url.toString() },
+    raw: { sourceUrl },
   };
 }
 
@@ -254,7 +269,7 @@ function extractProductLinks(html: string, baseUrl: URL): string[] {
     if (!/\/products?\//i.test(resolved.pathname)) continue;
     resolved.search = "";
     resolved.hash = "";
-    const key = resolved.toString();
+    const key = normalizeSourceUrl(resolved.toString());
     if (!seen.has(key)) {
       seen.add(key);
       links.push(key);
@@ -276,7 +291,11 @@ function extractNextPageUrl(html: string, baseUrl: URL): URL | null {
   }
 }
 
-export async function discoverProductUrls(rawListingUrl: string, maxCount: number): Promise<string[]> {
+export async function discoverProductUrls(
+  rawListingUrl: string,
+  maxCount: number,
+  skipNormalizedUrls: Set<string> = new Set()
+): Promise<string[]> {
   const cappedMax = Math.max(1, Math.min(Math.floor(maxCount) || 1, MAX_DISCOVER_COUNT));
   let currentUrl = await assertSafeUrl(rawListingUrl);
   const found: string[] = [];
@@ -290,7 +309,9 @@ export async function discoverProductUrls(rawListingUrl: string, maxCount: numbe
     const html = await fetchTextCapped(pageKey);
     for (const link of extractProductLinks(html, currentUrl)) {
       if (found.length >= cappedMax) break;
-      if (!found.includes(link)) found.push(link);
+      const normalized = normalizeSourceUrl(link);
+      if (skipNormalizedUrls.has(normalized)) continue;
+      if (!found.includes(normalized)) found.push(normalized);
     }
     if (found.length >= cappedMax) break;
 
@@ -300,7 +321,11 @@ export async function discoverProductUrls(rawListingUrl: string, maxCount: numbe
   }
 
   if (found.length === 0) {
-    throw new Error("Couldn't find any product links on that page.");
+    throw new Error(
+      skipNormalizedUrls.size > 0
+        ? "Every product on that page is already in your shop."
+        : "Couldn't find any product links on that page."
+    );
   }
   return found.slice(0, cappedMax);
 }
