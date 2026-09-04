@@ -9,3 +9,490 @@ datasource db {
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  username      String   @unique
+  passwordHash  String
+  displayName   String
+  bio           String?
+  avatarUrl     String?
+  // Optional profile-detail sections, each with its own show/hide flag so a
+  // member can fill one in without it appearing on their public profile.
+  work          String?
+  location      String?
+  birthdate     DateTime?
+  links         String?  // JSON array of {label, url}
+  contactEmail  String?
+  contactPhone  String?
+  showWork      Boolean  @default(false)
+  showLocation  Boolean  @default(false)
+  showBirthdate Boolean  @default(false)
+  showLinks     Boolean  @default(false)
+  showContact   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  // Grants access to the /admin area (user/content moderation, platform-wide
+  // stats). Not settable from any user-facing form -- only ever flipped by
+  // another admin from the admin Users page, or directly in the database.
+  isAdmin       Boolean  @default(false)
+  // Last time this user opened the notification bell -- used to compute
+  // "new since you last checked" for friend posts (unread messages already
+  // have their own per-message readAt).
+  notificationsCheckedAt DateTime?
+  // Bumped by a periodic client-side heartbeat while the app is open in a
+  // tab; someone is considered "online" if this is within the last few
+  // minutes (see src/lib/presence.ts) rather than a true persistent
+  // connection -- good enough for a "Friends Online" list without adding
+  // websockets.
+  lastActiveAt  DateTime?
+
+  posts         Post[]
+  comments      Comment[]
+  likes         Like[]
+
+  following     Follow[]  @relation("Follower")
+  followers     Follow[]  @relation("Following")
+
+  sentFriendRequests     FriendRequest[] @relation("SentFriendRequests")
+  receivedFriendRequests FriendRequest[] @relation("ReceivedFriendRequests")
+  blocking               Block[]         @relation("BlockingUsers")
+  blockedBy              Block[]         @relation("BlockedUsers")
+  sentMessages           Message[]       @relation("SentMessages")
+  receivedMessages       Message[]       @relation("ReceivedMessages")
+
+  shop          Shop?
+  orders        Order[]
+  passwordResetTokens PasswordResetToken[]
+  ownedGroups   Group[]           @relation("OwnedGroups")
+  groupMemberships GroupMembership[]
+}
+
+// Single-use, short-lived tokens for the "forgot password" flow. Only the
+// SHA-256 hash is stored -- the raw token exists only in the emailed link,
+// same principle as a password hash, so a DB read alone can't be used to
+// take over an account.
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Mutual, approval-based relationship (distinct from the one-way Follow
+// above). A single row represents the relationship in both directions --
+// "are A and B friends" is answered by matching either sender/receiver
+// order with status ACCEPTED, so unfriending/cancelling just touches one row.
+model FriendRequest {
+  id          String    @id @default(cuid())
+  sender      User      @relation("SentFriendRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId    String
+  receiver    User      @relation("ReceivedFriendRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiverId  String
+  status      String    @default("PENDING") // "PENDING" | "ACCEPTED" | "DECLINED"
+  createdAt   DateTime  @default(now())
+  respondedAt DateTime?
+
+  @@unique([senderId, receiverId])
+}
+
+// One-directional block. Blocking someone tears down any existing Follow
+// (both directions) and FriendRequest between the two users, and prevents
+// new follows/friend requests/messages either way while active.
+model Block {
+  id        String   @id @default(cuid())
+  blocker   User     @relation("BlockingUsers", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockerId String
+  blocked   User     @relation("BlockedUsers", fields: [blockedId], references: [id], onDelete: Cascade)
+  blockedId String
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+}
+
+// Private direct message. Conversations are derived on read (grouped by the
+// other participant) rather than tracked in a separate model.
+model Message {
+  id          String    @id @default(cuid())
+  sender      User      @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  senderId    String
+  recipient   User      @relation("ReceivedMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  recipientId String
+  body        String
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([senderId, recipientId])
+  @@index([recipientId, senderId])
+}
+
+model Follow {
+  id          String   @id @default(cuid())
+  follower    User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followerId  String
+  following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  followingId String
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+}
+
+model Post {
+  id        String    @id @default(cuid())
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  body      String
+  imageUrl  String?
+  videoUrl          String?
+  videoThumbnailUrl String?
+  // Optional: a post can showcase a product from the author's shop
+  product   Product?  @relation(fields: [productId], references: [id])
+  productId String?
+  // Optional: a post made inside a group instead of on the author's own
+  // wall. Visibility in the main feed depends on the group's own
+  // visibility (see Group.visibility) -- handled in the feed query, not
+  // enforced by the schema.
+  group     Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String?
+  createdAt DateTime  @default(now())
+  editedAt  DateTime?
+
+  comments  Comment[]
+  likes     Like[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+  body      String
+  createdAt DateTime @default(now())
+}
+
+model Like {
+  id        String   @id @default(cuid())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+}
+
+// A Shop is a member-owned storefront. One shop per user in this prototype.
+model Shop {
+  id          String    @id @default(cuid())
+  owner       User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId     String    @unique
+  slug        String    @unique
+  name        String
+  description String?
+  bannerUrl   String?
+  // Default per-order shipping charge, used by any product left on "FLAT"
+  // shipping mode (see Product.shippingMode).
+  flatShippingCents Int @default(0)
+  // Bumped once per page load on the public shop page -- a loose page-view
+  // count (not deduped per visitor), used only to rank the "Top Shops"
+  // sidebar block, not for anything billing/analytics-critical.
+  visitCount  Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  products    Product[]
+  podConnections PodConnection[]
+  paymentConnections PaymentConnection[]
+  coupons     Coupon[]
+  categories  Category[]
+  refundRequests RefundRequest[]
+}
+
+// A member community with its own post feed. Visibility and join policy
+// are each chosen independently by the owner at creation time:
+//   visibility: "PUBLIC"  -- listed/searchable to everyone, posts also
+//                             surface in every member's (and every other
+//                             user's) main feed, same as a normal post.
+//               "PRIVATE" -- still listed/searchable (like most platforms'
+//                             private groups), but posts only show in the
+//                             group's own page and in members' main feeds.
+//   joinPolicy: "OPEN"     -- joining creates an ACTIVE membership immediately.
+//               "APPROVAL" -- joining creates a PENDING membership; the
+//                             owner approves/declines it (see GroupMembership).
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  topic       String?
+  description String?
+  avatarUrl   String?
+  visibility  String   @default("PUBLIC")
+  joinPolicy  String   @default("OPEN")
+  owner       User     @relation("OwnedGroups", fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId     String
+  createdAt   DateTime @default(now())
+
+  members     GroupMembership[]
+  posts       Post[]
+}
+
+model GroupMembership {
+  id       String   @id @default(cuid())
+  group    Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId  String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String
+  // "ACTIVE" -- a real member, counts toward the group's member count and
+  // can post/view the group feed. "PENDING" -- requested to join an
+  // APPROVAL group and is waiting on the owner.
+  status   String   @default("ACTIVE")
+  joinedAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+}
+
+// Per-shop POD provider credentials, so each seller connects their own
+// Printify/Printful account rather than sharing one platform-wide
+// connection. apiKey/extra are stored encrypted (see src/lib/crypto.ts).
+model PodConnection {
+  id        String   @id @default(cuid())
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId    String
+  provider  String   // "PRINTIFY" | "PRINTFUL"
+  apiKey    String   // encrypted
+  extra     String?  // encrypted JSON blob for provider-specific fields (e.g. Printify shopId)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([shopId, provider])
+}
+
+// Per-shop payment processor credentials (Stripe, PayPal, Square, or a
+// custom one like Authorize.net). Encrypted like PodConnection, and just as
+// strictly per-shop -- no shared/platform-wide fallback.
+model PaymentConnection {
+  id          String   @id @default(cuid())
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId      String
+  provider    String   // "STRIPE" | "PAYPAL" | "SQUARE" | "CUSTOM"
+  // Stable per-connection identifier: "stripe"/"paypal"/"square" for built-ins,
+  // a slugified name (e.g. "authorize-net") for custom ones so a shop can add
+  // more than one custom processor.
+  slug        String
+  displayName String
+  apiKey      String   // encrypted -- the primary secret/token
+  extra       String?  // encrypted JSON blob for additional fields
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([shopId, slug])
+}
+
+// Shop-scoped discount code. A coupon only discounts the line items that
+// belong to its own shop -- a multi-vendor cart checkout applies it just to
+// that shop's subtotal, not the whole order.
+model Coupon {
+  id            String    @id @default(cuid())
+  shop          Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId        String
+  code          String    // stored uppercase, matched case-insensitively
+  type          String    // "PERCENT" | "FIXED"
+  // PERCENT: 1-100 (whole percent off); FIXED: cents off
+  amount        Int
+  isActive      Boolean   @default(true)
+  maxUses       Int?      // null = unlimited
+  usedCount     Int       @default(0)
+  expiresAt     DateTime?
+  minOrderCents Int?      // minimum subtotal (of this shop's items) to qualify
+  createdAt     DateTime  @default(now())
+
+  orders        Order[]
+
+  @@unique([shopId, code])
+}
+
+// NOTE: SQLite has no native enum support in Prisma, so ProductSource and
+// OrderStatus are plain strings here instead of `enum` blocks. The
+// application code treats them as closed sets:
+//   Product.source -> "MANUAL" | "PRINTIFY" | "PRINTFUL" | "CSV" | "URL"
+//   Order.status   -> "PENDING" | "PAID" | "FULFILLED" | "CANCELLED"
+// If you migrate to Postgres/MySQL for production, you can convert these
+// back to real `enum` types.
+
+model Product {
+  id            String        @id @default(cuid())
+  shop          Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId        String
+  title         String
+  description   String?
+  priceCents    Int
+  currency      String        @default("USD")
+  imageUrl      String?
+  // Optional product video (e.g. a quick demo/unboxing clip), manually
+  // uploaded from the "Add a product" form -- not populated by any of the
+  // import paths (POD/CSV/URL), which have no video source to pull from.
+  videoUrl          String?
+  videoThumbnailUrl String?
+  source        String        @default("MANUAL")
+  // "FLAT" -- uses the shop's flatShippingCents; "PRODUCT" -- uses this
+  // product's own shippingCents instead (e.g. a heavier/oversized item);
+  // "FREE" -- always $0, overriding the shop's flat rate for this item.
+  shippingMode  String        @default("FLAT")
+  shippingCents Int           @default(0)
+  // Original ID from the POD provider's catalog, if imported
+  externalId    String?
+  externalMeta  String?       // raw JSON blob from the provider, for reference/debugging
+  createdAt     DateTime      @default(now())
+  // Set when the shop owner hits Remove. OrderItem.productId is required, so
+  // a hard delete fails for anything that has ever sold. Archived products
+  // stay in the DB for order history but are hidden from shop/marketplace.
+  archivedAt    DateTime?
+
+  posts         Post[]
+  orderItems    OrderItem[]
+  variants      ProductVariant[]
+  categories    Category[]    @relation("ProductCategories")
+  images        ProductImage[]
+}
+
+// Extra gallery photos beyond the product's primary imageUrl (e.g. front/back/
+// lifestyle shots from an import, or additional manual uploads). Purely
+// supplementary -- cart/order/marketplace snapshots keep using Product.imageUrl.
+model ProductImage {
+  id        String   @id @default(cuid())
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  url       String
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+// Two-level category tree (e.g. Apparel -> Men's Apparel), scoped per shop.
+// A product can belong to any number of categories at once, so a design
+// "collection" (e.g. "Mom Puffs") and a type category (e.g. "Men's Apparel")
+// can both apply to the same product.
+model Category {
+  id        String     @id @default(cuid())
+  shop      Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId    String
+  name      String
+  slug      String
+  parent    Category?  @relation("CategoryChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  parentId  String?
+  children  Category[] @relation("CategoryChildren")
+  products  Product[]  @relation("ProductCategories")
+  createdAt DateTime   @default(now())
+
+  @@unique([shopId, slug])
+}
+
+// Imported POD products may have multiple purchasable options (e.g. size/color),
+// each with its own price. Manually-added products have no variants -- the
+// base Product.priceCents is used directly in that case.
+model ProductVariant {
+  id          String      @id @default(cuid())
+  product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId   String
+  // Original variant ID from the POD provider's catalog
+  externalId  String?
+  label       String
+  priceCents  Int
+  currency    String      @default("USD")
+  isAvailable Boolean     @default(true)
+  // Variant-specific photo (e.g. the mockup for this color), if the provider has one
+  imageUrl    String?
+  // JSON map of option name -> value, e.g. {"Colors":"Black","Sizes":"S"}, used to
+  // group the variant picker (by color, by size, ...) instead of a flat list
+  optionsJson String?
+  createdAt   DateTime    @default(now())
+
+  orderItems  OrderItem[]
+}
+
+// Orders paid via a real processor (e.g. PayPal) carry paymentProvider +
+// externalPaymentId (the capture ID) for refund lookups; orders placed
+// through the simulated flow leave both null.
+model Order {
+  id                String      @id @default(cuid())
+  buyer             User        @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  buyerId           String
+  status            String      @default("PENDING")
+  totalCents        Int
+  discountCents     Int         @default(0)
+  shippingCents     Int         @default(0)
+  couponCode        String?     // snapshot, so order history reads correctly if the coupon is later deleted
+  coupon            Coupon?     @relation(fields: [couponId], references: [id])
+  couponId          String?
+  paymentProvider   String?     // "PAYPAL" | "STRIPE" | "SQUARE" | null (simulated)
+  externalPaymentId String?     // processor's capture/charge ID, for refunds
+  contactPhone      String?
+  billingName       String?
+  billingAddress1   String?
+  billingAddress2   String?
+  billingCity       String?
+  billingState      String?
+  billingZip        String?
+  billingCountry    String?
+  shippingName      String?
+  shippingAddress1  String?
+  shippingAddress2  String?
+  shippingCity      String?
+  shippingState     String?
+  shippingZip       String?
+  shippingCountry   String?
+  createdAt         DateTime    @default(now())
+
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id             String          @id @default(cuid())
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId        String
+  product        Product         @relation(fields: [productId], references: [id])
+  productId      String
+  variant        ProductVariant? @relation(fields: [variantId], references: [id])
+  variantId      String?
+  // Snapshot of the variant's label at purchase time, so order history still
+  // reads correctly even if the variant is later removed/changed.
+  variantLabel   String?
+  quantity       Int             @default(1)
+  unitPriceCents Int
+  // Set when the SELLING shop marks its portion of this order complete.
+  // Independent per shop, so a multi-vendor order can have one shop's items
+  // fulfilled while another shop's are still open.
+  fulfilledAt    DateTime?
+
+  refundRequests RefundRequest[]
+}
+
+// A buyer-initiated refund request on a single order line item. Scoped per
+// item (not per whole order) for the same reason OrderItem.fulfilledAt is
+// per-shop, not per-order: a multi-vendor order's shops act independently.
+// Approving/denying here is a status change only -- it does NOT move money.
+// The shop owner still issues the actual refund from their own Stripe/PayPal
+// dashboard (see refundPaymentIntent()/refundCapture() in src/lib/payments,
+// which exist but are intentionally not wired up to this flow).
+model RefundRequest {
+  id            String     @id @default(cuid())
+  orderItem     OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  orderItemId   String
+  // Denormalized so a shop's refund queue can be listed directly, without
+  // joining through OrderItem -> Product -> Shop for every row.
+  shop          Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  shopId        String
+  reason        String
+  // "PENDING" | "APPROVED" | "DENIED"
+  status        String     @default("PENDING")
+  // Optional note from the shop owner explaining the approve/deny decision.
+  responseNote  String?
+  createdAt     DateTime   @default(now())
+  respondedAt   DateTime?
+
+  @@index([shopId, status])
+  @@index([orderItemId])
+}
