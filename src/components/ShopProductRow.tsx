@@ -19,6 +19,7 @@ export default function ShopProductRow({
     source: string;
     shippingMode: string;
     shippingCents: number;
+    imageUrl?: string | null;
     videoUrl: string | null;
     videoThumbnailUrl: string | null;
     categories: { id: string; name: string }[];
@@ -128,134 +129,148 @@ export default function ShopProductRow({
 
   if (removed) return null;
 
+  const btn = "text-brand-600 hover:underline text-xs";
+
   return (
-    <div className="border-b py-2 text-sm">
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <p className="font-medium">{product.title}</p>
-          <p className="text-gray-500 text-xs">
-            {product.source}
-            {product.categories.length > 0 && ` · ${product.categories.map((c) => c.name).join(", ")}`}
-          </p>
-          {removeError && <p className="text-red-500 text-xs mt-1">{removeError}</p>}
-        </div>
-        <div className="flex items-center gap-3 flex-shrink-0 flex-wrap justify-end">
-          <span>{formatCents(product.priceCents, product.currency)}</span>
-          <button onClick={() => setEditingTitle((e) => !e)} className="text-brand-600 hover:underline">
+    <div className="bg-white rounded-xl shadow overflow-hidden">
+      <div className="aspect-square bg-gray-100 flex items-center justify-center">
+        {product.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={product.imageUrl} alt={product.title} className="w-full h-full object-cover" />
+        ) : (
+          <span className="text-gray-400 text-sm">No image</span>
+        )}
+      </div>
+      <div className="p-3">
+        <p className="font-medium text-sm truncate">{product.title}</p>
+        <p className="text-brand-600 font-semibold text-sm">{formatCents(product.priceCents, product.currency)}</p>
+        <p className="text-xs text-gray-500 truncate">
+          {product.source}
+          {product.categories.length > 0 && ` · ${product.categories.map((c) => c.name).join(", ")}`}
+        </p>
+        {removeError && <p className="text-red-500 text-xs mt-1">{removeError}</p>}
+
+        <div className="flex flex-wrap gap-x-2 gap-y-1 mt-2">
+          <button type="button" onClick={() => setEditingTitle((e) => !e)} className={btn}>
             {editingTitle ? "Cancel" : "Title"}
           </button>
-          <button onClick={() => setEditingDescription((e) => !e)} className="text-brand-600 hover:underline">
+          <button type="button" onClick={() => setEditingDescription((e) => !e)} className={btn}>
             {editingDescription ? "Cancel" : "Description"}
           </button>
-          <button onClick={() => setEditingCategories((e) => !e)} className="text-brand-600 hover:underline">
+          <button type="button" onClick={() => setEditingCategories((e) => !e)} className={btn}>
             {editingCategories ? "Cancel" : "Categories"}
           </button>
-          <button onClick={() => setEditingShipping((e) => !e)} className="text-brand-600 hover:underline">
+          <button type="button" onClick={() => setEditingShipping((e) => !e)} className={btn}>
             {editingShipping ? "Cancel" : "Shipping"}
           </button>
-          <button onClick={() => setEditingVideo((e) => !e)} className="text-brand-600 hover:underline">
+          <button type="button" onClick={() => setEditingVideo((e) => !e)} className={btn}>
             {editingVideo ? "Cancel" : product.videoUrl ? "Video" : "+ Video"}
           </button>
-          <button onClick={handleDelete} disabled={removing} className="text-red-500 hover:underline disabled:opacity-60">
+          <button type="button" onClick={handleDelete} disabled={removing} className="text-red-500 hover:underline text-xs disabled:opacity-60">
             {removing ? "Removing…" : "Remove"}
           </button>
         </div>
-      </div>
 
-      {editingTitle && (
-        <div className="mt-2">
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full border rounded px-2 py-1.5 text-sm"
-            placeholder="Title"
-          />
-          <button
-            onClick={saveTitle}
-            disabled={savingTitle || !title.trim()}
-            className="mt-2 bg-brand-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
-          >
-            {savingTitle ? "Saving…" : "Save title"}
-          </button>
-        </div>
-      )}
-
-      {editingDescription && (
-        <div className="mt-2">
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            className="w-full border rounded px-2 py-1.5 text-sm resize-none"
-            placeholder="Description"
-          />
-          <button
-            onClick={saveDescription}
-            disabled={savingDescription}
-            className="mt-2 bg-brand-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
-          >
-            {savingDescription ? "Saving…" : "Save description"}
-          </button>
-        </div>
-      )}
-
-      {editingShipping && (
-        <div className="mt-2 flex gap-2 items-start">
-          <select
-            value={shippingMode}
-            onChange={(e) => setShippingMode(e.target.value)}
-            className="border rounded px-2 py-1.5 text-sm"
-          >
-            <option value="FLAT">Shop's flat rate</option>
-            <option value="PRODUCT">Custom for this product</option>
-            <option value="FREE">Free shipping</option>
-          </select>
-          {shippingMode === "PRODUCT" && (
+        {editingTitle && (
+          <div className="mt-2">
             <input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="Shipping cost (USD)"
-              value={shippingCost}
-              onChange={(e) => setShippingCost(e.target.value)}
-              className="border rounded px-2 py-1.5 text-sm w-40"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full border rounded px-2 py-1.5 text-sm"
+              placeholder="Title"
             />
-          )}
-          <button
-            onClick={saveShipping}
-            disabled={savingShipping}
-            className="bg-brand-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
-          >
-            {savingShipping ? "Saving…" : "Save"}
-          </button>
-        </div>
-      )}
+            <button
+              type="button"
+              onClick={saveTitle}
+              disabled={savingTitle || !title.trim()}
+              className="mt-2 bg-brand-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
+            >
+              {savingTitle ? "Saving…" : "Save title"}
+            </button>
+          </div>
+        )}
 
-      {editingVideo && (
-        <div className="mt-2">
-          <VideoInput url={video.url} thumbnailUrl={video.thumbnailUrl} onChange={setVideo} />
-          <button
-            onClick={saveVideo}
-            disabled={savingVideo}
-            className="mt-2 bg-brand-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
-          >
-            {savingVideo ? "Saving…" : "Save video"}
-          </button>
-        </div>
-      )}
+        {editingDescription && (
+          <div className="mt-2">
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full border rounded px-2 py-1.5 text-sm resize-none"
+              placeholder="Description"
+            />
+            <button
+              type="button"
+              onClick={saveDescription}
+              disabled={savingDescription}
+              className="mt-2 bg-brand-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
+            >
+              {savingDescription ? "Saving…" : "Save description"}
+            </button>
+          </div>
+        )}
 
-      {editingCategories && (
-        <div className="mt-2">
-          <CategoryPicker categories={categories} selectedIds={selectedIds} onChange={setSelectedIds} />
-          <button
-            onClick={saveCategories}
-            disabled={savingCategories}
-            className="mt-2 bg-brand-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
-          >
-            {savingCategories ? "Saving…" : "Save categories"}
-          </button>
-        </div>
-      )}
+        {editingShipping && (
+          <div className="mt-2 space-y-2">
+            <select
+              value={shippingMode}
+              onChange={(e) => setShippingMode(e.target.value)}
+              className="w-full border rounded px-2 py-1.5 text-sm"
+            >
+              <option value="FLAT">Shop's flat rate</option>
+              <option value="PRODUCT">Custom for this product</option>
+              <option value="FREE">Free shipping</option>
+            </select>
+            {shippingMode === "PRODUCT" && (
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Shipping cost (USD)"
+                value={shippingCost}
+                onChange={(e) => setShippingCost(e.target.value)}
+                className="w-full border rounded px-2 py-1.5 text-sm"
+              />
+            )}
+            <button
+              type="button"
+              onClick={saveShipping}
+              disabled={savingShipping}
+              className="bg-brand-600 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
+            >
+              {savingShipping ? "Saving…" : "Save"}
+            </button>
+          </div>
+        )}
+
+        {editingVideo && (
+          <div className="mt-2">
+            <VideoInput url={video.url} thumbnailUrl={video.thumbnailUrl} onChange={setVideo} />
+            <button
+              type="button"
+              onClick={saveVideo}
+              disabled={savingVideo}
+              className="mt-2 bg-brand-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
+            >
+              {savingVideo ? "Saving…" : "Save video"}
+            </button>
+          </div>
+        )}
+
+        {editingCategories && (
+          <div className="mt-2">
+            <CategoryPicker categories={categories} selectedIds={selectedIds} onChange={setSelectedIds} />
+            <button
+              type="button"
+              onClick={saveCategories}
+              disabled={savingCategories}
+              className="mt-2 bg-brand-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-brand-700 disabled:opacity-60"
+            >
+              {savingCategories ? "Saving…" : "Save categories"}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
