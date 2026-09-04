@@ -194,8 +194,8 @@ export default function ImportPage() {
         imageUrl: item.imageUrl,
         priceCents: item.priceCents,
         raw: item.raw,
-        categoryIds: selectedCategories[item.externalId] ?? []},
-      ),
+        categoryIds: selectedCategories[item.externalId] ?? [],
+      }),
     });
     setImportingId(null);
     if (res.status === 409) {
@@ -305,40 +305,13 @@ export default function ImportPage() {
           Paste a shop or category page from a public storefront and how many products to grab.
         </p>
         <div className="flex gap-2 max-w-xl">
-          <input
-            value={listingUrl}
-            onChange={(e) => setListingUrl(e.target.value)}
-            placeholder="https://example.com/shop/"
-            className="flex-1 border rounded px-3 py-1.5 text-sm"
-          />
-          <input
-            type="number"
-            min={1}
-            max={50}
-            value={listingMaxCount}
-            onChange={(e) => setListingMaxCount(Number(e.target.value))}
-            className="w-20 border rounded px-2 py-1.5 text-sm"
-          />
-          <button
-            onClick={discoverFromListing}
-            disabled={listingLoading || !listingUrl.trim()}
-            className="bg-brand-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-brand-700 disabled:opacity-60 flex-shrink-0"
-          >
+          <input value={listingUrl} onChange={(e) => setListingUrl(e.target.value)} placeholder="https://example.com/shop/" className="flex-1 border rounded px-3 py-1.5 text-sm" />
+          <input type="number" min={1} max={50} value={listingMaxCount} onChange={(e) => setListingMaxCount(Number(e.target.value))} className="w-20 border rounded px-2 py-1.5 text-sm" />
+          <button onClick={discoverFromListing} disabled={listingLoading || !listingUrl.trim()} className="bg-brand-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-brand-700 disabled:opacity-60 flex-shrink-0">
             {listingLoading ? "Finding…" : "Find products"}
           </button>
         </div>
-        {listingError && (
-          <p className="mt-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3 max-w-xl">{listingError}</p>
-        )}
-        {urlFailedResults.length > 0 && (
-          <div className="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3 max-w-xl space-y-1">
-            {urlFailedResults.map((r) => (
-              <p key={r.url}>
-                <span className="font-medium truncate">{r.url}</span>: {r.error}
-              </p>
-            ))}
-          </div>
-        )}
+        {listingError && <p className="mt-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3 max-w-xl">{listingError}</p>}
         {urlOkResults.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-4">
             {urlOkResults.map((r) => {
@@ -363,35 +336,16 @@ export default function ImportPage() {
       </section>
       <section className="border-t pt-6">
         <h2 className="text-lg font-semibold mb-1">From a CSV file</h2>
-        <button onClick={downloadCsvTemplate} className="text-sm text-brand-600 hover:underline mb-3 block">
-          Download CSV template →
-        </button>
-        <input
-          type="file"
-          accept=".csv,text/csv"
-          onChange={(e) => {
-            setCsvFile(e.target.files?.[0] ?? null);
-            setCsvResult(null);
-            setCsvError(null);
-          }}
-          className="text-sm"
-        />
+        <button onClick={downloadCsvTemplate} className="text-sm text-brand-600 hover:underline mb-3 block">Download CSV template →</button>
+        <input type="file" accept=".csv,text/csv" onChange={(e) => { setCsvFile(e.target.files?.[0] ?? null); setCsvResult(null); setCsvError(null); }} className="text-sm" />
         <div>
-          <button
-            onClick={importCsv}
-            disabled={!csvFile || csvUploading}
-            className="mt-2 bg-brand-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-brand-700 disabled:opacity-60"
-          >
+          <button onClick={importCsv} disabled={!csvFile || csvUploading} className="mt-2 bg-brand-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-brand-700 disabled:opacity-60">
             {csvUploading ? "Importing…" : "Upload & import"}
           </button>
         </div>
         {csvError && <p className="mt-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3 max-w-lg">{csvError}</p>}
         {csvResult && (
-          <div className="mt-3 text-sm max-w-xl">
-            <p className="text-green-700 bg-green-50 border border-green-200 rounded p-3">
-              Imported {csvResult.created} product{csvResult.created === 1 ? "" : "s"}.
-            </p>
-          </div>
+          <p className="mt-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded p-3 max-w-xl">Imported {csvResult.created} product{csvResult.created === 1 ? "" : "s"}.</p>
         )}
       </section>
     </div>
