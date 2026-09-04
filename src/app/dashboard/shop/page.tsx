@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import CreateShopForm from "@/components/CreateShopForm";
 import AddProductForm from "@/components/AddProductForm";
-import ShopProductRow from "@/components/ShopProductRow";
+import ShopProductList from "@/components/ShopProductList";
 
 export const dynamic = "force-dynamic";
 
@@ -48,15 +48,7 @@ export default async function ShopDashboardPage() {
         </Link>
       </div>
       <AddProductForm categories={categories} />
-
-      <div className="mt-6 bg-white rounded-xl shadow p-4">
-        <h3 className="font-semibold text-sm mb-2">Your products ({shop.products.length})</h3>
-        {shop.products.length === 0 ? (
-          <p className="text-sm text-gray-500">No products yet.</p>
-        ) : (
-          shop.products.map((p) => <ShopProductRow key={p.id} product={p as any} categories={categories} />)
-        )}
-      </div>
+      <ShopProductList products={shop.products as any} categories={categories} />
     </div>
   );
 }
