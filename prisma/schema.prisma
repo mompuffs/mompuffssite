@@ -24,6 +24,7 @@ model User {
   links         String?
   contactEmail  String?
   contactPhone  String?
+  showBio       Boolean  @default(true)
   showWork      Boolean  @default(false)
   showLocation  Boolean  @default(false)
   showBirthdate Boolean  @default(false)
