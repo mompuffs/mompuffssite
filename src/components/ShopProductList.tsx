@@ -46,30 +46,28 @@ export default function ShopProductList({
 
   return (
     <div className="mt-6 bg-white rounded-xl shadow p-4">
-      <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
-        <h3 className="font-semibold text-sm">
-          Your products ({visible.length}
-          {categoryId !== "all" ? ` of ${products.length}` : ""})
-        </h3>
-        {categories.length > 0 && (
-          <label className="flex items-center gap-2 text-sm text-gray-600">
-            <span className="whitespace-nowrap">Category</span>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="border rounded px-2 py-1 text-sm bg-white"
-            >
-              <option value="all">All categories</option>
-              <option value="uncategorized">Uncategorized</option>
-              {options.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
-      </div>
+      <h3 className="font-semibold text-sm mb-3">
+        Your products ({visible.length}
+        {categoryId !== "all" ? ` of ${products.length}` : ""})
+      </h3>
+      {categories.length > 0 && (
+        <label className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+          <span>Category</span>
+          <select
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className="border rounded px-2 py-1.5 text-sm bg-white min-w-[12rem]"
+          >
+            <option value="all">All categories</option>
+            <option value="uncategorized">Uncategorized</option>
+            {options.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       {products.length === 0 ? (
         <p className="text-sm text-gray-500">No products yet.</p>
       ) : visible.length === 0 ? (
