@@ -6,12 +6,8 @@ import { useSession } from "next-auth/react";
 import NotificationBell from "@/components/NotificationBell";
 import TopGroups from "@/components/TopGroups";
 import TopShops from "@/components/TopShops";
+import ShopManageSidebar from "@/components/ShopManageSidebar";
 
-// Split around Notifications, which isn't a plain Link -- it's the same
-// interactive bell (with its own unread-count popover) used in the navbar,
-// so it can't live in the plain-Link array below. My Profile and My Account
-// are appended separately too, since Profile's href depends on the
-// signed-in user's username.
 const NAV_ITEMS_BEFORE_NOTIFICATIONS = [
   { href: "/feed", label: "Feed", icon: "🏠" },
   { href: "/groups", label: "Groups", icon: "👥" },
@@ -28,20 +24,18 @@ function isActive(pathname: string | null, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-// Persistent left-side navigation, mirroring the top navbar's main links in
-// a dedicated block. Only shown once signed in -- logged-out pages (login,
-// register, public marketplace/shop/product pages) stay full-width, same as
-// the top navbar's own conditional links.
 export default function Sidebar() {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const shopDash = Boolean(pathname?.startsWith("/dashboard/shop"));
 
   if (status !== "authenticated" || !session?.user) return null;
 
   const profileHref = `/profile/${session.user.username}`;
 
   return (
-    <aside className="hidden md:block w-56 flex-shrink-0">
+    <aside className={`hidden md:block flex-shrink-0 ${shopDash ? "w-full" : "w-56"}`}>
+      <ShopManageSidebar />
       <div className="bg-white rounded-xl shadow p-3">
         <nav className="space-y-1">
           {NAV_ITEMS_BEFORE_NOTIFICATIONS.map((item) => {

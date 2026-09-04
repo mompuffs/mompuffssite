@@ -7,11 +7,6 @@ import FriendsOnline from "@/components/FriendsOnline";
 import TopStores from "@/components/TopStores";
 import SidebarLegalLinks from "@/components/SidebarLegalLinks";
 
-// The admin area (/admin/*) gets its own full-width chrome (see
-// AdminSidebar) instead of the public max-w-7xl/Sidebar layout every other
-// page uses -- closer to how a WordPress wp-admin screen is a clean break
-// from the public theme rather than the theme's own layout with extra bits
-// bolted on.
 export default function PageShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { status } = useSession();
@@ -20,25 +15,22 @@ export default function PageShell({ children }: { children: React.ReactNode }) {
     return <main className="min-w-0 flex-1">{children}</main>;
   }
 
-  // Marketplace/shop pages already have their own left-side shop-list aside
-  // plus a wide product grid -- adding the right rail on top crowds them,
-  // so they skip it (still get the left Sidebar and full-width main). Same
-  // deal for the seller dashboard (/dashboard/shop and its subpages) --
-  // product management is its own wide two-column layout.
   const skipRightRail =
     pathname?.startsWith("/marketplace") ||
     pathname?.startsWith("/shop/") ||
     pathname?.startsWith("/dashboard/shop") ||
     pathname === "/login";
 
+  const shopDash = Boolean(pathname?.startsWith("/dashboard/shop"));
+
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 flex gap-6 items-start">
+    <div
+      className={`max-w-7xl mx-auto px-4 py-6 items-start ${
+        shopDash ? "grid md:grid-cols-3 gap-6" : "flex gap-6"
+      }`}
+    >
       <Sidebar />
-      <main className="flex-1 min-w-0">{children}</main>
-      {/* Right rail -- was feed-only, now every page gets it (except
-          marketplace/shop, see above). Friends Online only makes sense
-          signed in; Top Stores is public info and hides itself if there's
-          nothing to show (see TopStores.tsx). */}
+      <main className={shopDash ? "md:col-span-2 min-w-0" : "flex-1 min-w-0"}>{children}</main>
       {!skipRightRail && (
         <aside className="hidden lg:flex lg:flex-col gap-3 w-64 flex-shrink-0">
           {status === "authenticated" && <FriendsOnline />}

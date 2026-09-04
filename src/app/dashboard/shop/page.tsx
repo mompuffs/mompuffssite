@@ -40,102 +40,22 @@ export default async function ShopDashboardPage() {
   }
 
   return (
-    <div className="grid md:grid-cols-2 gap-6">
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h1 className="text-2xl font-bold">{shop.name}</h1>
-          <Link href={`/shop/${shop.slug}`} className="text-sm text-brand-600 hover:underline">
-            View public page →
-          </Link>
-        </div>
-        <AddProductForm categories={categories} />
-
-        <div className="mt-6 bg-white rounded-xl shadow p-4">
-          <h3 className="font-semibold text-sm mb-2">Your products ({shop.products.length})</h3>
-          {shop.products.length === 0 ? (
-            <p className="text-sm text-gray-500">No products yet.</p>
-          ) : (
-            shop.products.map((p) => <ShopProductRow key={p.id} product={p as any} categories={categories} />)
-          )}
-        </div>
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h1 className="text-2xl font-bold">{shop.name}</h1>
+        <Link href={`/shop/${shop.slug}`} className="text-sm text-brand-600 hover:underline">
+          View public page →
+        </Link>
       </div>
+      <AddProductForm categories={categories} />
 
-      <div className="space-y-6 h-fit">
-        <div className="bg-white rounded-xl shadow p-4">
-          <h3 className="font-semibold text-sm mb-2">Manage shop</h3>
-          <ul className="text-sm space-y-1.5">
-            <li>
-              <Link href="/dashboard/shop/orders" className="text-brand-600 hover:underline">
-                Orders
-              </Link>
-            </li>
-            <li>
-              <Link href="/dashboard/shop/refunds" className="text-brand-600 hover:underline">
-                Refund requests
-              </Link>
-            </li>
-            <li>
-              <Link href="/dashboard/shop/categories" className="text-brand-600 hover:underline">
-                Categories
-              </Link>
-            </li>
-            <li>
-              <Link href="/dashboard/shop/import" className="text-brand-600 hover:underline">
-                Import products
-              </Link>
-            </li>
-            <li>
-              <Link href="/dashboard/shop/connections" className="text-brand-600 hover:underline">
-                Connections
-              </Link>
-            </li>
-            <li>
-              <Link href="/dashboard/shop/payments" className="text-brand-600 hover:underline">
-                Payments
-              </Link>
-            </li>
-            <li>
-              <Link href="/dashboard/shop/coupons" className="text-brand-600 hover:underline">
-                Coupons
-              </Link>
-            </li>
-            <li>
-              <Link href="/dashboard/shop/shipping" className="text-brand-600 hover:underline">
-                Shipping
-              </Link>
-            </li>
-            <li>
-              <Link href="/dashboard/shop/tax" className="text-brand-600 hover:underline">
-                Sales tax
-              </Link>
-            </li>
-            <li>
-              <Link href="/dashboard/shop/admin-settings" className="text-brand-600 hover:underline">
-                Shop settings
-              </Link>
-            </li>
-            <li>
-              <Link href="/dashboard/shop/help" className="text-brand-600 hover:underline">
-                Help &amp; Support
-              </Link>
-            </li>
-          </ul>
-        </div>
-
-        <div className="bg-white rounded-xl shadow p-4">
-          <h3 className="font-semibold text-sm mb-2">Tips</h3>
-          <ul className="text-sm text-gray-600 list-disc list-inside space-y-1">
-            <li>Products you add here show up instantly on the public marketplace.</li>
-            <li>Import from Printify, Printful, a public product URL, or a CSV on the import page.</li>
-            <li>
-              See{" "}
-              <Link href="/dashboard/shop/help" className="text-brand-600 hover:underline">
-                Help &amp; Support
-              </Link>{" "}
-              for what each dashboard page does.
-            </li>
-          </ul>
-        </div>
+      <div className="mt-6 bg-white rounded-xl shadow p-4">
+        <h3 className="font-semibold text-sm mb-2">Your products ({shop.products.length})</h3>
+        {shop.products.length === 0 ? (
+          <p className="text-sm text-gray-500">No products yet.</p>
+        ) : (
+          shop.products.map((p) => <ShopProductRow key={p.id} product={p as any} categories={categories} />)
+        )}
       </div>
     </div>
   );
