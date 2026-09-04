@@ -12,10 +12,15 @@ export default async function AdminSettingsPage() {
   const shop = await db.shop.findUnique({ where: { ownerId: user.id } });
   if (!shop) redirect("/dashboard/shop");
 
+  const account = await db.user.findUnique({
+    where: { id: user.id },
+    select: { displayName: true },
+  });
+
   return (
     <AdminSettingsForm
       shop={{ name: shop.name, description: shop.description ?? "", bannerUrl: shop.bannerUrl ?? "" }}
-      account={{ displayName: user.displayName ?? "" }}
+      account={{ displayName: account?.displayName ?? user.name ?? "" }}
     />
   );
 }
