@@ -103,7 +103,7 @@ model Follow {
   followerId  String
   following   User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
   followingId String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
   @@unique([followerId, followingId])
 }
 
@@ -132,7 +132,7 @@ model Comment {
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId  String
   body      String
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 }
 
 model Like {
@@ -141,7 +141,8 @@ model Like {
   postId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  createdAt DateTime @default(now())
+  emoji     String   @default("like")
+  createdAt DateTime  @default(now())
   @@unique([postId, userId])
 }
 
@@ -176,7 +177,7 @@ model Group {
   joinPolicy  String   @default("OPEN")
   owner       User     @relation("OwnedGroups", fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId     String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
   members     GroupMembership[]
   posts       Post[]
 }
@@ -188,7 +189,7 @@ model GroupMembership {
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId   String
   status   String   @default("ACTIVE")
-  joinedAt DateTime @default(now())
+  joinedAt DateTime  @default(now())
   @@unique([groupId, userId])
 }
 
@@ -199,8 +200,8 @@ model PodConnection {
   provider  String
   apiKey    String
   extra     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   @@unique([shopId, provider])
 }
 
@@ -212,9 +213,9 @@ model PaymentConnection {
   slug        String
   displayName String
   apiKey      String
-  extra       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  extra     String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   @@unique([shopId, slug])
 }
 
@@ -266,15 +267,15 @@ model ProductImage {
   productId String
   url       String
   position  Int      @default(0)
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 }
 
 model Category {
   id        String     @id @default(cuid())
   shop      Shop       @relation(fields: [shopId], references: [id], onDelete: Cascade)
   shopId    String
-  name      String
-  slug      String
+  name        String
+  slug        String
   parent    Category?  @relation("CategoryChildren", fields: [parentId], references: [id], onDelete: Cascade)
   parentId  String?
   children  Category[] @relation("CategoryChildren")
