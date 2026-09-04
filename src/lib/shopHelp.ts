@@ -15,9 +15,7 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
     sections: [
       {
         heading: "What this page is",
-        paragraphs: [
-          "My Shop is your product catalog. New items show on the public shop and marketplace as soon as you add them.",
-        ],
+        paragraphs: ["My Shop is your product catalog. New items show on the public shop and marketplace as soon as you add them."],
       },
       {
         heading: "How to use it",
@@ -40,9 +38,7 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
     sections: [
       {
         heading: "What this page is",
-        paragraphs: [
-          "Orders lists sales that include products from your shop. On a multi-vendor cart you only manage your own line items.",
-        ],
+        paragraphs: ["Orders lists sales that include products from your shop. On a multi-vendor cart you only manage your own line items."],
       },
       {
         heading: "How to use it",
@@ -63,9 +59,7 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
     sections: [
       {
         heading: "What this page is",
-        paragraphs: [
-          "Buyers can request a refund. You approve or deny the request here. Approving does not automatically send money back — you still refund in the processor you connected (Stripe Dashboard or PayPal).",
-        ],
+        paragraphs: ["Buyers can request a refund. You approve or deny the request here. Approving does not automatically send money back — you still refund in the processor you connected (Stripe Dashboard or PayPal)."],
       },
       {
         heading: "How to use it",
@@ -86,9 +80,7 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
     sections: [
       {
         heading: "What this page is",
-        paragraphs: [
-          "Categories organize your catalog on the public shop (All Products plus your tree in the left column).",
-        ],
+        paragraphs: ["Categories organize your catalog on the public shop (All Products plus your tree in the left column)."],
       },
       {
         heading: "How to use it",
@@ -109,16 +101,12 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
     sections: [
       {
         heading: "What this page is",
-        paragraphs: [
-          "Import copies products into your MomPuffs shop. Connected catalogs (Printify, Printful, Shopify, BigCommerce, Wix, Square, Stripe) need keys on Connections first. Website and CSV imports do not.",
-        ],
+        paragraphs: ["Import copies products into your MomPuffs shop. Connected catalogs need keys on Import Connectors first. Website and CSV imports do not."],
       },
       {
         heading: "From a connected catalog",
-        paragraphs: [
-          "Save the source on Connections, then open Import and click that source's button. Set categories on a card and click Import to my shop.",
-        ],
-        note: "If the catalog fails to load, the usual cause is a missing or expired key on Connections. Open Help → Connections for where to copy each key.",
+        paragraphs: ["Save the source under Import Connectors, then open Import and click that source's button. Set categories on a card and click Import to my shop."],
+        note: "If the catalog fails to load, the usual cause is a missing or expired key under Import Connectors. Open Help → Import Connectors for where to copy each key.",
       },
       {
         heading: "From a website",
@@ -145,15 +133,13 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
   },
   {
     slug: "connections",
-    title: "Connections",
+    title: "Import Connectors",
     href: "/dashboard/shop/connections",
-    summary: "Store your own catalog API keys. Other shops never see them.",
+    summary: "Connect Shopify, BigCommerce, Wix, Square, Stripe, Printify, or Printful so Import can load that catalog.",
     sections: [
       {
         heading: "What this page is",
-        paragraphs: [
-          "Each shop enters its own keys for Printify, Printful, Shopify, BigCommerce, Wix, Square, and Stripe. MomPuffs does not use a platform-wide key. After you save a source, load it from Import products.",
-        ],
+        paragraphs: ["Import Connectors is only for product import. These keys let Import products pull a catalog from another site. They are not payment keys (those live under Payments). Each shop enters its own keys. MomPuffs does not use a platform-wide key."],
       },
       {
         heading: "Printify",
@@ -163,7 +149,7 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
           "Open Connections in the left menu (or go to https://printify.com/app/connections).",
           "Choose Printify API and generate a Personal access token. Copy it once — Printify may not show it again.",
           "Open My Shops, click the shop, and copy the numeric Shop ID from the page or URL.",
-          "On MomPuffs Connections, Connect Printify, paste the token and Shop ID, and Save.",
+          "On MomPuffs Import Connectors, Connect Printify, paste the token and Shop ID, and Save.",
         ],
       },
       {
@@ -173,7 +159,7 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
           "Log in at printful.com.",
           "Open Settings → Stores / API (or https://www.printful.com/dashboard/settings).",
           "Under API, create a private token and copy it.",
-          "On MomPuffs Connections, Connect Printful, paste the token, and Save.",
+          "On MomPuffs Import Connectors, Connect Printful, paste the token, and Save.",
         ],
       },
       {
@@ -185,7 +171,7 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
           "Create an app. Under Admin API integration, enable read access for Products.",
           "Install the app and reveal the Admin API access token (starts with shpat_). Copy it once.",
           "Your shop domain is the .myshopify.com address (example: your-store.myshopify.com).",
-          "On MomPuffs Connections, Connect Shopify, paste the access token and shop domain, and Save.",
+          "On MomPuffs Import Connectors, Connect Shopify, paste the access token and shop domain, and Save.",
         ],
         note: "A custom app token is required. The storefront password or a staff login will not work.",
       },
@@ -197,7 +183,7 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
           "Go to Settings → API → Store-level API accounts (or Settings → API accounts).",
           "Create an API account with Products read-only (or modify) access. Copy the Access token.",
           "The Store hash is the short code in API paths, like api.bigcommerce.com/stores/abcdefg — copy abcdefg only.",
-          "On MomPuffs Connections, Connect BigCommerce, paste the access token and store hash, and Save.",
+          "On MomPuffs Import Connectors, Connect BigCommerce, paste the access token and store hash, and Save.",
         ],
       },
       {
@@ -207,38 +193,32 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
           "Log in at https://manage.wix.com and open the site that has the products.",
           "Site ID: Settings → Site details, or the siteId= value in the dashboard URL. Copy that ID.",
           "API key: go to https://manage.wix.com/account/api-keys (Account settings → API keys). Create a key with Wix Stores permissions.",
-          "On MomPuffs Connections, Connect Wix, paste the API key and Site ID, and Save.",
+          "On MomPuffs Import Connectors, Connect Wix, paste the API key and Site ID, and Save.",
         ],
         note: "The account API key must be allowed to access that specific site.",
       },
       {
         heading: "Square catalog",
-        paragraphs: [
-          "This is the Square product catalog, not the Payments connection. You can reuse the same access token.",
-        ],
+        paragraphs: ["This is the Square product catalog, not the Payments connection. You can reuse the same access token."],
         steps: [
           "Log in at https://developer.squareup.com/apps and open your application.",
           "Copy the Access token for Production (real catalog) or Sandbox (test catalog).",
-          "On MomPuffs Connections, Connect Square, paste the token, and type production or sandbox to match. Save.",
+          "On MomPuffs Import Connectors, Connect Square, paste the token, and type production or sandbox to match. Save.",
         ],
       },
       {
         heading: "Stripe catalog",
-        paragraphs: [
-          "This reads Products and Prices from Stripe. The secret key can be the same one you saved under Payments.",
-        ],
+        paragraphs: ["This reads Products and Prices from Stripe. The secret key can be the same one you saved under Payments."],
         steps: [
           "Log in at https://dashboard.stripe.com.",
           "Open Developers → API keys. Reveal and copy the Secret key (sk_live_ or sk_test_).",
-          "On MomPuffs Connections, Connect Stripe, paste that secret key, and Save.",
+          "On MomPuffs Import Connectors, Connect Stripe, paste that secret key, and Save.",
         ],
         note: "sk_test_ only lists test-mode products. Use sk_live_ for the live catalog.",
       },
       {
         heading: "After you connect",
-        paragraphs: [
-          "Go to Import products and click the same source name to load the catalog. Disconnect here if you need to rotate a key.",
-        ],
+        paragraphs: ["Go to Import products and click the same source name to load the catalog. Disconnect here if you need to rotate a key."],
       },
     ],
   },
@@ -250,9 +230,7 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
     sections: [
       {
         heading: "What this page is",
-        paragraphs: [
-          "Checkout can only take money if this shop has at least one processor connected. Keys stay on your shop; other vendors cannot use them.",
-        ],
+        paragraphs: ["Checkout can only take money if this shop has at least one processor connected. Keys stay on your shop; other vendors cannot use them."],
       },
       {
         heading: "Stripe",
@@ -290,9 +268,7 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
       },
       {
         heading: "Another processor",
-        paragraphs: [
-          "Use Add another processor for something like Authorize.net. Enter a display name, the API key or secret from that provider's control panel, and any extra login id or endpoint they give you. Checkout buttons on the site today are Stripe and PayPal; extra processors are stored for your records and future use.",
-        ],
+        paragraphs: ["Use Add another processor for something like Authorize.net. Enter a display name, the API key or secret from that provider's control panel, and any extra login id or endpoint they give you."],
       },
     ],
   },
@@ -301,34 +277,14 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
     title: "Coupons",
     href: "/dashboard/shop/coupons",
     summary: "Create promo codes that only discount your shop's items.",
-    sections: [
-      {
-        heading: "How to use it",
-        paragraphs: [],
-        steps: [
-          "Create a code, choose percent or fixed amount, and set any limits you offer.",
-          "At checkout the code only reduces your products, even if the cart also has another shop's items.",
-          "Tax is calculated after the discount on your subtotal.",
-        ],
-      },
-    ],
+    sections: [{ heading: "How to use it", paragraphs: [], steps: ["Create a code, choose percent or fixed amount, and set any limits you offer.", "At checkout the code only reduces your products, even if the cart also has another shop's items.", "Tax is calculated after the discount on your subtotal."] }],
   },
   {
     slug: "shipping",
     title: "Shipping",
     href: "/dashboard/shop/shipping",
     summary: "Set a shop-wide flat rate. Override it on individual products if needed.",
-    sections: [
-      {
-        heading: "How to use it",
-        paragraphs: [],
-        steps: [
-          "Set the shop flat rate on Shipping. That is the default for every product.",
-          "On a product card, open Shipping and choose Shop's flat rate, Custom for this product, or Free shipping.",
-          "Checkout adds one shipping amount for the shop in the cart.",
-        ],
-      },
-    ],
+    sections: [{ heading: "How to use it", paragraphs: [], steps: ["Set the shop flat rate on Shipping. That is the default for every product.", "On a product card, open Shipping and choose Shop's flat rate, Custom for this product, or Free shipping.", "Checkout adds one shipping amount for the shop in the cart."] }],
   },
   {
     slug: "tax",
@@ -354,14 +310,7 @@ export const SHOP_HELP_TOPICS: HelpTopic[] = [
     title: "Shop settings",
     href: "/dashboard/shop/admin-settings",
     summary: "Change shop name, description, and banner. The URL slug does not change.",
-    sections: [
-      {
-        heading: "How to use it",
-        paragraphs: [
-          "Update the public name, about text, and banner image. The shop URL (/shop/your-slug) stays the same so existing links keep working.",
-        ],
-      },
-    ],
+    sections: [{ heading: "How to use it", paragraphs: ["Update the public name, about text, and banner image. The shop URL (/shop/your-slug) stays the same so existing links keep working."] }],
   },
 ];
 
