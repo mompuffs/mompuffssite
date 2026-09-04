@@ -75,12 +75,11 @@ export default function CheckoutPage() {
   const [stripePublishableKey, setStripePublishableKey] = useState<string | null>(null);
   const [configChecked, setConfigChecked] = useState(false);
   const [shippingCents, setShippingCents] = useState(0);
+  const [taxCents, setTaxCents] = useState(0);
 
   const discountCents = appliedCoupon?.discountCents ?? 0;
-  const finalTotalCents = Math.max(0, totalCents - discountCents) + shippingCents;
+  const finalTotalCents = Math.max(0, totalCents - discountCents) + shippingCents + taxCents;
 
-  // Real-payment checkout only supports one shop's items at a time (a single
-  // order pays into a single connected account).
   const shopIds = Array.from(new Set(items.map((i) => i.shopId)));
   const singleShopId = shopIds.length === 1 ? shopIds[0] : null;
 
@@ -120,6 +119,26 @@ export default function CheckoutPage() {
   const hasRealPayment = Boolean(paypalClientId || stripePublishableKey);
 
   const effectiveShipping = shipToBilling ? billing : shippingAddr;
+
+  useEffect(() => {
+    if (items.length === 0 || !isAddressComplete(effectiveShipping)) {
+      setTaxCents(0);
+      return;
+    }
+    fetch("/api/checkout/tax", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items,
+        couponCode: appliedCoupon?.code,
+        address: addressPayload(effectiveShipping),
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => setTaxCents(data.taxCents ?? 0))
+      .catch(() => setTaxCents(0));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(items), appliedCoupon?.code, effectiveShipping.country, effectiveShipping.state, effectiveShipping.zip, effectiveShipping.city, step]);
 
   function updateBilling(field: keyof AddressForm) {
     return (e: React.ChangeEvent<HTMLInputElement>) => setBilling((b) => ({ ...b, [field]: e.target.value }));
@@ -408,6 +427,10 @@ export default function CheckoutPage() {
         <div className="flex justify-between text-sm">
           <span>Shipping</span>
           <span>{shippingCents > 0 ? formatCents(shippingCents) : "Free"}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span>Tax</span>
+          <span>{taxCents > 0 ? formatCents(taxCents) : formatCents(0)}</span>
         </div>
         <div className="flex justify-between font-semibold border-t pt-2">
           <span>Total</span>
