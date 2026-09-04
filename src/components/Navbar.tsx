@@ -91,7 +91,6 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-30 bg-brand-500 shadow-sm">
-      {/* Fixed 150px bar. */}
       <div className="max-w-6xl mx-auto px-4 h-[150px] flex items-center justify-between gap-4">
         <Link href="/feed" className="flex items-center shrink-0">
           <Image
@@ -108,8 +107,6 @@ export default function Navbar() {
           <SearchBar />
         </div>
 
-        {/* Full nav row -- overflows on narrow screens, so it's desktop-only;
-            the hamburger button below covers the same links stacked. */}
         <div className="hidden md:flex items-center gap-3 text-sm font-semibold text-[#43203F]">
           <Link href="/feed" className="hover:text-white">Feed</Link>
           <Link href="/groups" className="hover:text-white">Groups</Link>
@@ -130,20 +127,16 @@ export default function Navbar() {
               {(session.user as any).isAdmin && (
                 <Link href="/admin" className="hover:text-white">Admin</Link>
               )}
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="hover:text-red-100"
-              >
+              <Link href="/help" className="hover:text-white">Help</Link>
+              <button onClick={() => signOut({ callbackUrl: "/login" })} className="hover:text-red-100">
                 Sign out
               </button>
             </>
           ) : status === "unauthenticated" ? (
             <>
+              <Link href="/help" className="hover:text-white">Help</Link>
               <Link href="/login" className="hover:text-white">Log in</Link>
-              <Link
-                href="/register"
-                className="bg-white text-brand-700 px-3 py-1.5 rounded-full hover:bg-brand-50"
-              >
+              <Link href="/register" className="bg-white text-brand-700 px-3 py-1.5 rounded-full hover:bg-brand-50">
                 Sign up
               </Link>
             </>
@@ -162,45 +155,22 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="md:hidden border-t border-gray-200 px-4 py-3 space-y-1 text-sm bg-white">
           <SearchBar variant="mobile" onNavigate={() => setMobileOpen(false)} />
-          <Link href="/feed" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
-            Feed
-          </Link>
-          <Link href="/groups" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
-            Groups
-          </Link>
-          <Link href="/marketplace" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
-            Marketplace
-          </Link>
-          <Link href="/cart" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
-            Cart
-          </Link>
+          <Link href="/feed" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Feed</Link>
+          <Link href="/groups" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Groups</Link>
+          <Link href="/marketplace" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Marketplace</Link>
+          <Link href="/cart" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Cart</Link>
 
           {status === "authenticated" && session?.user ? (
             <>
-              <div className="py-2">
-                <NotificationBell />
-              </div>
-              <div className="py-2">
-                <MessagesLink />
-              </div>
-              <Link href="/dashboard/shop" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
-                My Shop
-              </Link>
-              <Link
-                href={`/profile/${session.user.username}`}
-                onClick={() => setMobileOpen(false)}
-                className="block py-2 hover:text-brand-600"
-              >
-                My Profile
-              </Link>
-              <Link href="/account" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
-                My Account
-              </Link>
+              <div className="py-2"><NotificationBell /></div>
+              <div className="py-2"><MessagesLink /></div>
+              <Link href="/dashboard/shop" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">My Shop</Link>
+              <Link href={`/profile/${session.user.username}`} onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">My Profile</Link>
+              <Link href="/account" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">My Account</Link>
               {(session.user as any).isAdmin && (
-                <Link href="/admin" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
-                  Admin
-                </Link>
+                <Link href="/admin" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Admin</Link>
               )}
+              <Link href="/help" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Help &amp; Support</Link>
               <button
                 onClick={() => {
                   setMobileOpen(false);
@@ -213,16 +183,9 @@ export default function Navbar() {
             </>
           ) : status === "unauthenticated" ? (
             <>
-              <Link href="/login" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">
-                Log in
-              </Link>
-              <Link
-                href="/register"
-                onClick={() => setMobileOpen(false)}
-                className="block bg-brand-600 text-white px-3 py-1.5 rounded-full text-center mt-1"
-              >
-                Sign up
-              </Link>
+              <Link href="/help" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Help &amp; Support</Link>
+              <Link href="/login" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Log in</Link>
+              <Link href="/register" onClick={() => setMobileOpen(false)} className="block bg-brand-600 text-white px-3 py-1.5 rounded-full text-center mt-1">Sign up</Link>
             </>
           ) : null}
         </div>

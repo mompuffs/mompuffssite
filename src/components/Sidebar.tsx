@@ -90,6 +90,15 @@ export default function Sidebar() {
             <span className="text-base leading-none">⚙️</span>
             My Account
           </Link>
+          <Link
+            href="/help"
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition ${
+              isActive(pathname, "/help") ? "bg-brand-50 text-brand-600" : "text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            <span className="text-base leading-none">❓</span>
+            Help &amp; Support
+          </Link>
         </nav>
       </div>
       <TopGroups />
