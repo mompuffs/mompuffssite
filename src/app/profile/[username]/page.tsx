@@ -93,7 +93,15 @@ export default async function ProfilePage({ params }: { params: { username: stri
     isBlocked = await isBlockedEitherWay(currentUser.id, profileUser.id);
   }
 
-  const showAbout = profileUser.showBio !== false && Boolean(profileUser.bio);
+  const aboutText = (profileUser.bio ?? "").trim();
+  const showAbout = aboutText.length > 0 && (profileUser as { showBio?: boolean }).showBio !== false;
+  const showDetails =
+    (profileUser.showWork && profileUser.work) ||
+    (profileUser.showLocation && profileUser.location) ||
+    birthdateDisplay ||
+    (profileUser.showContact && (profileUser.contactEmail || profileUser.contactPhone)) ||
+    profileLinks.length > 0 ||
+    showAbout;
 
   return (
     <div className="max-w-xl mx-auto">
@@ -131,14 +139,8 @@ export default async function ProfilePage({ params }: { params: { username: stri
           <p className="text-xs text-gray-500 bg-gray-50 border rounded p-2 mt-3">Interactions are unavailable between you and this user.</p>
         )}
 
-        {showAbout && <p className="mt-3 text-sm whitespace-pre-wrap">{profileUser.bio}</p>}
-
-        {(profileUser.showWork && profileUser.work) ||
-        (profileUser.showLocation && profileUser.location) ||
-        birthdateDisplay ||
-        (profileUser.showContact && (profileUser.contactEmail || profileUser.contactPhone)) ||
-        profileLinks.length > 0 ? (
-          <div className="mt-3 text-sm text-gray-700 space-y-1">
+        {showDetails && (
+          <div className="mt-3 text-sm text-gray-700 space-y-2">
             {profileUser.showWork && profileUser.work && <p>💼 <span>{profileUser.work}</span></p>}
             {profileUser.showLocation && profileUser.location && <p>📍 <span>{profileUser.location}</span></p>}
             {birthdateDisplay && <p>🎂 <span>{birthdateDisplay}</span></p>}
@@ -154,8 +156,14 @@ export default async function ProfilePage({ params }: { params: { username: stri
                 ))}
               </div>
             )}
+            {showAbout && (
+              <div className="pt-2 border-t">
+                <p className="text-xs font-medium text-gray-500 mb-1">About me</p>
+                <p className="whitespace-pre-wrap">{aboutText}</p>
+              </div>
+            )}
           </div>
-        ) : null}
+        )}
 
         <div className="flex gap-4 mt-4 text-sm text-gray-600">
           <span><strong>{profileUser._count.posts}</strong> posts</span>
