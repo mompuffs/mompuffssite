@@ -30,7 +30,7 @@ export type PodFieldDef = {
 };
 
 export interface PodAdapter {
-  id: "PRINTIFY" | "PRINTFUL" | "SHOPIFY" | "BIGCOMMERCE" | "WIX" | "SQUARE" | "STRIPE";
+  id: "PRINTIFY" | "PRINTFUL";
   label: string;
   fields: PodFieldDef[];
   isConfigured(creds: PodCredentials): boolean;
