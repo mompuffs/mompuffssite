@@ -17,10 +17,6 @@ export default async function FeedPage() {
     excludedAuthorIds = blocks.map((b) => (b.blockerId === user.id ? b.blockedId : b.blockerId));
   }
 
-  // A post with no groupId is a normal wall post, always visible. A post
-  // inside a group only shows here if the group is PUBLIC, or the viewer
-  // is an ACTIVE member of that (private) group -- otherwise it's only
-  // visible on the group's own page to other members.
   const groupVisibilityOr: object[] = [{ groupId: null }, { group: { visibility: "PUBLIC" } }];
   if (user) {
     groupVisibilityOr.push({ group: { members: { some: { userId: user.id, status: "ACTIVE" } } } });
@@ -37,7 +33,7 @@ export default async function FeedPage() {
       author: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
       product: { select: { id: true, title: true, priceCents: true, currency: true, imageUrl: true } },
       group: { select: { id: true, name: true, slug: true } },
-      likes: { select: { userId: true } },
+      likes: { select: { userId: true, emoji: true } },
       comments: {
         orderBy: { createdAt: "asc" },
         include: { author: { select: { username: true, displayName: true } } },
@@ -49,9 +45,7 @@ export default async function FeedPage() {
     <div className="max-w-xl mx-auto">
       <PostComposer />
       {posts.length === 0 && (
-        <p className="text-center text-gray-500 mt-10">
-          No posts yet. Be the first to share something!
-        </p>
+        <p className="text-center text-gray-500 mt-10">No posts yet. Be the first to share something!</p>
       )}
       {posts.map((post) => (
         <PostCard key={post.id} post={post as any} />
