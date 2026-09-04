@@ -11,12 +11,14 @@ export default function FloatingChatWidget({
   username,
   label,
   minimized,
+  unread,
   onToggle,
   onClose,
 }: {
   username: string;
   label?: string;
   minimized: boolean;
+  unread: boolean;
   onToggle: () => void;
   onClose: () => void;
 }) {
@@ -79,7 +81,12 @@ export default function FloatingChatWidget({
 
   return (
     <div className="w-72 bg-white rounded-t-xl shadow-2xl border border-gray-200 flex flex-col">
-      <div className="flex items-center justify-between px-3 py-2 border-b cursor-pointer bg-gray-50 rounded-t-xl" onClick={onToggle}>
+      <div
+        className={`flex items-center justify-between px-3 py-2 border-b cursor-pointer rounded-t-xl ${
+          unread ? "bg-brand-500 text-[#43203F]" : "bg-white text-gray-900"
+        }`}
+        onClick={onToggle}
+      >
         <div className="flex items-center gap-2 min-w-0">
           {otherUser?.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -92,10 +99,10 @@ export default function FloatingChatWidget({
           <span className="text-sm font-semibold truncate">{title}</span>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <button type="button" onClick={(e) => { e.stopPropagation(); onToggle(); }} className="text-gray-400 hover:text-gray-700 text-sm px-1" aria-label={minimized ? "Open chat" : "Minimize chat"}>
+          <button type="button" onClick={(e) => { e.stopPropagation(); onToggle(); }} className="text-sm px-1 opacity-70 hover:opacity-100" aria-label={minimized ? "Open chat" : "Minimize chat"}>
             {minimized ? "▲" : "–"}
           </button>
-          <button type="button" onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-gray-400 hover:text-gray-700 text-lg leading-none px-1" aria-label="Close chat">
+          <button type="button" onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-lg leading-none px-1 opacity-70 hover:opacity-100" aria-label="Close chat">
             ×
           </button>
         </div>

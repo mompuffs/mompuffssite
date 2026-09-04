@@ -13,7 +13,7 @@ type OverlayContextValue = {
   openChat: (username: string) => void;
 };
 
-type DockChat = { username: string; name: string; minimized: boolean };
+type DockChat = { username: string; name: string; minimized: boolean; unread: boolean };
 
 const OverlayContext = createContext<OverlayContextValue | null>(null);
 
@@ -33,13 +33,17 @@ export default function OverlayProvider({ children }: { children: ReactNode }) {
     setOpenPostId(postId);
   }
 
-  function upsertDock(username: string, name: string, minimized: boolean) {
+  function upsertDock(username: string, name: string, minimized: boolean, unread: boolean) {
     setDocks((current) => {
       const existing = current.find((c) => c.username === username);
       if (existing) {
-        return current.map((c) => (c.username === username ? { ...c, name, minimized } : { ...c, minimized: minimized ? c.minimized : true }));
+        return current.map((c) =>
+          c.username === username
+            ? { ...c, name, minimized, unread }
+            : { ...c, minimized: minimized ? c.minimized : true }
+        );
       }
-      const next = [...current.map((c) => ({ ...c, minimized: true })), { username, name, minimized }];
+      const next = [...current.map((c) => ({ ...c, minimized: true })), { username, name, minimized, unread }];
       return next.slice(-MAX_DOCKS);
     });
   }
@@ -50,7 +54,7 @@ export default function OverlayProvider({ children }: { children: ReactNode }) {
       return;
     }
     closedRef.current.delete(username);
-    upsertDock(username, username, false);
+    upsertDock(username, username, false, false);
   }
 
   useEffect(() => {
@@ -61,18 +65,26 @@ export default function OverlayProvider({ children }: { children: ReactNode }) {
         .then((r) => r.json())
         .then((conversations) => {
           if (!Array.isArray(conversations)) return;
-          for (const convo of conversations) {
-            if (!convo?.unreadCount || !convo.otherUser?.username) continue;
-            const username = convo.otherUser.username as string;
-            if (closedRef.current.has(username)) continue;
-            const name = (convo.otherUser.displayName as string) || username;
-            setDocks((current) => {
-              if (current.some((c) => c.username === username)) {
-                return current.map((c) => (c.username === username ? { ...c, name } : c));
+          setDocks((current) => {
+            let next = [...current];
+            for (const convo of conversations) {
+              const username = convo?.otherUser?.username as string | undefined;
+              if (!username) continue;
+              const name = (convo.otherUser.displayName as string) || username;
+              const hasUnread = Number(convo.unreadCount || 0) > 0;
+              const existing = next.find((c) => c.username === username);
+              if (hasUnread && !closedRef.current.has(username)) {
+                if (existing) {
+                  next = next.map((c) => (c.username === username ? { ...c, name, unread: true } : c));
+                } else {
+                  next = [...next, { username, name, minimized: true, unread: true }].slice(-MAX_DOCKS);
+                }
+              } else if (existing) {
+                next = next.map((c) => (c.username === username ? { ...c, name, unread: hasUnread } : c));
               }
-              return [...current, { username, name, minimized: true }].slice(-MAX_DOCKS);
-            });
-          }
+            }
+            return next;
+          });
         })
         .catch(() => {});
     }
@@ -94,10 +106,13 @@ export default function OverlayProvider({ children }: { children: ReactNode }) {
               username={chat.username}
               label={chat.name}
               minimized={chat.minimized}
+              unread={chat.unread}
               onToggle={() =>
                 setDocks((current) =>
                   current.map((c) =>
-                    c.username === chat.username ? { ...c, minimized: !c.minimized } : { ...c, minimized: true }
+                    c.username === chat.username
+                      ? { ...c, minimized: !c.minimized, unread: c.minimized ? false : c.unread }
+                      : { ...c, minimized: true }
                   )
                 )
               }
