@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/session";
 import { priceCartItems } from "@/lib/checkout";
 import { evaluateCoupon } from "@/lib/coupons";
 import { calculateShippingCents } from "@/lib/shipping";
+import { calculateCartTax } from "@/lib/tax";
 import { getShopPaymentCreds } from "@/lib/payments/connections";
 import { createPaymentIntent } from "@/lib/payments/stripe";
 
@@ -10,7 +11,7 @@ export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Not authenticated." }, { status: 401 });
 
-  const { items, couponCode } = await req.json();
+  const { items, couponCode, shipping } = await req.json();
   if (!Array.isArray(items) || items.length === 0) {
     return NextResponse.json({ error: "Cart is empty." }, { status: 400 });
   }
@@ -42,14 +43,25 @@ export async function POST(req: Request) {
     if (!result.valid) return NextResponse.json({ error: result.error }, { status: 400 });
     discountCents = result.discountCents;
   }
-  const finalTotalCents = Math.max(0, totalCents - discountCents) + shippingCents;
+  const { taxCents } = await calculateCartTax({
+    priced,
+    shippingCents,
+    discountCents,
+    address: {
+      country: shipping?.country,
+      state: shipping?.state,
+      postcode: shipping?.zip,
+      city: shipping?.city,
+    },
+  });
+  const finalTotalCents = Math.max(0, totalCents - discountCents) + shippingCents + taxCents;
   if (finalTotalCents <= 0) {
     return NextResponse.json({ error: "Order total must be greater than zero." }, { status: 400 });
   }
 
   try {
     const intent = await createPaymentIntent(creds as any, finalTotalCents);
-    return NextResponse.json({ clientSecret: intent.client_secret, paymentIntentId: intent.id });
+    return NextResponse.json({ clientSecret: intent.client_secret, paymentIntentId: intent.id, taxCents });
   } catch (err: any) {
     return NextResponse.json({ error: err.message ?? "Could not start Stripe checkout." }, { status: 502 });
   }
