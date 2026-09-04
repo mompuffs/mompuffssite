@@ -3,9 +3,8 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { discoverProductUrls, scrapeProductFromUrl, MAX_DISCOVER_COUNT } from "@/lib/urlImport";
 
-// Discovering + scraping several product pages one after another can take a
-// while; give this route real headroom beyond the platform default.
-export const maxDuration = 60;
+// Discovering + scraping many product pages can take a while.
+export const maxDuration = 120;
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
