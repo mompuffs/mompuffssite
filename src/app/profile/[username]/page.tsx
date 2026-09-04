@@ -27,9 +27,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
     profileUser.showLinks && profileUser.links ? JSON.parse(profileUser.links) : [];
   const birthdateDisplay =
     profileUser.showBirthdate && profileUser.birthdate
-      ? // Stored as a bare date (no time-of-day); force UTC when formatting
-        // so it doesn't shift a day in timezones behind UTC.
-        new Date(profileUser.birthdate).toLocaleDateString(undefined, {
+      ? new Date(profileUser.birthdate).toLocaleDateString(undefined, {
           timeZone: "UTC",
           year: "numeric",
           month: "long",
@@ -37,10 +35,6 @@ export default async function ProfilePage({ params }: { params: { username: stri
         })
       : null;
 
-  // Same rule as the main feed: a group post only shows here if the group
-  // is public, or the viewer is an active member of that private group --
-  // otherwise a private group's posts would leak onto the author's public
-  // profile page to anyone.
   const groupVisibilityOr: object[] = [{ groupId: null }, { group: { visibility: "PUBLIC" } }];
   if (currentUser) {
     groupVisibilityOr.push({ group: { members: { some: { userId: currentUser.id, status: "ACTIVE" } } } });
@@ -53,7 +47,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
       author: { select: { id: true, username: true, displayName: true, avatarUrl: true } },
       product: { select: { id: true, title: true, priceCents: true, currency: true, imageUrl: true } },
       group: { select: { id: true, name: true, slug: true } },
-      likes: { select: { userId: true } },
+      likes: { select: { userId: true, emoji: true } },
       comments: {
         orderBy: { createdAt: "asc" },
         include: { author: { select: { username: true, displayName: true } } },
@@ -99,6 +93,8 @@ export default async function ProfilePage({ params }: { params: { username: stri
     isBlocked = await isBlockedEitherWay(currentUser.id, profileUser.id);
   }
 
+  const showAbout = profileUser.showBio !== false && Boolean(profileUser.bio);
+
   return (
     <div className="max-w-xl mx-auto">
       <div className="bg-white rounded-xl shadow p-6 mb-4">
@@ -106,11 +102,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
           <div className="flex items-center gap-4">
             {profileUser.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={profileUser.avatarUrl}
-                alt={profileUser.displayName}
-                className="w-16 h-16 rounded-full object-cover flex-shrink-0"
-              />
+              <img src={profileUser.avatarUrl} alt={profileUser.displayName} className="w-16 h-16 rounded-full object-cover flex-shrink-0" />
             ) : (
               <div className="w-16 h-16 rounded-full bg-brand-100 text-brand-700 flex items-center justify-center text-2xl font-semibold flex-shrink-0">
                 {profileUser.displayName.charAt(0).toUpperCase()}
@@ -125,17 +117,8 @@ export default async function ProfilePage({ params }: { params: { username: stri
             <div className="flex flex-wrap items-center gap-1.5 justify-end">
               {!isBlocked && (
                 <>
-                  <Link
-                    href={`/messages/${profileUser.username}`}
-                    className="px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-50"
-                  >
-                    Message
-                  </Link>
-                  <FriendButton
-                    targetUserId={profileUser.id}
-                    initialState={friendState}
-                    initialRequestId={friendRequestId}
-                  />
+                  <Link href={`/messages/${profileUser.username}`} className="px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 hover:bg-gray-50">Message</Link>
+                  <FriendButton targetUserId={profileUser.id} initialState={friendState} initialRequestId={friendRequestId} />
                   <FollowButton targetUserId={profileUser.id} initiallyFollowing={isFollowing} />
                 </>
               )}
@@ -145,12 +128,10 @@ export default async function ProfilePage({ params }: { params: { username: stri
         </div>
 
         {isBlocked && currentUser && !isOwnProfile && (
-          <p className="text-xs text-gray-500 bg-gray-50 border rounded p-2 mt-3">
-            Interactions are unavailable between you and this user.
-          </p>
+          <p className="text-xs text-gray-500 bg-gray-50 border rounded p-2 mt-3">Interactions are unavailable between you and this user.</p>
         )}
 
-        {profileUser.bio && <p className="mt-3 text-sm">{profileUser.bio}</p>}
+        {showAbout && <p className="mt-3 text-sm whitespace-pre-wrap">{profileUser.bio}</p>}
 
         {(profileUser.showWork && profileUser.work) ||
         (profileUser.showLocation && profileUser.location) ||
@@ -158,37 +139,16 @@ export default async function ProfilePage({ params }: { params: { username: stri
         (profileUser.showContact && (profileUser.contactEmail || profileUser.contactPhone)) ||
         profileLinks.length > 0 ? (
           <div className="mt-3 text-sm text-gray-700 space-y-1">
-            {profileUser.showWork && profileUser.work && (
-              <p>
-                💼 <span>{profileUser.work}</span>
-              </p>
-            )}
-            {profileUser.showLocation && profileUser.location && (
-              <p>
-                📍 <span>{profileUser.location}</span>
-              </p>
-            )}
-            {birthdateDisplay && (
-              <p>
-                🎂 <span>{birthdateDisplay}</span>
-              </p>
-            )}
+            {profileUser.showWork && profileUser.work && <p>💼 <span>{profileUser.work}</span></p>}
+            {profileUser.showLocation && profileUser.location && <p>📍 <span>{profileUser.location}</span></p>}
+            {birthdateDisplay && <p>🎂 <span>{birthdateDisplay}</span></p>}
             {profileUser.showContact && (profileUser.contactEmail || profileUser.contactPhone) && (
-              <p>
-                ✉️{" "}
-                {[profileUser.contactEmail, profileUser.contactPhone].filter(Boolean).join(" · ")}
-              </p>
+              <p>✉️ {[profileUser.contactEmail, profileUser.contactPhone].filter(Boolean).join(" · ")}</p>
             )}
             {profileLinks.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-1">
                 {profileLinks.map((link, i) => (
-                  <a
-                    key={i}
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer nofollow"
-                    className="text-brand-600 hover:underline bg-brand-50 px-2 py-1 rounded-full text-xs"
-                  >
+                  <a key={i} href={link.url} target="_blank" rel="noopener noreferrer nofollow" className="text-brand-600 hover:underline bg-brand-50 px-2 py-1 rounded-full text-xs">
                     {link.label || link.url}
                   </a>
                 ))}
@@ -204,10 +164,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
         </div>
 
         {profileUser.shop && (
-          <Link
-            href={`/shop/${profileUser.shop.slug}`}
-            className="inline-block mt-4 bg-brand-50 text-brand-700 px-3 py-1.5 rounded-full text-sm font-medium hover:bg-brand-100"
-          >
+          <Link href={`/shop/${profileUser.shop.slug}`} className="inline-block mt-4 bg-brand-50 text-brand-700 px-3 py-1.5 rounded-full text-sm font-medium hover:bg-brand-100">
             🛍️ Visit {profileUser.shop.name}
           </Link>
         )}
