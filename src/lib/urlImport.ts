@@ -5,6 +5,10 @@ import { stripHtml } from "@/lib/pod/html";
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_RESPONSE_BYTES = 3_000_000;
 
+// Below: assertSafeUrl / fetchTextCapped / extractMeta are exported for
+// reuse by src/lib/linkPreview.ts (feed-post link previews) -- same SSRF
+// guard and HTML-fetching approach, no reason to duplicate it.
+
 export function normalizeSourceUrl(raw: string): string {
   try {
     const u = new URL(raw.trim());
@@ -39,7 +43,7 @@ function isPrivateIp(ip: string): boolean {
   return false;
 }
 
-async function assertSafeUrl(rawUrl: string): Promise<URL> {
+export async function assertSafeUrl(rawUrl: string): Promise<URL> {
   let url: URL;
   try {
     url = new URL(rawUrl);
@@ -68,9 +72,9 @@ async function assertSafeUrl(rawUrl: string): Promise<URL> {
   return url;
 }
 
-async function fetchTextCapped(url: string): Promise<string> {
+export async function fetchTextCapped(url: string, timeoutMs: number = FETCH_TIMEOUT_MS): Promise<string> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(url, {
       signal: controller.signal,
@@ -162,7 +166,7 @@ function looksLikeListingPage(html: string, productNodeCount: number): boolean {
   return false;
 }
 
-function extractMeta(html: string, property: string): string | undefined {
+export function extractMeta(html: string, property: string): string | undefined {
   const escaped = property.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const patterns = [
     new RegExp(`<meta[^>]+(?:property|name)=["']${escaped}["'][^>]*content=["']([^"']*)["']`, "i"),

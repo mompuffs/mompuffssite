@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { formatCents } from "@/lib/money";
 import EmojiPicker from "@/components/EmojiPicker";
 import { REACTIONS, reactionById } from "@/lib/reactions";
+import LinkPreviewCard from "@/components/LinkPreviewCard";
 
 type Comment = {
   id: string;
@@ -20,6 +21,12 @@ type Post = {
   imageUrl: string | null;
   videoUrl: string | null;
   videoThumbnailUrl: string | null;
+  linkUrl?: string | null;
+  linkTitle?: string | null;
+  linkDescription?: string | null;
+  linkImageUrl?: string | null;
+  linkVideoUrl?: string | null;
+  linkSiteName?: string | null;
   createdAt: string;
   editedAt?: string | null;
   author: { id: string; username: string; displayName: string; avatarUrl: string | null };
@@ -198,6 +205,11 @@ export default function PostCard({ post: initialPost }: { post: Post }) {
           <img src={post.imageUrl} alt="" className="rounded-lg w-full max-h-96 object-cover mb-2" />
         )
       )}
+
+      {/* Pulled-in preview for a link in the post body -- only present when
+          the post has no attached photo/video/product of its own, see
+          POST/PATCH /api/posts. */}
+      <LinkPreviewCard post={post} />
 
       {post.product && (
         <Link href={`/product/${post.product.id}`} className="flex items-center gap-3 border rounded-lg p-2 mb-2 hover:bg-gray-50">

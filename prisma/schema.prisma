@@ -122,6 +122,19 @@ model Post {
   groupId   String?
   createdAt DateTime  @default(now())
   editedAt  DateTime?
+  // Link preview, pulled from the first URL found in `body` at post
+  // creation (or re-pulled on edit) via src/lib/linkPreview.ts -- only
+  // attempted when the post has no imageUrl/videoUrl/product of its own,
+  // so a manually-attached photo/video/product isn't crowded out by an
+  // unrelated link's preview. linkVideoUrl and linkImageUrl are mutually
+  // exclusive in practice (see PostCard.tsx): a video preview is shown
+  // instead of the image when both are present, never both at once.
+  linkUrl         String?
+  linkTitle       String?
+  linkDescription String?
+  linkImageUrl    String?
+  linkVideoUrl    String?
+  linkSiteName    String?
   comments  Comment[]
   likes     Like[]
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { extractFirstUrl, fetchLinkPreview } from "@/lib/linkPreview";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -50,6 +51,15 @@ export async function POST(req: Request) {
     }
   }
 
+  // Only pull a link preview for a plain-text post -- a manually attached
+  // photo/video/product already gives the post visual content, so don't
+  // crowd it with an unrelated link's preview underneath.
+  let linkPreview = null;
+  if (!imageUrl && !videoUrl && !productId) {
+    const firstUrl = extractFirstUrl(body);
+    if (firstUrl) linkPreview = await fetchLinkPreview(firstUrl);
+  }
+
   const post = await db.post.create({
     data: {
       authorId: user.id,
@@ -59,6 +69,12 @@ export async function POST(req: Request) {
       videoThumbnailUrl: videoThumbnailUrl || undefined,
       productId: productId || undefined,
       groupId: groupId || undefined,
+      linkUrl: linkPreview?.url,
+      linkTitle: linkPreview?.title ?? undefined,
+      linkDescription: linkPreview?.description ?? undefined,
+      linkImageUrl: linkPreview?.imageUrl ?? undefined,
+      linkVideoUrl: linkPreview?.videoUrl ?? undefined,
+      linkSiteName: linkPreview?.siteName ?? undefined,
     },
   });
 
