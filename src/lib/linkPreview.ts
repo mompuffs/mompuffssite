@@ -1,4 +1,5 @@
 import { assertSafeUrl, extractMeta, fetchTextCapped } from "@/lib/urlImport";
+import { decodeEntities } from "@/lib/pod/html";
 
 // Keep this well under the post-composer's tolerance for a "hanging"
 // submit -- urlImport's own default (10s, for the shop-import flow where a
@@ -43,50 +44,106 @@ export function isDirectVideoUrl(url: string): boolean {
 function resolveMaybeRelative(value: string | undefined, base: URL): string | undefined {
   if (!value) return undefined;
   try {
-    return new URL(value, base).toString();
+    // Meta-tag content is raw HTML-source text -- entities (&amp; etc. --
+    // very common in these URLs, which are usually query-string-heavy CDN
+    // links) need decoding before the string is a usable URL at all.
+    return new URL(decodeEntities(value), base).toString();
   } catch {
     return undefined;
   }
 }
 
-/** Fetches Open Graph (falling back to Twitter Card / <title>) metadata for
- *  a URL. Never throws -- a broken/slow/blocking source just means no
- *  preview, not a failed post. */
+function decodeOrUndefined(value: string | undefined): string | undefined {
+  return value ? decodeEntities(value) : undefined;
+}
+
+const YOUTUBE_ID_RE =
+  /(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/i;
+
+/** YouTube (and most large platforms) actively detect and block/ degrade
+ *  scraping requests from cloud/datacenter IPs -- confirmed live: the exact
+ *  same request that returns full Open Graph tags from a residential IP
+ *  came back from this app's own Vercel deployment with no og:video/
+ *  og:image at all. oEmbed is YouTube's own sanctioned, unauthenticated API
+ *  for exactly this use case, so it isn't subject to that treatment. */
+async function fetchYouTubeOEmbed(url: string): Promise<LinkPreview | null> {
+  const videoId = url.match(YOUTUBE_ID_RE)?.[1];
+  if (!videoId) return null;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), PREVIEW_FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`, {
+      signal: controller.signal,
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return {
+      url,
+      title: typeof data.title === "string" ? data.title : null,
+      description: null, // oEmbed doesn't provide one
+      imageUrl: typeof data.thumbnail_url === "string" ? data.thumbnail_url : null,
+      videoUrl: `https://www.youtube.com/embed/${videoId}`,
+      siteName: "YouTube",
+      isDirectVideoFile: false,
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function fetchOpenGraphPreview(rawUrl: string): Promise<LinkPreview | null> {
+  const url = await assertSafeUrl(rawUrl);
+  const html = await fetchTextCapped(url.toString(), PREVIEW_FETCH_TIMEOUT_MS);
+
+  let title = extractMeta(html, "og:title") || extractMeta(html, "twitter:title");
+  if (!title) {
+    const titleTag = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+    title = titleTag?.[1]?.trim();
+  }
+  const description = extractMeta(html, "og:description") || extractMeta(html, "twitter:description");
+  const imageUrl = resolveMaybeRelative(
+    extractMeta(html, "og:image:secure_url") || extractMeta(html, "og:image") || extractMeta(html, "twitter:image"),
+    url
+  );
+  const videoUrl = resolveMaybeRelative(
+    extractMeta(html, "og:video:secure_url") || extractMeta(html, "og:video:url") || extractMeta(html, "og:video"),
+    url
+  );
+  const siteName = extractMeta(html, "og:site_name");
+
+  if (!title && !description && !imageUrl && !videoUrl) return null;
+
+  const videoType = extractMeta(html, "og:video:type");
+  const isDirectVideoFile = !!videoUrl && (DIRECT_VIDEO_EXTENSIONS.test(videoUrl) || !!videoType?.startsWith("video/"));
+
+  return {
+    url: url.toString(),
+    title: decodeOrUndefined(title) ?? null,
+    description: decodeOrUndefined(description) ?? null,
+    imageUrl: imageUrl ?? null,
+    videoUrl: videoUrl ?? null,
+    siteName: decodeOrUndefined(siteName) ?? null,
+    isDirectVideoFile,
+  };
+}
+
+/** Fetches preview metadata for a URL -- YouTube via its own oEmbed API
+ *  (see fetchYouTubeOEmbed for why), everything else via Open Graph/Twitter
+ *  Card scraping. Never throws -- a broken/slow/blocking source just means
+ *  no preview, not a failed post. */
 export async function fetchLinkPreview(rawUrl: string): Promise<LinkPreview | null> {
   try {
-    const url = await assertSafeUrl(rawUrl);
-    const html = await fetchTextCapped(url.toString(), PREVIEW_FETCH_TIMEOUT_MS);
-
-    let title = extractMeta(html, "og:title") || extractMeta(html, "twitter:title");
-    if (!title) {
-      const titleTag = html.match(/<title[^>]*>([^<]*)<\/title>/i);
-      title = titleTag?.[1]?.trim();
+    if (/(?:^|\.)youtube(?:-nocookie)?\.com$|(?:^|\.)youtu\.be$/i.test(new URL(rawUrl).hostname)) {
+      const oembed = await fetchYouTubeOEmbed(rawUrl);
+      if (oembed) return oembed;
+      // Fall through to Open Graph scraping if oEmbed didn't work out (e.g.
+      // a non-video YouTube URL, or oEmbed itself is unreachable) -- still
+      // worth a shot rather than giving up on a YouTube link entirely.
     }
-    const description = extractMeta(html, "og:description") || extractMeta(html, "twitter:description");
-    const imageUrl = resolveMaybeRelative(
-      extractMeta(html, "og:image:secure_url") || extractMeta(html, "og:image") || extractMeta(html, "twitter:image"),
-      url
-    );
-    const videoUrl = resolveMaybeRelative(
-      extractMeta(html, "og:video:secure_url") || extractMeta(html, "og:video:url") || extractMeta(html, "og:video"),
-      url
-    );
-    const siteName = extractMeta(html, "og:site_name");
-
-    if (!title && !description && !imageUrl && !videoUrl) return null;
-
-    const videoType = extractMeta(html, "og:video:type");
-    const isDirectVideoFile = !!videoUrl && (DIRECT_VIDEO_EXTENSIONS.test(videoUrl) || !!videoType?.startsWith("video/"));
-
-    return {
-      url: url.toString(),
-      title: title ?? null,
-      description: description ?? null,
-      imageUrl: imageUrl ?? null,
-      videoUrl: videoUrl ?? null,
-      siteName: siteName ?? null,
-      isDirectVideoFile,
-    };
+    return await fetchOpenGraphPreview(rawUrl);
   } catch {
     return null;
   }
