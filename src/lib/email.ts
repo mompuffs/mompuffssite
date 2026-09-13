@@ -131,6 +131,31 @@ Approving here only marks the request as approved -- it does not move any money.
   }
 }
 
+export async function sendVerificationEmail({ to, verifyUrl }: { to: string; verifyUrl: string }) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY not set -- skipping verification email.");
+    return;
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to,
+      subject: "Verify your Mompuffs account",
+      text: `Welcome to Mompuffs! Confirm this email address to finish setting up your account.
+
+Verify your email: ${verifyUrl}
+
+This link expires in 24 hours. If you didn't create a Mompuffs account, you can ignore this email.`,
+    });
+    if (error) {
+      console.error("Resend rejected the verification email:", error);
+    }
+  } catch (err) {
+    console.error("Failed to send verification email:", err);
+  }
+}
+
 export async function sendContactMessage({
   name,
   email,

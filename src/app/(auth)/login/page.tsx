@@ -1,17 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
+// useSearchParams() (used below, to read ?verified=1 / ?verifyError=1 coming
+// back from /api/auth/verify-email) requires a Suspense boundary in the App
+// Router, or the build opts the whole page out of static rendering.
 export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { status } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Set by a redirect back from /api/auth/verify-email (see that route) or
+  // by attempting to log into an unverified account (see handleSubmit).
+  const [notice, setNotice] = useState<string | null>(() => {
+    if (searchParams.get("verified")) return "Email verified! You can log in now.";
+    if (searchParams.get("verifyError")) return "That verification link is invalid or has expired.";
+    return null;
+  });
 
   // Single source of truth for the post-login redirect. next-auth's
   // signIn() (below) internally awaits a session re-fetch before it
@@ -67,7 +86,11 @@ export default function LoginPage() {
 
     if (res?.error) {
       setLoading(false);
-      setError("Invalid email or password.");
+      if (res.error === "EMAIL_NOT_VERIFIED") {
+        setError("Please verify your email before logging in -- check your inbox for the link, or resend it below.");
+      } else {
+        setError("Invalid email or password.");
+      }
       return;
     }
     // Success: leave loading=true and let the effect above redirect once
@@ -77,6 +100,7 @@ export default function LoginPage() {
   return (
     <div className="max-w-sm mx-auto mt-12 bg-white p-6 rounded-xl shadow">
       <h1 className="text-2xl font-bold text-brand-600 mb-4">Log in to Mompuffs</h1>
+      {notice && <p className="text-sm text-gray-700 mb-3">{notice}</p>}
       <form onSubmit={handleSubmit} className="space-y-3">
         <input
           type="email"
@@ -101,7 +125,19 @@ export default function LoginPage() {
             Forgot password?
           </Link>
         </p>
-        {error && <p className="text-red-600 text-sm">{error}</p>}
+        {error && (
+          <p className="text-red-600 text-sm">
+            {error}
+            {error.startsWith("Please verify") && (
+              <>
+                {" "}
+                <Link href="/resend-verification" className="underline">
+                  Resend verification email
+                </Link>
+              </>
+            )}
+          </p>
+        )}
         <button
           type="submit"
           disabled={loading}

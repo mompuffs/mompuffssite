@@ -7,9 +7,13 @@ export default function ContactPage() {
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot -- real users never see or fill this
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  // Captured once, at mount, so the server can reject submissions that come
+  // back faster than a person could plausibly fill the form out.
+  const [formRenderedAt] = useState(() => Date.now());
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -19,7 +23,7 @@ export default function ContactPage() {
     const res = await fetch("/api/contact", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, subject, message }),
+      body: JSON.stringify({ name, email, subject, message, website, formRenderedAt }),
     });
     const data = await res.json();
 
@@ -77,6 +81,21 @@ export default function ContactPage() {
               onChange={(e) => setMessage(e.target.value)}
               rows={6}
               className="w-full border rounded px-3 py-2 resize-none"
+            />
+            {/* Honeypot: hidden from sighted and screen-reader users alike,
+                but a form-filling bot that scrapes all inputs will fill it
+                in. Never made visible via CSS a bot could trivially detect
+                (display:none is fine here -- simplicity wins over the
+                marginal bot that specifically checks for it). */}
+            <input
+              type="text"
+              name="website"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+              style={{ display: "none" }}
             />
             {error && <p className="text-red-600 text-sm">{error}</p>}
             <button

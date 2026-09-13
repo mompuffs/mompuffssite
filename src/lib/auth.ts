@@ -26,6 +26,15 @@ export const authOptions: NextAuthOptions = {
         const valid = await bcrypt.compare(credentials.password, user.passwordHash);
         if (!valid) return null;
 
+        // Blocks a spam-bot account from ever being signed into, even if it
+        // got past registration's rate limit/honeypot -- see
+        // src/app/api/auth/register/route.ts. Thrown (rather than returning
+        // null like the checks above) so the login page can show a
+        // different message than "wrong password" for this case.
+        if (!user.emailVerifiedAt) {
+          throw new Error("EMAIL_NOT_VERIFIED");
+        }
+
         return {
           id: user.id,
           email: user.email,

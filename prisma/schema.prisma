@@ -34,6 +34,11 @@ model User {
   isAdmin       Boolean  @default(false)
   notificationsCheckedAt DateTime?
   lastActiveAt  DateTime?
+  // Null until the account's email is confirmed via the link sent at
+  // registration -- see src/lib/emailVerification.ts. Credentials login is
+  // blocked (src/lib/auth.ts) until this is set, so a spam-bot account
+  // can't be signed into even if it gets past registration's rate limit.
+  emailVerifiedAt DateTime?
 
   posts         Post[]
   comments      Comment[]
@@ -49,8 +54,29 @@ model User {
   shop          Shop?
   orders        Order[]
   passwordResetTokens PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
   ownedGroups   Group[]           @relation("OwnedGroups")
   groupMemberships GroupMembership[]
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  @@index([userId])
+}
+
+// Simple fixed-window counter used to throttle spam-prone public endpoints
+// (registration, contact form) per IP. Not exact under concurrent requests
+// (see src/lib/rateLimit.ts) but that's fine for spam mitigation -- it
+// doesn't need to be as precise as a real distributed limiter would be.
+model RateLimitBucket {
+  key         String   @id
+  count       Int      @default(0)
+  windowStart DateTime @default(now())
 }
 
 model PasswordResetToken {
