@@ -4,6 +4,7 @@ import { evaluateCoupon } from "@/lib/coupons";
 import { calculateShippingCents } from "@/lib/shipping";
 import { calculateCartTax } from "@/lib/tax";
 import { sendSaleNotification } from "@/lib/email";
+import { reportSaleToApollo } from "@/lib/apollo";
 
 export type AddressInput = {
   name?: string;
@@ -115,7 +116,7 @@ export async function createPaidOrder({
     });
   });
 
-  const buyer = await db.user.findUnique({ where: { id: buyerId }, select: { displayName: true } });
+  const buyer = await db.user.findUnique({ where: { id: buyerId }, select: { displayName: true, email: true } });
   const shopIds = Array.from(new Set(order.items.map((i) => i.product.shopId)));
   const shops = await db.shop.findMany({
     where: { id: { in: shopIds } },
@@ -140,6 +141,22 @@ export async function createPaidOrder({
       });
     })
   );
+
+  await reportSaleToApollo({
+    orderId: order.id,
+    amountCents: finalTotalCents,
+    email: buyer?.email,
+    products: order.items.map((i) => i.product.title),
+    metadata: {
+      payment: paymentProvider,
+      shops: shops.map((s) => s.name),
+      subtotal_cents: totalCents,
+      discount_cents: discountCents,
+      shipping_cents: shippingCents,
+      tax_cents: taxCents,
+      coupon: couponCodeSnapshot ?? null,
+    },
+  });
 
   return { order, finalTotalCents, shippingCents, taxCents, priced };
 }
