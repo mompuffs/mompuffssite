@@ -38,6 +38,9 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={nunito.variable}>
+      <head>
+        <script defer data-site="mom-puffs" src="https://apollo.innovativeonlinesolution.com/a.js"></script>
+      </head>
       <body>
         <SessionProviderWrapper>
           <CartProvider>
