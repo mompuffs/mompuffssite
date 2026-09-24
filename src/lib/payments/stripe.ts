@@ -28,3 +28,15 @@ export async function refundPaymentIntent(creds: StripeCreds, paymentIntentId: s
     ...(amountCents ? { amount: amountCents } : {}),
   });
 }
+
+// ---------- Lookups used to report refunds (see src/lib/refundSync.ts) ----------
+
+export async function listPaymentRefunds(creds: StripeCreds, paymentIntentId: string) {
+  const res = await client(creds).refunds.list({ payment_intent: paymentIntentId, limit: 100 });
+  return res.data;
+}
+
+export async function listPaymentDisputes(creds: StripeCreds, paymentIntentId: string) {
+  const res = await client(creds).disputes.list({ payment_intent: paymentIntentId, limit: 100 });
+  return res.data;
+}

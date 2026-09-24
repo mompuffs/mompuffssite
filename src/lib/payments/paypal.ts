@@ -81,3 +81,39 @@ export async function refundCapture(creds: PayPalCreds, captureId: string, amoun
   }
   return data;
 }
+
+// ---------- Lookups used to report refunds (see src/lib/refundSync.ts) ----------
+
+async function paypalGet<T>(creds: PayPalCreds, path: string): Promise<T> {
+  const token = await getAccessToken(creds);
+  const res = await fetch(`${baseUrl(creds.environment)}${path}`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(`PayPal lookup ${path} failed (${res.status}): ${JSON.stringify(data)}`);
+  return data as T;
+}
+
+export type PayPalCapture = {
+  id: string;
+  status: string; // COMPLETED | PARTIALLY_REFUNDED | REFUNDED | REVERSED | ...
+  amount: { value: string; currency_code: string };
+  update_time?: string;
+  supplementary_data?: { related_ids?: { order_id?: string } };
+};
+
+export function getCapture(creds: PayPalCreds, captureId: string) {
+  return paypalGet<PayPalCapture>(creds, `/v2/payments/captures/${encodeURIComponent(captureId)}`);
+}
+
+export type PayPalRefund = { id: string; status: string; amount: { value: string; currency_code: string }; create_time?: string };
+
+/** Every refund recorded against a PayPal checkout order. */
+export async function getOrderRefunds(creds: PayPalCreds, paypalOrderId: string): Promise<PayPalRefund[]> {
+  const order = await paypalGet<{ purchase_units?: { payments?: { refunds?: PayPalRefund[] } }[] }>(
+    creds,
+    `/v2/checkout/orders/${encodeURIComponent(paypalOrderId)}`
+  );
+  return (order.purchase_units ?? []).flatMap((u) => u.payments?.refunds ?? []);
+}
