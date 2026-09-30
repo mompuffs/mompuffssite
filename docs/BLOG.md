@@ -23,7 +23,7 @@ nothing on the Socrates side is changed. All of it lives in `src/lib/socrates.ts
 ## Adding mompuffs as a site in Socrates
 
 1. In Socrates, create the profile and set Publishing to **Custom website** with receiving
-   address `https://mompuffs.com/api/webhooks/socrates` and a webhook secret. Note the
+   address `https://www.mompuffs.com/api/webhooks/socrates` and a webhook secret. Note the
    site id and feed key.
 2. In Vercel (mompuffs) set `SOCRATES_SITE_ID`, `SOCRATES_FEED_KEY`, `SOCRATES_WEBHOOK_SECRET`
    (and `SOCRATES_URL` only if the desk moves). Redeploy.

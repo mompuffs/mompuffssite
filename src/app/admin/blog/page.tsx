@@ -61,7 +61,7 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: { 
             </ul>
             <p className="text-xs text-gray-400 mt-2">
               In Socrates, set this profile&apos;s publishing to <em>Custom website</em> with the receiving address{" "}
-              <span className="font-mono break-all">https://mompuffs.com/api/webhooks/socrates</span>.
+              <span className="font-mono break-all">https://www.mompuffs.com/api/webhooks/socrates</span>.
             </p>
           </div>
           <BlogImportButton disabled={!cfg.siteId || !cfg.feedKey} />
