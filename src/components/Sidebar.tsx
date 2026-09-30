@@ -13,6 +13,7 @@ const NAV_ITEMS_BEFORE_NOTIFICATIONS = [
   { href: "/groups", label: "Groups", icon: "👥" },
   { href: "/marketplace", label: "Marketplace", icon: "🛍️" },
   { href: "/cart", label: "Cart", icon: "🛒" },
+  { href: "/blog", label: "Blog", icon: "📰" },
 ];
 const NAV_ITEMS_AFTER_NOTIFICATIONS = [
   { href: "/messages", label: "Messages", icon: "💬" },
