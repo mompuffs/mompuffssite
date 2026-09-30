@@ -1,0 +1,122 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { db } from "@/lib/db";
+import { asFaq, asSources, renderMarkdown } from "@/lib/blog";
+
+export const dynamic = "force-dynamic";
+
+async function getArticle(slug: string) {
+  return db.blogArticle.findFirst({
+    where: { slug, status: "PUBLISHED" },
+    include: { category: { select: { name: true, slug: true } } },
+  });
+}
+
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const a = await getArticle(params.slug);
+  if (!a) return { title: "Article not found | Mompuffs" };
+  const description = a.metaDescription ?? a.dek ?? undefined;
+  return {
+    title: `${a.metaTitle ?? a.title} | Mompuffs`,
+    description,
+    openGraph: {
+      type: "article",
+      title: a.metaTitle ?? a.title,
+      description,
+      images: a.heroImage ? [{ url: a.heroImage, alt: a.heroAlt ?? a.title }] : undefined,
+      publishedTime: a.publishedAt.toISOString(),
+    },
+  };
+}
+
+export default async function BlogArticlePage({ params }: { params: { slug: string } }) {
+  const a = await getArticle(params.slug);
+  if (!a) notFound();
+
+  const faq = asFaq(a.faq);
+  const sources = asSources(a.sources);
+  const date = a.publishedAt.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+
+  return (
+    <article className="bg-white rounded-xl shadow overflow-hidden">
+      {a.heroImage && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={a.heroImage} alt={a.heroAlt ?? a.title} className="w-full aspect-[16/9] object-cover" />
+      )}
+      <div className="p-5 sm:p-8">
+        <nav className="text-sm mb-3 flex flex-wrap items-center gap-2">
+          <Link href="/blog" className="text-brand-600 hover:underline">
+            ← Blog
+          </Link>
+          {a.category && (
+            <Link
+              href={`/blog?category=${a.category.slug}`}
+              className="bg-brand-50 text-brand-700 font-medium px-2 py-0.5 rounded-full text-xs hover:bg-brand-100"
+            >
+              {a.category.name}
+            </Link>
+          )}
+        </nav>
+        <h1 className="text-2xl sm:text-3xl font-bold leading-tight break-words">{a.title}</h1>
+        {a.dek && <p className="text-lg text-gray-600 mt-2">{a.dek}</p>}
+        <p className="text-sm text-gray-400 mt-3">
+          {a.author ? `${a.author} · ` : ""}
+          <time dateTime={a.publishedAt.toISOString()}>{date}</time>
+        </p>
+
+        {a.tldr && (
+          <div className="mt-6 bg-brand-50 border-l-4 border-brand-500 rounded p-4 text-sm">
+            <p className="font-semibold text-brand-800 mb-1">TL;DR</p>
+            <p className="text-gray-700">{a.tldr}</p>
+          </div>
+        )}
+
+        <div className="blog-prose mt-6" dangerouslySetInnerHTML={{ __html: renderMarkdown(a.body) }} />
+
+        {faq.length > 0 && (
+          <section className="mt-10">
+            <h2 className="text-xl font-bold mb-3">FAQ</h2>
+            <div className="space-y-2">
+              {faq.map((f, i) => (
+                <details key={i} className="border rounded-lg p-3">
+                  <summary className="font-medium cursor-pointer">{f.q}</summary>
+                  <p className="text-sm text-gray-700 mt-2">{f.a}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {sources.length > 0 && (
+          <section className="mt-10">
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-gray-400 mb-2">Sources</h2>
+            <ol className="list-decimal pl-5 text-sm space-y-1">
+              {sources.map((s, i) => (
+                <li key={i} className="break-words">
+                  <a href={s.url} target="_blank" rel="nofollow noopener noreferrer" className="text-brand-600 hover:underline">
+                    {s.title}
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
+        {a.tags.length > 0 && (
+          <div className="mt-8 flex flex-wrap gap-2">
+            {a.tags.map((t) => (
+              <Link
+                key={t}
+                href={`/blog?q=${encodeURIComponent(t)}`}
+                className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full hover:bg-gray-200"
+              >
+                #{t}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}

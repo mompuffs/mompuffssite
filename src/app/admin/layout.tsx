@@ -13,9 +13,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   if (!(user as any).isAdmin) redirect("/feed");
 
   return (
-    <div className="flex min-h-[calc(100vh-3.5rem)] bg-gray-100">
+    <div className="flex flex-col md:flex-row min-h-[calc(100vh-3.5rem)] bg-gray-100">
       <AdminSidebar />
-      <div className="flex-1 min-w-0 p-6 md:p-8">{children}</div>
+      <div className="flex-1 min-w-0 p-4 md:p-8">{children}</div>
     </div>
   );
 }

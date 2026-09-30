@@ -60,3 +60,24 @@ body {
   outline-offset: 2px;
   border-radius: 2px;
 }
+
+/* Blog article body (rendered markdown). No typography plugin in this
+   project, so the handful of elements an article uses are styled here. */
+.blog-prose { color: #362f3b; line-height: 1.75; overflow-wrap: anywhere; }
+.blog-prose > * + * { margin-top: 1rem; }
+.blog-prose h2 { font-size: 1.375rem; font-weight: 700; margin-top: 2rem; line-height: 1.3; color: #241f28; }
+.blog-prose h3 { font-size: 1.125rem; font-weight: 700; margin-top: 1.5rem; color: #241f28; }
+.blog-prose h4 { font-weight: 600; margin-top: 1.25rem; }
+.blog-prose a { color: #7c5c7b; text-decoration: underline; text-underline-offset: 2px; }
+.blog-prose a:hover { color: #482444; }
+.blog-prose ul { list-style: disc; padding-left: 1.5rem; }
+.blog-prose ol { list-style: decimal; padding-left: 1.5rem; }
+.blog-prose li + li { margin-top: 0.25rem; }
+.blog-prose blockquote { border-left: 4px solid #d0bfcc; padding-left: 1rem; color: #63586a; font-style: italic; }
+.blog-prose img { border-radius: 0.5rem; max-width: 100%; height: auto; }
+.blog-prose code { background: #f1eef4; padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-size: 0.875em; }
+.blog-prose pre { background: #241f28; color: #f1eef4; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
+.blog-prose pre code { background: none; padding: 0; }
+.blog-prose table { width: 100%; border-collapse: collapse; font-size: 0.875rem; display: block; overflow-x: auto; }
+.blog-prose th, .blog-prose td { border: 1px solid #e6e1ea; padding: 0.5rem; text-align: left; }
+.blog-prose hr { border-color: #e6e1ea; margin: 2rem 0; }

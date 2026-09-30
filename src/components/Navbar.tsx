@@ -113,6 +113,7 @@ export default function Navbar() {
           <MarketplaceMenu>
             <Link href="/marketplace" className="hover:text-white">Marketplace</Link>
           </MarketplaceMenu>
+          <Link href="/blog" className="hover:text-white">Blog</Link>
           <Link href="/cart" className="hover:text-white">Cart</Link>
 
           {status === "authenticated" && session?.user ? (
@@ -158,6 +159,7 @@ export default function Navbar() {
           <Link href="/feed" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Feed</Link>
           <Link href="/groups" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Groups</Link>
           <Link href="/marketplace" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Marketplace</Link>
+          <Link href="/blog" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Blog</Link>
           <Link href="/cart" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Cart</Link>
 
           {status === "authenticated" && session?.user ? (
