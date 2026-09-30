@@ -44,7 +44,6 @@ export default async function AdminBlogArticlePage({ params }: { params: { id: s
           categoryId: article.categoryId ?? "",
           linked: Boolean(article.socratesId),
           lastSyncedAt: article.lastSyncedAt?.toISOString() ?? null,
-          syncError: article.syncError,
         }}
       />
     </div>

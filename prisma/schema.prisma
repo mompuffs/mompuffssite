@@ -435,8 +435,7 @@ model TaxRate {
 
 // ---------------------------------------------------------------------------
 // Blog. Articles are written in Socrates (the content desk) and arrive here
-// by its signed publish webhook or by an import from its feed; edits made on
-// the admin edit page are pushed back to Socrates (two-way sync, see
+// by its signed publish webhook or by an import from its feed (see
 // src/lib/socrates.ts). Categories are mompuffs-owned: a Socrates "pillar"
 // only picks the category of a brand-new article, after that the admin's
 // choice sticks.
@@ -470,17 +469,14 @@ model BlogArticle {
   status            String        @default("PUBLISHED")
   category          BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   categoryId        String?
-  // Socrates link. socratesUpdatedAt is the Socrates-side updatedAt of the
-  // version we hold, sent back as expectedUpdatedAt so a push never clobbers
-  // a newer Socrates edit. syncError is set when a local save couldn't be
-  // pushed, and cleared by the next successful push or incoming update.
+  // Socrates link. Any incoming update (webhook, import, Pull latest)
+  // replaces the content fields; category and status stay as set here.
   socratesId        String?       @unique
   socratesSiteId    String?
   socratesSlug      String?
   socratesPillar    String?
   socratesUpdatedAt DateTime?
   lastSyncedAt      DateTime?
-  syncError         String?
   publishedAt       DateTime      @default(now())
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt

@@ -1,20 +1,14 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAdminUser } from "@/lib/admin";
-import { pushArticle } from "@/lib/socrates";
 
 export const dynamic = "force-dynamic";
 
 const TEXT_FIELDS = ["dek", "tldr", "metaTitle", "metaDescription", "heroImage", "heroAlt", "author"] as const;
 
-// Saves the edit page. Content goes to Socrates first (two-way sync) so the
-// two copies can't silently drift:
-//   - Socrates accepted it  -> save locally with Socrates' new updatedAt
-//   - Socrates has a newer edit (409) -> save nothing; the page offers
-//     "Overwrite Socrates" (force) or "Pull latest"
-//   - Socrates unreachable  -> save locally and record syncError, so the
-//     page shows the article as out of sync with a retry
-// Category and visibility are mompuffs-only and never sent.
+// Saves the edit page on mompuffs only. Socrates is where articles are
+// written: its next send, an import, or Pull latest replaces the content
+// fields here. Category and visibility are mompuffs-only and always kept.
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const admin = await getAdminUser();
   if (!admin) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
@@ -59,33 +53,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     categoryId: next.categoryId,
   };
 
-  if (!article.socratesId) {
-    await db.blogArticle.update({ where: { id: article.id }, data: local });
-    return NextResponse.json({ ok: true, synced: false });
-  }
-
-  const pushed = await pushArticle(next, body.force === true);
-  if (!pushed.ok && pushed.conflict) {
-    return NextResponse.json(
-      { error: pushed.error, conflict: true, socratesUpdatedAt: pushed.post.updatedAt },
-      { status: 409 },
-    );
-  }
-  if (!pushed.ok) {
-    await db.blogArticle.update({ where: { id: article.id }, data: { ...local, syncError: pushed.error } });
-    return NextResponse.json({ ok: true, synced: false, syncError: pushed.error });
-  }
-
-  await db.blogArticle.update({
-    where: { id: article.id },
-    data: {
-      ...local,
-      socratesUpdatedAt: new Date(pushed.post.updatedAt),
-      lastSyncedAt: new Date(),
-      syncError: null,
-    },
-  });
-  return NextResponse.json({ ok: true, synced: true });
+  await db.blogArticle.update({ where: { id: article.id }, data: local });
+  return NextResponse.json({ ok: true });
 }
 
 // Removes the article from mompuffs only; the Socrates original is untouched

@@ -20,16 +20,17 @@ type Article = {
   categoryId: string;
   linked: boolean;
   lastSyncedAt: string | null;
-  syncError: string | null;
 };
 
-type Notice = { tone: "ok" | "warn" | "error"; text: string } | null;
+type Notice = { tone: "ok" | "error"; text: string } | null;
 
 const input = "w-full border rounded px-3 py-1.5 text-sm";
 const label = "block text-xs font-medium text-gray-600 mb-1";
 
-// The edit page for one blog article. Content fields sync to the matching
-// Socrates article on save; category and visibility are mompuffs-only.
+// The edit page for one blog article. Socrates is where articles are written:
+// "Open in Socrates editor" edits the original, and its next send (or Pull
+// latest) replaces the content here. Saving here only changes mompuffs.
+// Category and visibility are mompuffs-only and survive every sync.
 export default function BlogArticleEditor({
   article,
   categories,
@@ -42,15 +43,12 @@ export default function BlogArticleEditor({
   const router = useRouter();
   const [a, setA] = useState(article);
   const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<Notice>(
-    article.syncError ? { tone: "warn", text: `Last save didn't reach Socrates: ${article.syncError}` } : null,
-  );
-  const [conflict, setConflict] = useState(false);
+  const [notice, setNotice] = useState<Notice>(null);
 
   const set = (k: keyof Article) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setA((cur) => ({ ...cur, [k]: e.target.value }));
 
-  async function save(force = false) {
+  async function save() {
     setBusy(true);
     setNotice(null);
     const res = await fetch(`/api/admin/blog/articles/${a.id}`, {
@@ -69,29 +67,15 @@ export default function BlogArticleEditor({
         tags: a.tags.split(",").map((t) => t.trim()).filter(Boolean),
         status: a.status,
         categoryId: a.categoryId || null,
-        force,
       }),
     });
     const data = await res.json().catch(() => ({}));
     setBusy(false);
-    if (res.status === 409 && data.conflict) {
-      setConflict(true);
-      setNotice({
-        tone: "error",
-        text: "This article was changed in Socrates after it was last synced here. Pull the latest version, or overwrite Socrates with your edits.",
-      });
-      return;
-    }
     if (!res.ok) {
       setNotice({ tone: "error", text: data.error || "Something went wrong." });
       return;
     }
-    setConflict(false);
-    if (data.syncError) {
-      setNotice({ tone: "warn", text: `Saved here, but Socrates wasn't updated: ${data.syncError}. Save again to retry.` });
-    } else {
-      setNotice({ tone: "ok", text: data.synced ? "Saved and synced to Socrates." : "Saved." });
-    }
+    setNotice({ tone: "ok", text: "Saved." });
     router.refresh();
   }
 
@@ -130,7 +114,6 @@ export default function BlogArticleEditor({
 
   const toneClass = {
     ok: "bg-green-50 text-green-800 border-green-200",
-    warn: "bg-amber-50 text-amber-800 border-amber-200",
     error: "bg-red-50 text-red-700 border-red-200",
   };
 
@@ -159,21 +142,12 @@ export default function BlogArticleEditor({
         <div className="bg-white rounded-xl shadow p-5 space-y-3">
           {notice && <p className={`text-xs border rounded p-2 ${toneClass[notice.tone]}`}>{notice.text}</p>}
           <button
-            onClick={() => save(false)}
+            onClick={save}
             disabled={busy || !a.title.trim()}
             className="w-full bg-brand-600 text-white text-sm font-medium px-4 py-2 rounded-full hover:bg-brand-700 disabled:opacity-40"
           >
-            {busy ? "Working…" : a.linked ? "Save & sync to Socrates" : "Save"}
+            {busy ? "Working…" : "Save"}
           </button>
-          {conflict && (
-            <button
-              onClick={() => save(true)}
-              disabled={busy}
-              className="w-full border border-red-300 text-red-700 text-sm px-4 py-2 rounded-full hover:bg-red-50 disabled:opacity-40"
-            >
-              Overwrite Socrates with my edits
-            </button>
-          )}
           {a.linked && (
             <>
               <button
@@ -195,8 +169,9 @@ export default function BlogArticleEditor({
               )}
               <p className="text-xs text-gray-400">
                 {a.lastSyncedAt ? `Last synced ${new Date(a.lastSyncedAt).toLocaleString()}. ` : ""}
-                Edits saved in Socrates show up here automatically. In Socrates, switch to the mompuffs profile
-                before opening the editor link.
+                To change the article itself, edit it in Socrates and send it again (or Pull latest here).
+                Content saved on this page is replaced by the next update from Socrates; category and
+                visibility are kept.
               </p>
             </>
           )}

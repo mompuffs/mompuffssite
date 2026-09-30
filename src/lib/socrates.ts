@@ -3,18 +3,13 @@ import { Prisma, type BlogArticle } from "@prisma/client";
 import { db } from "@/lib/db";
 import { blogSlugify, uniqueBlogCategorySlug } from "@/lib/blog";
 
-// Two-way sync with Socrates (the socrates-standalone content desk).
-//
-//   Socrates -> mompuffs:
-//     - Socrates POSTs the signed `post.published` payload to
-//       /api/blog/socrates when an article is published, and again whenever a
-//       published article is edited there (receiver: handleIncomingPost).
-//     - The admin "Import from Socrates" button / per-article "Pull latest"
-//       read GET <SOCRATES_URL>/api/feed/<siteId> with the feed key.
-//   mompuffs -> Socrates:
-//     - Saving on /admin/blog/[id] PATCHes <SOCRATES_URL>/api/feed/<siteId>
-//       with the same feed key (pushArticle). Socrates doesn't re-send the
-//       result back, so the round trip can't loop.
+// mompuffs as a Socrates "Custom website" (socrates-standalone content desk).
+// Socrates is where articles are written and edited; this side only receives:
+//   - Socrates POSTs the signed `post.published` payload to
+//     /api/webhooks/socrates on publish, and again when someone uses its
+//     "send" action on a published article.
+//   - The admin "Import from Socrates" button and per-article "Pull latest"
+//     read GET <SOCRATES_URL>/api/feed/<siteId> with the profile's feed key.
 //
 // Env: SOCRATES_URL, SOCRATES_SITE_ID, SOCRATES_FEED_KEY (from the profile
 // form in Socrates), SOCRATES_WEBHOOK_SECRET (the profile's webhook secret).
@@ -132,7 +127,6 @@ export async function upsertFromSocrates(p: SocratesPost, siteId: string) {
     socratesPillar: p.pillar,
     socratesUpdatedAt: new Date(p.updatedAt),
     lastSyncedAt: new Date(),
-    syncError: null,
   };
   const content = contentFields(p);
 
@@ -205,44 +199,4 @@ export async function pullFromSocrates(article: BlogArticle) {
   const data = (await res.json()) as { post: SocratesPost };
   if (data.post.id !== article.socratesId) throw new Error("Socrates returned a different article.");
   return upsertFromSocrates(data.post, socratesConfig().siteId);
-}
-
-export type PushResult =
-  | { ok: true; post: SocratesPost }
-  | { ok: false; conflict: true; error: string; post: SocratesPost }
-  | { ok: false; conflict: false; error: string };
-
-// Sends the article's editable content to Socrates. `force` skips the
-// expectedUpdatedAt check (the admin chose to overwrite a newer Socrates edit).
-export async function pushArticle(article: BlogArticle, force = false): Promise<PushResult> {
-  if (!article.socratesId) return { ok: false, conflict: false, error: "This article isn't linked to Socrates." };
-  let res: Response;
-  try {
-    res = await feedFetch("", {
-      method: "PATCH",
-      body: JSON.stringify({
-        id: article.socratesId,
-        expectedUpdatedAt: force ? undefined : article.socratesUpdatedAt?.toISOString(),
-        title: article.title,
-        dek: article.dek,
-        tldr: article.tldr,
-        body: article.body,
-        metaTitle: article.metaTitle,
-        metaDescription: article.metaDescription,
-        heroImage: article.heroImage,
-        heroAlt: article.heroAlt,
-        author: article.author,
-        tags: article.tags,
-      }),
-    });
-  } catch (e) {
-    return { ok: false, conflict: false, error: e instanceof Error ? e.message : String(e) };
-  }
-  if (res.status === 409) {
-    const j = await res.json();
-    return { ok: false, conflict: true, error: j.error, post: j.post };
-  }
-  if (!res.ok) return { ok: false, conflict: false, error: await errorText(res) };
-  const j = (await res.json()) as { post: SocratesPost };
-  return { ok: true, post: j.post };
 }

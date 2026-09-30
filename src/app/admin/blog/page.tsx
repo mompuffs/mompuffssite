@@ -33,7 +33,7 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: { 
     <div>
       <h1 className="text-2xl font-bold text-brand-900 mb-1">Blog</h1>
       <p className="text-sm text-gray-500 mb-4">
-        Articles are written in Socrates and synced both ways. {total} article{total === 1 ? "" : "s"}.
+        Articles are written in Socrates and arrive here when published there. {total} article{total === 1 ? "" : "s"}.
       </p>
       <BlogAdminNav />
 
@@ -94,7 +94,7 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: { 
                   <th className="pb-2 pr-4 font-medium">Category</th>
                   <th className="pb-2 pr-4 font-medium">Status</th>
                   <th className="pb-2 pr-4 font-medium">Published</th>
-                  <th className="pb-2 pr-4 font-medium">Sync</th>
+                  <th className="pb-2 pr-4 font-medium">Last synced</th>
                   <th className="pb-2 font-medium text-right">Action</th>
                 </tr>
               </thead>
@@ -116,10 +116,6 @@ export default async function AdminBlogPage({ searchParams }: { searchParams: { 
                     <td className="py-2.5 pr-4 whitespace-nowrap">
                       {!a.socratesId ? (
                         <span className="text-gray-400">Local</span>
-                      ) : a.syncError ? (
-                        <span className="text-red-600" title={a.syncError}>
-                          Out of sync
-                        </span>
                       ) : (
                         <span className="text-gray-500">{fmt(a.lastSyncedAt)}</span>
                       )}
