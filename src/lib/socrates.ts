@@ -39,6 +39,9 @@ export type SocratesPost = {
   dek: string | null;
   tldr: string | null;
   body: string | null;
+  // body with each body image placed under its heading (markdown). Sent by
+  // Socrates since 2026-10-04; older payloads lack it, so fall back to body.
+  bodyWithImages?: string | null;
   metaTitle: string | null;
   metaDescription: string | null;
   pillar: string | null;
@@ -99,7 +102,7 @@ function contentFields(p: SocratesPost) {
     title: p.title,
     dek: p.dek,
     tldr: p.tldr,
-    body: p.body ?? "",
+    body: p.bodyWithImages ?? p.body ?? "",
     metaTitle: p.metaTitle,
     metaDescription: p.metaDescription,
     heroImage: p.heroImage,
