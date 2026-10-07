@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { getShopPaymentCreds } from "@/lib/payments/connections";
 import { DIRECTORY_PRICES, type DirectoryPlan } from "@/lib/directory";
-import { sendDirectoryRenewalReminder } from "@/lib/email";
+import { sendDirectoryPremiumNotification, sendDirectoryRenewalReminder } from "@/lib/email";
 
 // Directory premium is a recurring PayPal subscription billed to the
 // MomPuffs shop's own connected PayPal account (the same credentials its
@@ -165,9 +165,20 @@ export async function activateSubscription(listingId: string, subscriptionId: st
 
   const listing = await db.businessListing.findUnique({
     where: { id: listingId },
-    select: { paypalSubscriptionId: true, subscriptionStatus: true, premiumUntil: true },
+    select: {
+      name: true,
+      slug: true,
+      status: true,
+      approvedAt: true,
+      paypalSubscriptionId: true,
+      subscriptionStatus: true,
+      premiumUntil: true,
+      claimedBy: { select: { displayName: true, username: true, email: true } },
+    },
   });
   if (!listing) throw new Error("Listing not found.");
+  // A paid submission: payment replaces the review step.
+  const publishing = listing.status === "DRAFT";
 
   const through = premiumThrough(sub, plan);
   await db.businessListing.update({
@@ -180,8 +191,21 @@ export async function activateSubscription(listingId: string, subscriptionId: st
       premiumUntil:
         listing.premiumUntil && listing.premiumUntil > through.premiumUntil ? listing.premiumUntil : through.premiumUntil,
       reminderSentFor: null,
+      ...(publishing ? { status: "APPROVED", approvedAt: listing.approvedAt ?? new Date() } : {}),
     },
   });
+
+  if (listing.claimedBy) {
+    await sendDirectoryPremiumNotification({
+      listingName: listing.name,
+      listingSlug: listing.slug,
+      ownerName: listing.claimedBy.displayName,
+      ownerUsername: listing.claimedBy.username,
+      ownerEmail: listing.claimedBy.email,
+      plan: DIRECTORY_PRICES[plan].display,
+      isNewListing: publishing,
+    });
+  }
 
   // Switching plans: stop the old subscription so they aren't billed twice.
   if (listing.paypalSubscriptionId && listing.paypalSubscriptionId !== sub.id && listing.subscriptionStatus === "ACTIVE") {
@@ -191,7 +215,11 @@ export async function activateSubscription(listingId: string, subscriptionId: st
   }
 }
 
-// Owner cancels: no more charges; premium stays on through what they paid for.
+// PayPal statuses a subscription can still be cancelled from.
+export const CANCELLABLE_STATUSES = ["ACTIVE", "APPROVED", "SUSPENDED"];
+
+// Owner (or admin) cancels: no more charges; premium stays on through what
+// they paid for.
 export async function cancelSubscription(listingId: string) {
   const listing = await db.businessListing.findUnique({
     where: { id: listingId },
@@ -278,5 +306,9 @@ export async function syncSubscriptions() {
       console.error(`Directory subscription sync failed for listing ${l.id}:`, err);
     }
   }
-  return { checked: listings.length, reminders, errors };
+  // Premium submissions whose owner never finished paying.
+  const { count: draftsRemoved } = await db.businessListing.deleteMany({
+    where: { status: "DRAFT", paypalSubscriptionId: null, createdAt: { lt: new Date(now - 2 * DAY_MS) } },
+  });
+  return { checked: listings.length, reminders, errors, draftsRemoved };
 }

@@ -25,6 +25,7 @@ export default async function MySubmissionsPage({ searchParams }: { searchParams
   const listings = await db.businessListing.findMany({
     where: {
       OR: [{ claimedById: userId }, { submittedById: userId, claimedById: null }],
+      status: { not: "DRAFT" }, // unpaid premium submissions
     },
     orderBy: { updatedAt: "desc" },
     select: {

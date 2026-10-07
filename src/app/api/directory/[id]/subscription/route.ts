@@ -29,8 +29,12 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     await activateSubscription(r.listing.id, subscriptionId);
   } catch (err: any) {
     console.error(`Directory subscription ${subscriptionId} activation failed:`, err);
+    // Raw PayPal API errors are logged above, not shown to the buyer.
+    const message = String(err.message ?? "").startsWith("PayPal ")
+      ? "We couldn't confirm your PayPal payment."
+      : err.message ?? "Couldn't activate the subscription.";
     return NextResponse.json(
-      { error: `${err.message ?? "Couldn't activate the subscription."} Reference: ${subscriptionId}` },
+      { error: `${message} If you were charged, contact us with this reference: ${subscriptionId}` },
       { status: 400 }
     );
   }

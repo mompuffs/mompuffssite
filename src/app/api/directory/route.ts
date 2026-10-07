@@ -6,8 +6,13 @@ import { ADDRESS_NOT_FOUND, locateListing, uniqueListingSlug, validateListingInp
 
 export const dynamic = "force-dynamic";
 
-// Member submits a business. It waits for admin approval unless the
-// submitter is an admin; admin-added listings also show every field.
+// Member submits a business. Three paths:
+//   - admin: live right away, every field shown (fullAccess)
+//   - free (listingType "FREE"): waits for admin approval
+//   - premium ("PREMIUM"): saved as a hidden DRAFT owned by the submitter;
+//     paying for the PayPal subscription publishes it with no review
+//     (activateSubscription in src/lib/directoryBilling.ts). Unpaid drafts
+//     are cleaned up by the daily cron.
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Sign in to submit a business." }, { status: 401 });
@@ -18,7 +23,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "You've submitted a lot today. Try again tomorrow." }, { status: 429 });
   }
 
-  const parsed = validateListingInput(await req.json().catch(() => null));
+  const body = await req.json().catch(() => null);
+  const premium = !isAdmin && body?.listingType === "PREMIUM";
+  if (premium && body?.ownerConfirm !== true) {
+    return NextResponse.json({ error: "Confirm that you own or manage this business." }, { status: 400 });
+  }
+  const parsed = validateListingInput(body);
   if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
   const data = parsed.data;
 
@@ -32,9 +42,10 @@ export async function POST(req: Request) {
       ...coords,
       slug: await uniqueListingSlug(data.name, data.city ?? "", data.state),
       submittedById: userId,
-      status: isAdmin ? "APPROVED" : "PENDING",
+      status: isAdmin ? "APPROVED" : premium ? "DRAFT" : "PENDING",
       approvedAt: isAdmin ? new Date() : null,
       fullAccess: isAdmin,
+      ...(premium ? { claimedById: userId, claimedAt: new Date() } : {}),
     },
     select: { id: true, slug: true, status: true },
   });

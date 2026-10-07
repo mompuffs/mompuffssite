@@ -18,7 +18,7 @@ export default function DeleteListingButton({
   const [busy, setBusy] = useState(false);
 
   async function handleDelete() {
-    if (!confirm(`Delete "${name}" from the directory? This can't be undone.`)) return;
+    if (!confirm(`Delete "${name}" from the directory? Any PayPal subscription for it is cancelled too. This can't be undone.`)) return;
     setBusy(true);
     const res = await fetch(`/api/directory/${id}`, { method: "DELETE" });
     setBusy(false);

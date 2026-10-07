@@ -280,3 +280,49 @@ If this doesn't look right, you can remove the claim from Admin -> Directory.`,
     console.error("Failed to send directory claim notification:", err);
   }
 }
+
+// Lets the site owner know a directory listing went Premium -- either a
+// brand-new paid submission (live with no review) or an upgrade.
+export async function sendDirectoryPremiumNotification({
+  listingName,
+  listingSlug,
+  ownerName,
+  ownerUsername,
+  ownerEmail,
+  plan,
+  isNewListing,
+}: {
+  listingName: string;
+  listingSlug: string;
+  ownerName: string;
+  ownerUsername: string;
+  ownerEmail: string;
+  plan: string;
+  isNewListing: boolean;
+}) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY not set -- skipping directory premium notification.");
+    return;
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to: CONTACT_INBOX,
+      replyTo: ownerEmail,
+      subject: isNewListing ? `New paid directory listing: ${listingName}` : `Directory listing upgraded: ${listingName}`,
+      text: `${ownerName} (@${ownerUsername}, ${ownerEmail}) ${
+        isNewListing ? "paid for a new Premium listing, and it's live now" : "upgraded their listing to Premium"
+      } (${plan}).
+
+Listing: ${SITE_URL}/directory/${listingSlug}
+
+To remove it or stop the subscription, go to Admin -> Directory.`,
+    });
+    if (error) {
+      console.error("Resend rejected the directory premium notification:", error);
+    }
+  } catch (err) {
+    console.error("Failed to send directory premium notification:", err);
+  }
+}

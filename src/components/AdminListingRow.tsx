@@ -50,16 +50,22 @@ export default function AdminListingRow({ listing: l }: { listing: AdminListing 
   }
 
   function unclaim() {
-    const sub = l.subscriptionStatus === "ACTIVE" ? " Their PayPal subscription will be cancelled." : "";
+    const sub = ["ACTIVE", "APPROVED", "SUSPENDED"].includes(l.subscriptionStatus ?? "") ? " Their PayPal subscription will be cancelled." : "";
     if (!confirm(`Remove ${l.claimedBy?.displayName}'s claim on "${l.name}"?${sub}`)) return;
     patch({ unclaim: true });
   }
 
+  function stopSubscription() {
+    if (!confirm(`Stop the PayPal subscription for "${l.name}"? They won't be charged again. Premium details stay up until the end of what they've already paid for.`)) return;
+    patch({ cancelSubscription: true });
+  }
+
+  const subscribed = ["ACTIVE", "APPROVED", "SUSPENDED"].includes(l.subscriptionStatus ?? "");
   const paidUntil = l.premiumUntil && new Date(l.premiumUntil) > new Date() ? new Date(l.premiumUntil) : null;
   const tier = l.fullAccess
     ? "Full access"
     : paidUntil
-      ? `Premium (${l.plan === "YEARLY" ? "yearly" : "monthly"}${l.subscriptionStatus === "ACTIVE" ? "" : ", cancelled"}) until ${paidUntil.toLocaleDateString()}`
+      ? `Premium (${l.plan === "YEARLY" ? "yearly" : "monthly"}${subscribed ? "" : ", cancelled"}) until ${paidUntil.toLocaleDateString()}`
       : "Free";
 
   async function setStatus(status: string) {
@@ -132,6 +138,15 @@ export default function AdminListingRow({ listing: l }: { listing: AdminListing 
               className="text-sm font-semibold bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-200 disabled:opacity-40"
             >
               {l.status === "APPROVED" ? "Unpublish" : "Reject"}
+            </button>
+          )}
+          {subscribed && (
+            <button
+              onClick={stopSubscription}
+              disabled={busy}
+              className="text-sm font-semibold text-red-600 hover:underline disabled:opacity-40"
+            >
+              Stop subscription
             </button>
           )}
           <button

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAdminUser } from "@/lib/admin";
-import { cancelSubscription } from "@/lib/directoryBilling";
+import { CANCELLABLE_STATUSES, cancelSubscription } from "@/lib/directoryBilling";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +11,8 @@ const STATUSES = ["APPROVED", "REJECTED", "PENDING"];
 //   { status, reviewNote? }  approve / reject (note shown to submitter) / back to pending
 //   { fullAccess: boolean }  show every field publicly without a subscription
 //   { unclaim: true }        remove the owner's claim (cancels their subscription)
+//   { cancelSubscription: true }  stop the owner's PayPal billing; the listing stays
+//                            up and keeps premium through what they've paid for
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const admin = await getAdminUser();
   if (!admin) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
@@ -27,8 +29,20 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     return NextResponse.json({ ok: true });
   }
 
+  const cancellable = Boolean(listing.paypalSubscriptionId) && CANCELLABLE_STATUSES.includes(listing.subscriptionStatus ?? "");
+
+  if (body.cancelSubscription === true) {
+    if (!cancellable) return NextResponse.json({ error: "This listing has no active subscription." }, { status: 400 });
+    try {
+      await cancelSubscription(params.id);
+    } catch (err: any) {
+      return NextResponse.json({ error: `PayPal couldn't cancel it: ${err.message}` }, { status: 502 });
+    }
+    return NextResponse.json({ ok: true });
+  }
+
   if (body.unclaim === true) {
-    if (listing.paypalSubscriptionId && listing.subscriptionStatus === "ACTIVE") {
+    if (cancellable) {
       try {
         await cancelSubscription(params.id);
       } catch (err: any) {

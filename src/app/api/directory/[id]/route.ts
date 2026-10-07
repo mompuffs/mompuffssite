@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { ADDRESS_NOT_FOUND, locateListing, uniqueListingSlug, validateListingInput } from "@/lib/directoryServer";
 import { canEditListing } from "@/lib/directory";
-import { cancelSubscription } from "@/lib/directoryBilling";
+import { CANCELLABLE_STATUSES, cancelSubscription } from "@/lib/directoryBilling";
 
 export const dynamic = "force-dynamic";
 
@@ -62,7 +62,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   const r = await loadForEdit(params.id);
   if ("error" in r) return r.error;
   // Don't leave PayPal billing someone for a listing that's gone.
-  if (r.listing.paypalSubscriptionId && r.listing.subscriptionStatus === "ACTIVE") {
+  if (r.listing.paypalSubscriptionId && CANCELLABLE_STATUSES.includes(r.listing.subscriptionStatus ?? "")) {
     try {
       await cancelSubscription(r.listing.id);
     } catch (err: any) {

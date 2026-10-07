@@ -1,9 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ImageInput from "@/components/ImageInput";
-import { DAYS, DIRECTORY_CATEGORIES, US_STATES, type DayKey } from "@/lib/directory";
+import PayPalSubscribeButtons from "@/components/PayPalSubscribeButtons";
+import {
+  DAYS,
+  DIRECTORY_CATEGORIES,
+  DIRECTORY_PRICES,
+  FREE_FIELDS_LABEL,
+  PREMIUM_FIELDS_LABEL,
+  US_STATES,
+  type DayKey,
+  type DirectoryPlan,
+} from "@/lib/directory";
+
+type ListingType = "FREE" | DirectoryPlan;
 
 // Empty open/close times on a day that isn't Closed or 24 hours = not listed.
 type DayState = { open: string; close: string; closed: boolean; allDay: boolean };
@@ -74,6 +86,7 @@ export default function DirectoryListingForm({
   isAdmin = false,
   isOwner = false,
   showsAll = false,
+  billing = null,
 }: {
   listingId?: string;
   initial?: ListingFormValues;
@@ -82,8 +95,19 @@ export default function DirectoryListingForm({
   isOwner?: boolean;
   // Whether premium fields already show publicly (admin, comped or paid).
   showsAll?: boolean;
+  // PayPal subscription config; when set, a new member submission can be
+  // paid for up front as Premium (goes live with no review).
+  billing?: { clientId: string; plans: Record<DirectoryPlan, string> } | null;
 }) {
-  const tagPremium = !isAdmin && !showsAll;
+  const offerPremium = !listingId && !isAdmin && Boolean(billing);
+  const [listingType, setListingType] = useState<ListingType>("FREE");
+  const [ownerConfirm, setOwnerConfirm] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  // The hidden draft a premium submission is saved as before payment;
+  // reused if they close PayPal and try again.
+  const draft = useRef<{ id: string; slug: string } | null>(null);
+  const premiumChosen = offerPremium && listingType !== "FREE";
+  const tagPremium = !isAdmin && !showsAll && !premiumChosen;
   const router = useRouter();
   const [v, setV] = useState<ListingFormValues>(initial ?? EMPTY);
   const [days, setDays] = useState(() => initialDays(initial?.hours ?? null));
@@ -106,10 +130,7 @@ export default function DirectoryListingForm({
     });
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-
+  function buildHours(): Record<string, any> | null {
     const hours: Record<string, any> = {};
     for (const { key, label: dayLabel } of DAYS) {
       const d = days[key];
@@ -118,9 +139,66 @@ export default function DirectoryListingForm({
       else if (d.open && d.close) hours[key] = { open: d.open, close: d.close };
       else if (d.open || d.close) {
         setError(`Add both an open and a close time for ${dayLabel}, or leave both blank.`);
-        return;
+        return null;
       } else hours[key] = null;
     }
+    return hours;
+  }
+
+  // Premium checkout, step 1 (before PayPal opens): everything filled in?
+  function readyToPay() {
+    setError(null);
+    if (!formRef.current?.reportValidity()) return false;
+    if (!ownerConfirm) {
+      setError("Confirm that you own or manage this business.");
+      return false;
+    }
+    return buildHours() !== null;
+  }
+
+  // Step 2: save (or update) the hidden draft; its ID ties the PayPal
+  // subscription to this listing. Address problems surface here, before
+  // any money changes hands.
+  async function saveDraft(): Promise<string> {
+    const hours = buildHours();
+    if (!hours) throw new Error("Check the hours.");
+    const body = JSON.stringify({ ...v, hours, listingType: "PREMIUM", ownerConfirm });
+    const res = draft.current
+      ? await fetch(`/api/directory/${draft.current.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body })
+      : await fetch("/api/directory", { method: "POST", headers: { "Content-Type": "application/json" }, body });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error ?? "Couldn't save your listing.");
+    draft.current = { id: data.id, slug: data.slug };
+    return data.id;
+  }
+
+  // Step 3: PayPal approved -- verify it server-side, which publishes the listing.
+  async function finishPaid(subscriptionId: string) {
+    if (!draft.current) return;
+    setSaving(true);
+    setError(null);
+    const res = await fetch(`/api/directory/${draft.current.id}/subscription`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subscriptionId }),
+    });
+    const data = await res.json().catch(() => ({}));
+    setSaving(false);
+    if (!res.ok) {
+      setError(data.error ?? "Your payment went through but we couldn't publish your listing. Please contact us.");
+      return;
+    }
+    router.push(`/directory/${draft.current.slug}`);
+    router.refresh();
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (premiumChosen) return; // paid through the PayPal buttons instead
+    setError(null);
+
+    const hours = buildHours();
+    if (!hours) return;
     setSaving(true);
 
     const res = await fetch(listingId ? `/api/directory/${listingId}` : "/api/directory", {
@@ -139,7 +217,47 @@ export default function DirectoryListingForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+      {offerPremium && (
+        <section className="bg-white rounded-xl shadow p-5 space-y-3">
+          <h2 className="font-bold text-lg">Listing type</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {(
+              [
+                ["FREE", "Free", `Shows ${FREE_FIELDS_LABEL}. Reviewed by our team before it appears.`],
+                ["MONTHLY", `Premium · ${DIRECTORY_PRICES.MONTHLY.display}`, "Shows every detail. Live as soon as you pay."],
+                ["YEARLY", `Premium · ${DIRECTORY_PRICES.YEARLY.display}`, "Same as monthly, two months free. Live as soon as you pay."],
+              ] as [ListingType, string, string][]
+            ).map(([value, title, desc]) => (
+              <label
+                key={value}
+                className={`border rounded-lg px-3 py-2 text-sm cursor-pointer ${
+                  listingType === value ? "border-brand-500 bg-brand-50" : "hover:bg-gray-50"
+                }`}
+              >
+                <span className="flex items-center gap-2 font-semibold">
+                  <input
+                    type="radio"
+                    name="listingType"
+                    checked={listingType === value}
+                    onChange={() => setListingType(value)}
+                    className="accent-brand-600"
+                  />
+                  {title}
+                </span>
+                <span className="block text-xs text-gray-500 mt-1">{desc}</span>
+              </label>
+            ))}
+          </div>
+          {premiumChosen && (
+            <p className="text-xs text-gray-500">
+              Premium renews automatically through PayPal (card or PayPal account) until you cancel. We email you a week before
+              each charge. You&apos;ll be the listing&apos;s owner and can update it anytime.
+            </p>
+          )}
+        </section>
+      )}
+
       {tagPremium && (
         <p className="text-sm bg-brand-50 text-brand-800 rounded-xl px-4 py-3">
           Fields marked <span className="font-bold">Premium</span> are saved, but only show publicly once the business owner
@@ -322,6 +440,36 @@ export default function DirectoryListingForm({
 
       {error && <p className="text-red-600 text-sm bg-red-50 rounded-lg px-3 py-2">{error}</p>}
 
+      {premiumChosen && billing ? (
+        <section className="bg-white rounded-xl shadow p-5 space-y-3">
+          <h2 className="font-bold text-lg">Pay and publish</h2>
+          <label className="flex items-start gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={ownerConfirm}
+              onChange={(e) => setOwnerConfirm(e.target.checked)}
+              className="mt-1 accent-brand-600"
+            />
+            <span>I own this business or I&apos;m authorized to manage its listing.</span>
+          </label>
+          <p className="text-sm text-gray-700">
+            {DIRECTORY_PRICES[listingType as DirectoryPlan].display}, shows your {PREMIUM_FIELDS_LABEL}. Your listing goes live as soon
+            as payment is complete.
+          </p>
+          {saving ? (
+            <p className="text-sm text-gray-500">Publishing your listing…</p>
+          ) : (
+            <PayPalSubscribeButtons
+              clientId={billing.clientId}
+              planId={billing.plans[listingType as DirectoryPlan]}
+              beforeOpen={readyToPay}
+              getCustomId={saveDraft}
+              onApproved={finishPaid}
+              onError={setError}
+            />
+          )}
+        </section>
+      ) : (
       <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
@@ -338,6 +486,7 @@ export default function DirectoryListingForm({
           </p>
         )}
       </div>
+      )}
     </form>
   );
 }
