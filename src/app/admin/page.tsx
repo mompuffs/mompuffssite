@@ -26,6 +26,7 @@ export default async function AdminDashboardPage() {
     orderCount,
     pendingRefunds,
     recentUsers,
+    pendingListings,
   ] = await Promise.all([
     db.user.count(),
     db.user.count({ where: { isAdmin: true } }),
@@ -40,6 +41,7 @@ export default async function AdminDashboardPage() {
       take: 5,
       select: { id: true, username: true, displayName: true, email: true, createdAt: true },
     }),
+    db.businessListing.count({ where: { status: "PENDING" } }),
   ]);
 
   return (
@@ -56,6 +58,7 @@ export default async function AdminDashboardPage() {
         <StatCard label="Orders" value={orderCount} href="/admin/shops" />
         <StatCard label="Admins" value={adminCount} href="/admin/users" />
         <StatCard label="Pending refunds" value={pendingRefunds} href="/admin/shops" />
+        <StatCard label="Listings to review" value={pendingListings} href="/admin/directory" />
       </div>
 
       <div className="bg-white rounded-xl shadow p-5">

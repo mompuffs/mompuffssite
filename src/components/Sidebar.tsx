@@ -14,6 +14,7 @@ const NAV_ITEMS_BEFORE_NOTIFICATIONS = [
   { href: "/marketplace", label: "Marketplace", icon: "🛍️" },
   { href: "/cart", label: "Cart", icon: "🛒" },
   { href: "/blog", label: "Blog", icon: "📰" },
+  { href: "/directory", label: "Directory", icon: "📍" },
 ];
 const NAV_ITEMS_AFTER_NOTIFICATIONS = [
   { href: "/messages", label: "Messages", icon: "💬" },

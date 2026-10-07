@@ -19,6 +19,7 @@ export default function PageShell({ children }: { children: React.ReactNode }) {
     pathname?.startsWith("/marketplace") ||
     pathname?.startsWith("/shop/") ||
     pathname?.startsWith("/dashboard/shop") ||
+    pathname?.startsWith("/directory") ||
     pathname === "/login";
 
   const shopDash = Boolean(pathname?.startsWith("/dashboard/shop"));

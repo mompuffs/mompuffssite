@@ -10,6 +10,7 @@ const NAV_ITEMS = [
   { href: "/admin/groups", label: "Groups", icon: "👥" },
   { href: "/admin/shops", label: "Shops", icon: "🏪" },
   { href: "/admin/blog", label: "Blog", icon: "📰" },
+  { href: "/admin/directory", label: "Directory", icon: "📍" },
 ];
 
 function isActive(pathname: string | null, href: string, exact?: boolean) {

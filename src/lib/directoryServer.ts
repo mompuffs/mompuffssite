@@ -1,0 +1,132 @@
+import { db } from "@/lib/db";
+import { US_STATES, categoryFor, fullAddress, normalizeUrl, parseHours, type Hours } from "@/lib/directory";
+
+function slugify(s: string) {
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 80);
+}
+
+export async function uniqueListingSlug(name: string, city: string, state: string, excludeId?: string) {
+  const base = slugify(`${name} ${city} ${state}`) || "business";
+  let slug = base;
+  for (let n = 2; ; n++) {
+    const hit = await db.businessListing.findUnique({ where: { slug }, select: { id: true } });
+    if (!hit || hit.id === excludeId) return slug;
+    slug = `${base}-${n}`;
+  }
+}
+
+// Address -> coordinates. The US Census geocoder is free, keyless and
+// accurate for street addresses; OpenStreetMap's Nominatim is the fallback
+// for addresses the Census file doesn't know (new construction, suites).
+export async function geocodeAddress(a: {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+}): Promise<{ lat: number; lng: number } | null> {
+  const oneLine = fullAddress(a);
+  try {
+    const url =
+      "https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?benchmark=Public_AR_Current&format=json&address=" +
+      encodeURIComponent(oneLine);
+    const res = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(8000) });
+    if (res.ok) {
+      const data = await res.json();
+      const c = data?.result?.addressMatches?.[0]?.coordinates;
+      if (c && Number.isFinite(c.x) && Number.isFinite(c.y)) return { lat: c.y, lng: c.x };
+    }
+  } catch {
+    // fall through to Nominatim
+  }
+  const queries = [oneLine, `${a.city}, ${a.state} ${a.zip}`];
+  for (const q of queries) {
+    try {
+      const url =
+        "https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=us&q=" + encodeURIComponent(q);
+      const res = await fetch(url, {
+        cache: "no-store",
+        headers: { "User-Agent": "mompuffs.com business directory (info@mompuffs.com)" },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const hit = data?.[0];
+        if (hit) return { lat: Number(hit.lat), lng: Number(hit.lon) };
+      }
+    } catch {
+      // try next
+    }
+  }
+  return null;
+}
+
+export type ListingInput = {
+  name: string;
+  category: string;
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  phone: string | null;
+  website: string | null;
+  menuUrl: string | null;
+  imageUrl: string | null;
+  about: string;
+  specials: string | null;
+  hours: Hours | null;
+};
+
+function str(v: unknown, max: number) {
+  return typeof v === "string" ? v.trim().slice(0, max) : "";
+}
+
+// Validates a submit/edit body. Returns the cleaned fields or a message
+// suitable for showing the member.
+export function validateListingInput(body: any): { data: ListingInput } | { error: string } {
+  const name = str(body?.name, 120);
+  const category = str(body?.category, 40);
+  const street = str(body?.street, 160);
+  const city = str(body?.city, 80);
+  const state = str(body?.state, 2).toUpperCase();
+  const zip = str(body?.zip, 10);
+  const about = str(body?.about, 5000);
+  const phone = str(body?.phone, 30) || null;
+  const specials = str(body?.specials, 2000) || null;
+
+  if (!name) return { error: "Business name is required." };
+  if (!categoryFor(category)) return { error: "Pick a category." };
+  if (!street || !city) return { error: "Street address and city are required." };
+  if (!US_STATES.some((s) => s.code === state)) return { error: "Pick a state." };
+  if (!/^\d{5}(-\d{4})?$/.test(zip)) return { error: "Enter a 5-digit ZIP code." };
+  if (!about) return { error: "Tell people about the business in the About section." };
+  if (phone && phone.replace(/\D/g, "").length < 10) return { error: "That phone number looks incomplete." };
+
+  const website = normalizeUrl(body?.website);
+  if (str(body?.website, 500) && !website) return { error: "That website address doesn't look right." };
+  const menuUrl = normalizeUrl(body?.menuUrl);
+  if (str(body?.menuUrl, 500) && !menuUrl) return { error: "That menu link doesn't look right." };
+  const imageUrl = normalizeUrl(body?.imageUrl);
+
+  return {
+    data: {
+      name,
+      category,
+      street,
+      city,
+      state,
+      zip,
+      phone,
+      website,
+      menuUrl,
+      imageUrl,
+      about,
+      specials,
+      hours: parseHours(body?.hours),
+    },
+  };
+}

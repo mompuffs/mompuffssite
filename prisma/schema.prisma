@@ -57,6 +57,7 @@ model User {
   emailVerificationTokens EmailVerificationToken[]
   ownedGroups             Group[]                  @relation("OwnedGroups")
   groupMemberships        GroupMembership[]
+  businessListings        BusinessListing[]
 }
 
 model EmailVerificationToken {
@@ -482,4 +483,39 @@ model BlogArticle {
   updatedAt         DateTime      @updatedAt
 
   @@index([status, publishedAt])
+}
+
+// Business directory (/directory). Members submit listings; they stay
+// "PENDING" until an admin approves them ("APPROVED"), or "REJECTED".
+// A member's edit to their own listing sends it back to PENDING.
+// category is one of the slugs in src/lib/directory.ts.
+model BusinessListing {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  name          String
+  category      String
+  street        String
+  city          String
+  state         String // 2-letter code
+  zip           String
+  lat           Float
+  lng           Float
+  phone         String?
+  website       String?
+  menuUrl       String?
+  imageUrl      String?
+  about         String
+  specials      String?
+  hours         Json? // { mon: { open: "09:00", close: "21:00" } | { closed: true } | null, ... }
+  status        String    @default("PENDING")
+  reviewNote    String?
+  submittedBy   User      @relation(fields: [submittedById], references: [id], onDelete: Cascade)
+  submittedById String
+  approvedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([status, category])
+  @@index([status, state])
+  @@index([submittedById])
 }
