@@ -2,7 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
-import { DIRECTORY_CATEGORIES, DIRECTORY_PER_PAGE, US_STATES, categoryFor, formatPhone, stateName } from "@/lib/directory";
+import {
+  DIRECTORY_CATEGORIES,
+  DIRECTORY_PER_PAGE,
+  US_STATES,
+  categoryFor,
+  formatPhone,
+  fullAddress,
+  listingShowsAll,
+  stateName,
+} from "@/lib/directory";
 import { pageCount, parsePage } from "@/lib/pagination";
 import DirectoryMap from "@/components/DirectoryMap";
 import ProductPagination from "@/components/ProductPagination";
@@ -61,11 +70,14 @@ export default async function DirectoryPage({
         about: true,
         specials: true,
         menuUrl: true,
+        fullAccess: true,
+        premiumUntil: true,
+        claimedById: true,
       },
     }),
     // Every match goes on the map, not just this page of the list.
     db.businessListing.findMany({
-      where,
+      where: { ...where, lat: { not: null }, lng: { not: null } },
       take: 5000,
       select: { id: true, slug: true, name: true, category: true, lat: true, lng: true, city: true, state: true },
     }),
@@ -99,7 +111,7 @@ export default async function DirectoryPage({
         </div>
         <div className="flex gap-2">
           <Link href="/directory/mine" className="text-sm font-semibold text-brand-700 px-3 py-2 rounded-full hover:bg-brand-50">
-            My submissions
+            My listings
           </Link>
           <Link href="/directory/submit" className="text-sm font-semibold bg-brand-600 text-white px-4 py-2 rounded-full hover:bg-brand-700">
             + Submit a business
@@ -168,6 +180,7 @@ export default async function DirectoryPage({
             <div className="space-y-3">
               {listings.map((l) => {
                 const cat = categoryFor(l.category);
+                const showAll = listingShowsAll(l);
                 return (
                   <Link
                     key={l.id}
@@ -189,17 +202,18 @@ export default async function DirectoryPage({
                             {cat.name}
                           </span>
                         )}
-                        {l.specials && (
+                        {l.claimedById && (
+                          <span className="text-[11px] font-semibold bg-brand-100 text-brand-800 px-1.5 py-0.5 rounded">✓ Owner</span>
+                        )}
+                        {showAll && l.specials && (
                           <span className="text-[11px] font-semibold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">Deals</span>
                         )}
-                        {l.menuUrl && (
+                        {showAll && l.menuUrl && (
                           <span className="text-[11px] font-semibold bg-green-100 text-green-800 px-1.5 py-0.5 rounded">Menu</span>
                         )}
                       </div>
                       <h2 className="font-bold leading-snug group-hover:text-brand-700 truncate">{l.name}</h2>
-                      <p className="text-sm text-gray-500 truncate">
-                        {l.street}, {l.city}, {l.state} {l.zip}
-                      </p>
+                      <p className="text-sm text-gray-500 truncate">{fullAddress(l)}</p>
                       {l.phone && <p className="text-sm text-gray-500">{formatPhone(l.phone)}</p>}
                       <p className="text-sm text-gray-600 mt-1 line-clamp-1">{l.about}</p>
                     </div>
@@ -220,7 +234,7 @@ export default async function DirectoryPage({
         <div className="w-full lg:sticky lg:top-[166px]">
           <DirectoryMap
             mode="us"
-            points={points}
+            points={points.map((p) => ({ ...p, lat: p.lat!, lng: p.lng! }))}
             fitToPoints={filtered}
             className="h-72 sm:h-96 lg:h-[calc(100vh-190px)] lg:min-h-[420px]"
           />

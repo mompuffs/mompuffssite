@@ -16,6 +16,7 @@ export type ListingFormValues = {
   state: string;
   zip: string;
   phone: string;
+  email: string;
   website: string;
   menuUrl: string;
   imageUrl: string;
@@ -32,6 +33,7 @@ const EMPTY: ListingFormValues = {
   state: "",
   zip: "",
   phone: "",
+  email: "",
   website: "",
   menuUrl: "",
   imageUrl: "",
@@ -54,16 +56,34 @@ function initialDays(hours: Record<string, any> | null): Record<DayKey, DayState
 
 const input = "w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-300";
 const label = "block text-sm font-semibold text-gray-700 mb-1";
+const optional = <span className="font-normal text-gray-400">(optional)</span>;
+
+// Marks the fields that only show publicly on Premium listings.
+function PremiumTag({ show }: { show: boolean }) {
+  if (!show) return null;
+  return (
+    <span className="ml-1.5 align-middle text-[10px] font-bold uppercase tracking-wide bg-brand-100 text-brand-700 px-1.5 py-0.5 rounded">
+      Premium
+    </span>
+  );
+}
 
 export default function DirectoryListingForm({
   listingId,
   initial,
   isAdmin = false,
+  isOwner = false,
+  showsAll = false,
 }: {
   listingId?: string;
   initial?: ListingFormValues;
   isAdmin?: boolean;
+  // The listing's claimed owner: edits go live without review.
+  isOwner?: boolean;
+  // Whether premium fields already show publicly (admin, comped or paid).
+  showsAll?: boolean;
 }) {
+  const tagPremium = !isAdmin && !showsAll;
   const router = useRouter();
   const [v, setV] = useState<ListingFormValues>(initial ?? EMPTY);
   const [days, setDays] = useState(() => initialDays(initial?.hours ?? null));
@@ -120,6 +140,13 @@ export default function DirectoryListingForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {tagPremium && (
+        <p className="text-sm bg-brand-50 text-brand-800 rounded-xl px-4 py-3">
+          Fields marked <span className="font-bold">Premium</span> are saved, but only show publicly once the business owner
+          {isOwner ? " (you) upgrades" : " claims the listing and upgrades"} to Premium.
+        </p>
+      )}
+
       <section className="bg-white rounded-xl shadow p-5 space-y-4">
         <h2 className="font-bold text-lg">The business</h2>
         <div>
@@ -165,7 +192,7 @@ export default function DirectoryListingForm({
           />
         </div>
         <div>
-          <label className={label} htmlFor="specials">Specials <span className="font-normal text-gray-400">(optional)</span></label>
+          <label className={label} htmlFor="specials">Specials {optional}<PremiumTag show={tagPremium} /></label>
           <textarea
             id="specials"
             rows={3}
@@ -177,7 +204,7 @@ export default function DirectoryListingForm({
           />
         </div>
         <div>
-          <span className={label}>Photo or logo <span className="font-normal text-gray-400">(optional)</span></span>
+          <span className={label}>Photo or logo {optional}</span>
           <ImageInput value={v.imageUrl} onChange={(url) => set("imageUrl", url)} placeholder="Image URL" />
         </div>
       </section>
@@ -185,13 +212,13 @@ export default function DirectoryListingForm({
       <section className="bg-white rounded-xl shadow p-5 space-y-4">
         <h2 className="font-bold text-lg">Address</h2>
         <div>
-          <label className={label} htmlFor="street">Street address *</label>
-          <input id="street" required maxLength={160} value={v.street} onChange={(e) => set("street", e.target.value)} placeholder="123 Main St, Suite 4" className={input} />
+          <label className={label} htmlFor="street">Street address {optional}</label>
+          <input id="street" maxLength={160} value={v.street} onChange={(e) => set("street", e.target.value)} placeholder="123 Main St, Suite 4" className={input} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-6 gap-3">
           <div className="sm:col-span-3">
-            <label className={label} htmlFor="city">City *</label>
-            <input id="city" required maxLength={80} value={v.city} onChange={(e) => set("city", e.target.value)} className={input} />
+            <label className={label} htmlFor="city">City {optional}</label>
+            <input id="city" maxLength={80} value={v.city} onChange={(e) => set("city", e.target.value)} className={input} />
           </div>
           <div className="sm:col-span-2">
             <label className={label} htmlFor="state">State *</label>
@@ -203,11 +230,13 @@ export default function DirectoryListingForm({
             </select>
           </div>
           <div>
-            <label className={label} htmlFor="zip">ZIP *</label>
-            <input id="zip" required inputMode="numeric" maxLength={10} value={v.zip} onChange={(e) => set("zip", e.target.value)} className={input} />
+            <label className={label} htmlFor="zip">ZIP {optional}</label>
+            <input id="zip" inputMode="numeric" maxLength={10} value={v.zip} onChange={(e) => set("zip", e.target.value)} className={input} />
           </div>
         </div>
-        <p className="text-xs text-gray-500">We use the address to place the business on the map.</p>
+        <p className="text-xs text-gray-500">
+          Only the state is required. With a street address, the business also gets a pin on the map.
+        </p>
       </section>
 
       <section className="bg-white rounded-xl shadow p-5 space-y-4">
@@ -218,19 +247,23 @@ export default function DirectoryListingForm({
             <input id="phone" type="tel" maxLength={30} value={v.phone} onChange={(e) => set("phone", e.target.value)} className={input} />
           </div>
           <div>
-            <label className={label} htmlFor="website">Website</label>
+            <label className={label} htmlFor="email">Email<PremiumTag show={tagPremium} /></label>
+            <input id="email" type="email" maxLength={200} value={v.email} onChange={(e) => set("email", e.target.value)} placeholder="hello@example.com" className={input} />
+          </div>
+          <div>
+            <label className={label} htmlFor="website">Website<PremiumTag show={tagPremium} /></label>
             <input id="website" maxLength={500} value={v.website} onChange={(e) => set("website", e.target.value)} placeholder="example.com" className={input} />
           </div>
         </div>
         <div>
-          <label className={label} htmlFor="menuUrl">Link to menu</label>
+          <label className={label} htmlFor="menuUrl">Link to menu<PremiumTag show={tagPremium} /></label>
           <input id="menuUrl" maxLength={500} value={v.menuUrl} onChange={(e) => set("menuUrl", e.target.value)} placeholder="https://…" className={input} />
         </div>
       </section>
 
       <section className="bg-white rounded-xl shadow p-5">
         <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <h2 className="font-bold text-lg">Hours <span className="text-sm font-normal text-gray-400">(optional)</span></h2>
+          <h2 className="font-bold text-lg">Hours <span className="text-sm font-normal text-gray-400">(optional)</span><PremiumTag show={tagPremium} /></h2>
           <button type="button" onClick={copyMondayToAll} className="text-sm text-brand-600 hover:underline">
             Copy Monday to every day
           </button>
@@ -297,7 +330,7 @@ export default function DirectoryListingForm({
         >
           {saving ? "Saving…" : listingId ? "Save changes" : "Submit business"}
         </button>
-        {!isAdmin && (
+        {!isAdmin && !isOwner && (
           <p className="text-xs text-gray-500">
             {listingId
               ? "Edits are reviewed by our team before they go live."

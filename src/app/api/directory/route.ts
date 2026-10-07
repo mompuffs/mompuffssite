@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { checkRateLimit } from "@/lib/rateLimit";
-import { geocodeAddress, uniqueListingSlug, validateListingInput } from "@/lib/directoryServer";
+import { ADDRESS_NOT_FOUND, locateListing, uniqueListingSlug, validateListingInput } from "@/lib/directoryServer";
 
 export const dynamic = "force-dynamic";
 
 // Member submits a business. It waits for admin approval unless the
-// submitter is an admin.
+// submitter is an admin; admin-added listings also show every field.
 export async function POST(req: Request) {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Sign in to submit a business." }, { status: 401 });
@@ -22,23 +22,19 @@ export async function POST(req: Request) {
   if ("error" in parsed) return NextResponse.json({ error: parsed.error }, { status: 400 });
   const data = parsed.data;
 
-  const coords = await geocodeAddress(data);
-  if (!coords) {
-    return NextResponse.json(
-      { error: "We couldn't find that address on the map. Double-check the street, city, state and ZIP." },
-      { status: 400 }
-    );
-  }
+  const coords = await locateListing(data);
+  if (!coords) return NextResponse.json({ error: ADDRESS_NOT_FOUND }, { status: 400 });
 
   const listing = await db.businessListing.create({
     data: {
       ...data,
       hours: data.hours ?? undefined,
       ...coords,
-      slug: await uniqueListingSlug(data.name, data.city, data.state),
+      slug: await uniqueListingSlug(data.name, data.city ?? "", data.state),
       submittedById: userId,
       status: isAdmin ? "APPROVED" : "PENDING",
       approvedAt: isAdmin ? new Date() : null,
+      fullAccess: isAdmin,
     },
     select: { id: true, slug: true, status: true },
   });

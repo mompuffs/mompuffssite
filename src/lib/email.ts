@@ -195,3 +195,88 @@ ${message}`,
     console.error("Failed to send contact form email:", err);
   }
 }
+
+// Sent by the daily directory cron (src/lib/directoryBilling.ts) about a
+// week before PayPal charges a directory premium subscription again.
+export async function sendDirectoryRenewalReminder({
+  to,
+  name,
+  listingName,
+  listingSlug,
+  amount,
+  chargeDate,
+}: {
+  to: string;
+  name: string;
+  listingName: string;
+  listingSlug: string;
+  amount: string;
+  chargeDate: Date;
+}) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY not set -- skipping directory renewal reminder.");
+    return;
+  }
+  const when = chargeDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to,
+      subject: `Your Mompuffs directory premium renews on ${when}`,
+      text: `Hi ${name},
+
+Heads up: the premium plan for your Mompuffs directory listing "${listingName}" renews on ${when}. PayPal will automatically charge ${amount} then.
+
+Nothing to do if you'd like to keep it. To cancel, go to ${SITE_URL}/directory/${listingSlug}/edit and choose "Cancel subscription" before ${when}. Your listing keeps its premium details through the time you've already paid for.
+
+Questions? Just reply or write to ${CONTACT_INBOX}.`,
+    });
+    if (error) {
+      console.error("Resend rejected the directory renewal reminder:", error);
+    }
+  } catch (err) {
+    console.error("Failed to send directory renewal reminder:", err);
+  }
+}
+
+// Lets the site owner know someone claimed a directory listing (claims
+// are instant, with no review).
+export async function sendDirectoryClaimNotification({
+  listingName,
+  listingSlug,
+  claimerName,
+  claimerUsername,
+  claimerEmail,
+}: {
+  listingName: string;
+  listingSlug: string;
+  claimerName: string;
+  claimerUsername: string;
+  claimerEmail: string;
+}) {
+  if (!resend) {
+    console.warn("RESEND_API_KEY not set -- skipping directory claim notification.");
+    return;
+  }
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to: CONTACT_INBOX,
+      replyTo: claimerEmail,
+      subject: `Directory listing claimed: ${listingName}`,
+      text: `${claimerName} (@${claimerUsername}, ${claimerEmail}) just claimed the directory listing "${listingName}".
+
+Listing: ${SITE_URL}/directory/${listingSlug}
+Their profile: ${SITE_URL}/profile/${claimerUsername}
+
+If this doesn't look right, you can remove the claim from Admin -> Directory.`,
+    });
+    if (error) {
+      console.error("Resend rejected the directory claim notification:", error);
+    }
+  } catch (err) {
+    console.error("Failed to send directory claim notification:", err);
+  }
+}

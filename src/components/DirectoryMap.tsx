@@ -13,7 +13,7 @@ export type MapPoint = {
   category: string;
   lat: number;
   lng: number;
-  city: string;
+  city: string | null;
   state: string;
 };
 
@@ -85,7 +85,7 @@ export default function DirectoryMap({
         const m = L.marker([p.lat, p.lng], { icon, title: p.name });
         if (mode === "us") {
           m.bindPopup(
-            `<div style="min-width:160px"><a href="/directory/${encodeURIComponent(p.slug)}" style="font-weight:700;color:#6b2c63">${escapeHtml(p.name)}</a><div style="font-size:12px;color:#6b7280;margin-top:2px">${cat ? `${cat.icon} ${escapeHtml(cat.name)} · ` : ""}${escapeHtml(p.city)}, ${escapeHtml(p.state)}</div></div>`
+            `<div style="min-width:160px"><a href="/directory/${encodeURIComponent(p.slug)}" style="font-weight:700;color:#6b2c63">${escapeHtml(p.name)}</a><div style="font-size:12px;color:#6b7280;margin-top:2px">${cat ? `${cat.icon} ${escapeHtml(cat.name)} · ` : ""}${p.city ? `${escapeHtml(p.city)}, ` : ""}${escapeHtml(p.state)}</div></div>`
           );
         }
         return m;

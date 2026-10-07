@@ -3,11 +3,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
-import { categoryFor } from "@/lib/directory";
+import { categoryFor, listingShowsAll } from "@/lib/directory";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "My directory submissions | Mompuffs" };
+export const metadata: Metadata = { title: "My directory listings | Mompuffs" };
 
 const STATUS_STYLE: Record<string, { label: string; cls: string }> = {
   APPROVED: { label: "Live", cls: "bg-green-100 text-green-800" },
@@ -19,10 +19,27 @@ export default async function MySubmissionsPage({ searchParams }: { searchParams
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
+  const userId = (user as any).id as string;
+  // Listings they claimed, plus ones they submitted that nobody else has
+  // claimed (a claimed listing belongs to its claimer).
   const listings = await db.businessListing.findMany({
-    where: { submittedById: (user as any).id },
+    where: {
+      OR: [{ claimedById: userId }, { submittedById: userId, claimedById: null }],
+    },
     orderBy: { updatedAt: "desc" },
-    select: { id: true, slug: true, name: true, category: true, city: true, state: true, status: true, reviewNote: true },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      category: true,
+      city: true,
+      state: true,
+      status: true,
+      reviewNote: true,
+      claimedById: true,
+      fullAccess: true,
+      premiumUntil: true,
+    },
   });
 
   return (
@@ -31,7 +48,7 @@ export default async function MySubmissionsPage({ searchParams }: { searchParams
         ← Business Directory
       </Link>
       <div className="flex flex-wrap items-center justify-between gap-2 mt-2 mb-4">
-        <h1 className="text-2xl font-bold">My submissions</h1>
+        <h1 className="text-2xl font-bold">My listings</h1>
         <Link href="/directory/submit" className="text-sm font-semibold bg-brand-600 text-white px-4 py-2 rounded-full hover:bg-brand-700">
           + Submit a business
         </Link>
@@ -44,7 +61,7 @@ export default async function MySubmissionsPage({ searchParams }: { searchParams
       )}
 
       {listings.length === 0 ? (
-        <p className="bg-white rounded-xl shadow p-6 text-sm text-gray-500">You haven&apos;t submitted any businesses yet.</p>
+        <p className="bg-white rounded-xl shadow p-6 text-sm text-gray-500">You haven&apos;t submitted or claimed any businesses yet.</p>
       ) : (
         <div className="bg-white rounded-xl shadow divide-y">
           {listings.map((l) => {
@@ -57,13 +74,19 @@ export default async function MySubmissionsPage({ searchParams }: { searchParams
                     {l.name}
                   </Link>
                   <p className="text-sm text-gray-500">
-                    {l.city}, {l.state}
+                    {l.city ? `${l.city}, ${l.state}` : l.state}
+                    {l.claimedById === userId && (
+                      <>
+                        {" "}· <span className="font-semibold text-brand-700">You own this</span> ·{" "}
+                        {listingShowsAll(l) ? "Premium" : "Free plan"}
+                      </>
+                    )}
                   </p>
                   {l.status === "REJECTED" && l.reviewNote && <p className="text-sm text-red-700 mt-1">Note: {l.reviewNote}</p>}
                 </div>
                 <span className={`text-xs font-semibold px-2 py-1 rounded-full ${st.cls}`}>{st.label}</span>
                 <Link href={`/directory/${l.slug}/edit`} className="text-sm text-brand-600 hover:underline">
-                  Edit
+                  {l.claimedById === userId ? "Manage" : "Edit"}
                 </Link>
               </div>
             );

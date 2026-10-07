@@ -23,7 +23,8 @@ export default function DeleteListingButton({
     const res = await fetch(`/api/directory/${id}`, { method: "DELETE" });
     setBusy(false);
     if (!res.ok) {
-      alert("Something went wrong.");
+      const data = await res.json().catch(() => ({}));
+      alert(data.error ?? "Something went wrong.");
       return;
     }
     if (redirectTo) router.push(redirectTo);

@@ -21,12 +21,46 @@ type AdminListing = {
   reviewNote: string | null;
   updatedAt: string;
   submittedBy: { username: string; displayName: string };
+  claimedBy: { username: string; displayName: string } | null;
+  fullAccess: boolean;
+  plan: string | null;
+  subscriptionStatus: string | null;
+  premiumUntil: string | null;
 };
 
 export default function AdminListingRow({ listing: l }: { listing: AdminListing }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const cat = categoryFor(l.category);
+
+  async function patch(body: Record<string, unknown>) {
+    setBusy(true);
+    const res = await fetch(`/api/admin/directory/${l.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    setBusy(false);
+    if (!res.ok) {
+      alert(data.error ?? "Something went wrong.");
+      return;
+    }
+    router.refresh();
+  }
+
+  function unclaim() {
+    const sub = l.subscriptionStatus === "ACTIVE" ? " Their PayPal subscription will be cancelled." : "";
+    if (!confirm(`Remove ${l.claimedBy?.displayName}'s claim on "${l.name}"?${sub}`)) return;
+    patch({ unclaim: true });
+  }
+
+  const paidUntil = l.premiumUntil && new Date(l.premiumUntil) > new Date() ? new Date(l.premiumUntil) : null;
+  const tier = l.fullAccess
+    ? "Full access"
+    : paidUntil
+      ? `Premium (${l.plan === "YEARLY" ? "yearly" : "monthly"}${l.subscriptionStatus === "ACTIVE" ? "" : ", cancelled"}) until ${paidUntil.toLocaleDateString()}`
+      : "Free";
 
   async function setStatus(status: string) {
     let reviewNote: string | null = null;
@@ -66,6 +100,20 @@ export default function AdminListingRow({ listing: l }: { listing: AdminListing 
             </Link>{" "}
             · updated {new Date(l.updatedAt).toLocaleDateString()}
           </p>
+          <p className="text-xs mt-0.5">
+            <span className={`font-semibold ${tier === "Free" ? "text-gray-500" : "text-green-700"}`}>{tier}</span>
+            {l.claimedBy && (
+              <>
+                {" "}· claimed by{" "}
+                <Link href={`/profile/${l.claimedBy.username}`} className="hover:underline font-semibold">
+                  {l.claimedBy.displayName}
+                </Link>{" "}
+                <button onClick={unclaim} disabled={busy} className="text-red-600 hover:underline disabled:opacity-40">
+                  (remove claim)
+                </button>
+              </>
+            )}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {l.status !== "APPROVED" && (
@@ -86,6 +134,14 @@ export default function AdminListingRow({ listing: l }: { listing: AdminListing 
               {l.status === "APPROVED" ? "Unpublish" : "Reject"}
             </button>
           )}
+          <button
+            onClick={() => patch({ fullAccess: !l.fullAccess })}
+            disabled={busy}
+            title="Show every field publicly without a paid plan"
+            className="text-sm text-brand-600 hover:underline disabled:opacity-40"
+          >
+            {l.fullAccess ? "Remove full access" : "Give full access"}
+          </button>
           <Link href={`/directory/${l.slug}/edit`} className="text-sm text-brand-600 hover:underline">
             Edit
           </Link>

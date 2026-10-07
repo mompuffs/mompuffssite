@@ -3,7 +3,16 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
-import { categoryFor, directionsUrl, formatPhone, fullAddress, parseHours } from "@/lib/directory";
+import {
+  PREMIUM_FIELDS_LABEL,
+  canEditListing,
+  categoryFor,
+  directionsUrl,
+  formatPhone,
+  fullAddress,
+  listingShowsAll,
+  parseHours,
+} from "@/lib/directory";
 import DirectoryMap from "@/components/DirectoryMap";
 import DirectoryHours from "@/components/DirectoryHours";
 
@@ -20,9 +29,10 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   const l = await getListing(params.slug);
   if (!l || l.status !== "APPROVED") return { title: "Business not found | Mompuffs" };
   const cat = categoryFor(l.category);
+  const where = l.city ? `${l.city}, ${l.state}` : l.state;
   return {
-    title: `${l.name} – ${l.city}, ${l.state} | Mompuffs Directory`,
-    description: `${cat?.name ?? "Business"} at ${fullAddress(l)}. ${l.about.slice(0, 140)}`,
+    title: `${l.name} – ${where} | Mompuffs Directory`,
+    description: `${cat?.name ?? "Business"} in ${fullAddress(l)}. ${l.about.slice(0, 140)}`,
     openGraph: { images: l.imageUrl ? [{ url: l.imageUrl }] : undefined },
   };
 }
@@ -42,13 +52,24 @@ function telHref(phone: string) {
 export default async function DirectoryListingPage({ params }: { params: { slug: string } }) {
   const [l, user] = await Promise.all([getListing(params.slug), getCurrentUser()]);
   if (!l) notFound();
+  const userId = (user as any)?.id as string | undefined;
   const isAdmin = Boolean((user as any)?.isAdmin);
-  const canEdit = isAdmin || (user && (user as any).id === l.submittedById);
-  // Pending/rejected listings are only visible to their submitter and admins.
+  const canEdit = canEditListing(l, userId, isAdmin);
+  // Pending/rejected listings are only visible to whoever can edit them.
   if (l.status !== "APPROVED" && !canEdit) notFound();
 
   const cat = categoryFor(l.category);
-  const hours = parseHours(l.hours);
+  // Free listings show name/category/logo/address/phone/about only.
+  const showAll = listingShowsAll(l);
+  const website = showAll ? l.website : null;
+  const email = showAll ? l.email : null;
+  const menuUrl = showAll ? l.menuUrl : null;
+  const specials = showAll ? l.specials : null;
+  const hours = showAll ? parseHours(l.hours) : null;
+  const isOwner = Boolean(userId && l.claimedById === userId);
+  const hasHiddenFields = !showAll && Boolean(l.website || l.email || l.menuUrl || l.specials || l.hours);
+  const hasMap = l.lat != null && l.lng != null;
+
   const btn = "inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full";
   const softBtn = `${btn} bg-brand-50 text-brand-700 hover:bg-brand-100`;
 
@@ -60,7 +81,7 @@ export default async function DirectoryListingPage({ params }: { params: { slug:
         </Link>
         {canEdit && (
           <Link href={`/directory/${l.slug}/edit`} className="text-brand-600 hover:underline font-semibold">
-            Edit listing
+            {isOwner ? "Manage listing" : "Edit listing"}
           </Link>
         )}
       </nav>
@@ -81,6 +102,15 @@ export default async function DirectoryListingPage({ params }: { params: { slug:
         </div>
       )}
 
+      {isOwner && hasHiddenFields && (
+        <div className="rounded-xl px-4 py-3 text-sm bg-brand-50 text-brand-800 flex flex-wrap items-center justify-between gap-2">
+          <span>Your {PREMIUM_FIELDS_LABEL} are saved but hidden from visitors on the free plan.</span>
+          <Link href={`/directory/${l.slug}/edit#plan`} className="font-semibold underline">
+            Upgrade to show them
+          </Link>
+        </div>
+      )}
+
       <header className="bg-white rounded-xl shadow p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6">
         <div className="w-28 h-28 sm:w-36 sm:h-36 shrink-0 rounded-xl overflow-hidden bg-brand-50 flex items-center justify-center text-5xl">
           {l.imageUrl ? (
@@ -91,21 +121,28 @@ export default async function DirectoryListingPage({ params }: { params: { slug:
           )}
         </div>
         <div className="min-w-0 flex-1">
-          {cat && (
-            <Link
-              href={`/directory?category=${cat.slug}`}
-              className="text-xs font-bold uppercase tracking-wide hover:underline"
-              style={{ color: cat.color }}
-            >
-              {cat.icon} {cat.name}
-            </Link>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {cat && (
+              <Link
+                href={`/directory?category=${cat.slug}`}
+                className="text-xs font-bold uppercase tracking-wide hover:underline"
+                style={{ color: cat.color }}
+              >
+                {cat.icon} {cat.name}
+              </Link>
+            )}
+            {l.claimedById && (
+              <span className="text-xs font-semibold bg-brand-100 text-brand-800 px-2 py-0.5 rounded-full">
+                ✓ Owner verified
+              </span>
+            )}
+          </div>
           <h1 className="text-2xl sm:text-3xl font-bold leading-tight mt-1 break-words">{l.name}</h1>
           <p className="text-gray-600 mt-1">{fullAddress(l)}</p>
           <div className="flex flex-wrap gap-2 mt-4">
-            {l.menuUrl && (
+            {menuUrl && (
               <a
-                href={l.menuUrl}
+                href={menuUrl}
                 target="_blank"
                 rel="noopener noreferrer nofollow"
                 className={`${btn} bg-brand-600 text-white hover:bg-brand-700`}
@@ -113,17 +150,24 @@ export default async function DirectoryListingPage({ params }: { params: { slug:
                 📋 View menu
               </a>
             )}
-            <a href={directionsUrl(l)} target="_blank" rel="noopener noreferrer" className={softBtn}>
-              🧭 Directions
-            </a>
+            {l.street && (
+              <a href={directionsUrl(l)} target="_blank" rel="noopener noreferrer" className={softBtn}>
+                🧭 Directions
+              </a>
+            )}
             {l.phone && (
               <a href={telHref(l.phone)} className={softBtn}>
                 📞 Call
               </a>
             )}
-            {l.website && (
-              <a href={l.website} target="_blank" rel="noopener noreferrer nofollow" className={softBtn}>
+            {website && (
+              <a href={website} target="_blank" rel="noopener noreferrer nofollow" className={softBtn}>
                 🌐 Website
+              </a>
+            )}
+            {email && (
+              <a href={`mailto:${email}`} className={softBtn}>
+                ✉️ Email
               </a>
             )}
           </div>
@@ -132,39 +176,43 @@ export default async function DirectoryListingPage({ params }: { params: { slug:
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
         <div className="lg:col-span-2 space-y-4 min-w-0">
-          {l.specials && (
+          {specials && (
             <section className="bg-amber-50 border border-amber-200 rounded-xl p-4 sm:p-5">
               <h2 className="font-bold text-amber-900 mb-1">🏷️ Specials</h2>
-              <p className="text-sm text-amber-900 whitespace-pre-line break-words">{l.specials}</p>
+              <p className="text-sm text-amber-900 whitespace-pre-line break-words">{specials}</p>
             </section>
           )}
           <section className="bg-white rounded-xl shadow p-4 sm:p-5">
             <h2 className="font-bold text-lg mb-2">About</h2>
             <p className="text-gray-700 whitespace-pre-line break-words">{l.about}</p>
           </section>
-          <section className="bg-white rounded-xl shadow p-4 sm:p-5">
-            <h2 className="font-bold text-lg mb-3">Location</h2>
-            <DirectoryMap
-              mode="single"
-              points={[
-                { id: l.id, slug: l.slug, name: l.name, category: l.category, lat: l.lat, lng: l.lng, city: l.city, state: l.state },
-              ]}
-              className="h-64 sm:h-80"
-            />
-            <p className="text-sm text-gray-600 mt-3">
-              {fullAddress(l)} ·{" "}
-              <a href={directionsUrl(l)} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline">
-                Get directions
-              </a>
-            </p>
-          </section>
+          {hasMap && (
+            <section className="bg-white rounded-xl shadow p-4 sm:p-5">
+              <h2 className="font-bold text-lg mb-3">Location</h2>
+              <DirectoryMap
+                mode="single"
+                points={[
+                  { id: l.id, slug: l.slug, name: l.name, category: l.category, lat: l.lat!, lng: l.lng!, city: l.city, state: l.state },
+                ]}
+                className="h-64 sm:h-80"
+              />
+              <p className="text-sm text-gray-600 mt-3">
+                {fullAddress(l)} ·{" "}
+                <a href={directionsUrl(l)} target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline">
+                  Get directions
+                </a>
+              </p>
+            </section>
+          )}
         </div>
 
         <aside className="space-y-4 min-w-0">
-          <section className="bg-white rounded-xl shadow p-4 sm:p-5">
-            <h2 className="font-bold text-lg mb-2">Hours</h2>
-            {hours ? <DirectoryHours hours={hours} /> : <p className="text-sm text-gray-500">Hours not listed.</p>}
-          </section>
+          {hours && (
+            <section className="bg-white rounded-xl shadow p-4 sm:p-5">
+              <h2 className="font-bold text-lg mb-2">Hours</h2>
+              <DirectoryHours hours={hours} />
+            </section>
+          )}
           <section className="bg-white rounded-xl shadow p-4 sm:p-5 text-sm space-y-2">
             <h2 className="font-bold text-lg">Contact</h2>
             <p className="text-gray-700">{fullAddress(l)}</p>
@@ -175,27 +223,53 @@ export default async function DirectoryListingPage({ params }: { params: { slug:
                 </a>
               </p>
             )}
-            {l.website && (
+            {email && (
               <p className="truncate">
-                <a href={l.website} target="_blank" rel="noopener noreferrer nofollow" className="text-brand-600 hover:underline">
-                  {hostOf(l.website)}
+                <a href={`mailto:${email}`} className="text-brand-600 hover:underline">
+                  {email}
                 </a>
               </p>
             )}
-            {l.menuUrl && (
+            {website && (
+              <p className="truncate">
+                <a href={website} target="_blank" rel="noopener noreferrer nofollow" className="text-brand-600 hover:underline">
+                  {hostOf(website)}
+                </a>
+              </p>
+            )}
+            {menuUrl && (
               <p>
-                <a href={l.menuUrl} target="_blank" rel="noopener noreferrer nofollow" className="text-brand-600 hover:underline">
+                <a href={menuUrl} target="_blank" rel="noopener noreferrer nofollow" className="text-brand-600 hover:underline">
                   View menu
                 </a>
               </p>
             )}
           </section>
+
+          {!l.claimedById && l.status === "APPROVED" && (
+            <section className="bg-white rounded-xl shadow p-4 sm:p-5 text-sm">
+              <h2 className="font-bold text-lg mb-1">Is this your business?</h2>
+              <p className="text-gray-600 mb-3">Claim it for free to update the details and add more about what you offer.</p>
+              <Link
+                href={`/directory/${l.slug}/claim`}
+                className="inline-block bg-brand-600 text-white font-semibold px-4 py-2 rounded-full hover:bg-brand-700"
+              >
+                Claim this listing
+              </Link>
+            </section>
+          )}
+
           <p className="text-xs text-gray-400 px-1">
-            Submitted by{" "}
-            <Link href={`/profile/${l.submittedBy.username}`} className="hover:underline">
-              {l.submittedBy.displayName}
-            </Link>
-            . See something wrong?{" "}
+            {!l.claimedById && (
+              <>
+                Submitted by{" "}
+                <Link href={`/profile/${l.submittedBy.username}`} className="hover:underline">
+                  {l.submittedBy.displayName}
+                </Link>
+                .{" "}
+              </>
+            )}
+            See something wrong?{" "}
             <Link href="/contact" className="hover:underline">
               Let us know
             </Link>

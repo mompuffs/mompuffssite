@@ -85,12 +85,36 @@ export function formatPhone(p: string) {
   return digits.length === 10 ? `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}` : p;
 }
 
-export function fullAddress(l: { street: string; city: string; state: string; zip: string }) {
-  return `${l.street}, ${l.city}, ${l.state} ${l.zip}`;
+type AddressParts = { street?: string | null; city?: string | null; state: string; zip?: string | null };
+
+// Street and city are optional, so this joins whatever is there:
+// "12 Main St, Denver, CO 80202", "Denver, CO", or just "CO".
+export function fullAddress(l: AddressParts) {
+  const stateZip = [l.state, l.zip].filter(Boolean).join(" ");
+  return [l.street, l.city, stateZip].filter(Boolean).join(", ");
 }
 
-export function directionsUrl(l: { street: string; city: string; state: string; zip: string }) {
+// Only meaningful with a street address.
+export function directionsUrl(l: AddressParts) {
   return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(fullAddress(l))}`;
+}
+
+// ---------- Free vs. premium ----------
+
+export const DIRECTORY_PRICES = {
+  MONTHLY: { label: "Monthly", priceCents: 500, display: "$5/month" },
+  YEARLY: { label: "Yearly", priceCents: 5000, display: "$50/year" },
+} as const;
+export type DirectoryPlan = keyof typeof DIRECTORY_PRICES;
+
+export const FREE_FIELDS_LABEL = "logo, address, phone and about";
+export const PREMIUM_FIELDS_LABEL = "website, email, hours, specials and menu link";
+
+// Whether a listing's premium fields (website, email, hours, specials,
+// menu) show publicly: admin-added/comped listings always, otherwise only
+// while a claimed owner's subscription has them paid through.
+export function listingShowsAll(l: { fullAccess: boolean; premiumUntil: Date | string | null }, now = new Date()) {
+  return l.fullAccess || (l.premiumUntil != null && new Date(l.premiumUntil) > now);
 }
 
 export const US_STATES: { code: string; name: string }[] = [
@@ -109,4 +133,16 @@ export const US_STATES: { code: string; name: string }[] = [
 
 export function stateName(code: string) {
   return US_STATES.find((s) => s.code === code)?.name ?? code;
+}
+
+// Once a listing is claimed only its claimer (and admins) can edit it;
+// before that, whoever submitted it.
+export function canEditListing(
+  l: { claimedById: string | null; submittedById: string },
+  userId: string | null | undefined,
+  isAdmin: boolean
+) {
+  if (isAdmin) return true;
+  if (!userId) return false;
+  return l.claimedById ? l.claimedById === userId : l.submittedById === userId;
 }

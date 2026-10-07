@@ -25,9 +25,9 @@ export async function uniqueListingSlug(name: string, city: string, state: strin
 // for addresses the Census file doesn't know (new construction, suites).
 export async function geocodeAddress(a: {
   street: string;
-  city: string;
+  city: string | null;
   state: string;
-  zip: string;
+  zip: string | null;
 }): Promise<{ lat: number; lng: number } | null> {
   const oneLine = fullAddress(a);
   try {
@@ -43,7 +43,7 @@ export async function geocodeAddress(a: {
   } catch {
     // fall through to Nominatim
   }
-  const queries = [oneLine, `${a.city}, ${a.state} ${a.zip}`];
+  const queries = [oneLine];
   for (const q of queries) {
     try {
       const url =
@@ -68,11 +68,12 @@ export async function geocodeAddress(a: {
 export type ListingInput = {
   name: string;
   category: string;
-  street: string;
-  city: string;
+  street: string | null;
+  city: string | null;
   state: string;
-  zip: string;
+  zip: string | null;
   phone: string | null;
+  email: string | null;
   website: string | null;
   menuUrl: string | null;
   imageUrl: string | null;
@@ -90,19 +91,21 @@ function str(v: unknown, max: number) {
 export function validateListingInput(body: any): { data: ListingInput } | { error: string } {
   const name = str(body?.name, 120);
   const category = str(body?.category, 40);
-  const street = str(body?.street, 160);
-  const city = str(body?.city, 80);
+  const street = str(body?.street, 160) || null;
+  const city = str(body?.city, 80) || null;
   const state = str(body?.state, 2).toUpperCase();
-  const zip = str(body?.zip, 10);
+  const zip = str(body?.zip, 10) || null;
+  const email = str(body?.email, 200) || null;
   const about = str(body?.about, 5000);
   const phone = str(body?.phone, 30) || null;
   const specials = str(body?.specials, 2000) || null;
 
   if (!name) return { error: "Business name is required." };
   if (!categoryFor(category)) return { error: "Pick a category." };
-  if (!street || !city) return { error: "Street address and city are required." };
   if (!US_STATES.some((s) => s.code === state)) return { error: "Pick a state." };
-  if (!/^\d{5}(-\d{4})?$/.test(zip)) return { error: "Enter a 5-digit ZIP code." };
+  if (street && !city) return { error: "Add the city for that street address." };
+  if (zip && !/^\d{5}(-\d{4})?$/.test(zip)) return { error: "Enter a 5-digit ZIP code." };
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: "That email address doesn't look right." };
   if (!about) return { error: "Tell people about the business in the About section." };
   if (phone && phone.replace(/\D/g, "").length < 10) return { error: "That phone number looks incomplete." };
 
@@ -121,6 +124,7 @@ export function validateListingInput(body: any): { data: ListingInput } | { erro
       state,
       zip,
       phone,
+      email,
       website,
       menuUrl,
       imageUrl,
@@ -130,3 +134,13 @@ export function validateListingInput(body: any): { data: ListingInput } | { erro
     },
   };
 }
+
+// Map coordinates for a listing: only when there's a street address to pin.
+// Returns undefined when a street was given but couldn't be found.
+export async function locateListing(data: ListingInput): Promise<{ lat: number | null; lng: number | null } | undefined> {
+  if (!data.street) return { lat: null, lng: null };
+  return (await geocodeAddress({ ...data, street: data.street })) ?? undefined;
+}
+
+export const ADDRESS_NOT_FOUND =
+  "We couldn't find that street address on the map. Double-check it, or leave the street blank.";
