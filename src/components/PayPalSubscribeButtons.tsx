@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// PayPal subscription checkout for directory premium. Renders PayPal's own
-// button plus a separate "Debit or Credit Card" button, so buyers without a
-// PayPal account can pay by card (PayPal processes the card; the money lands
-// in the MomPuffs PayPal account).
+// PayPal subscription checkout for directory premium, rendered the same way
+// as the store checkout: PayPal's standard button stack, where "PayPal"
+// opens the PayPal popup and "Debit or Credit Card" opens card entry -- no
+// PayPal account needed. The money lands in the MomPuffs PayPal account.
 //
 // Loaded under its own namespace: the store checkout loads PayPal's SDK
 // with one-time-capture options, and the two can't share one script.
@@ -57,10 +57,8 @@ export default function PayPalSubscribeButtons({
   onApproved: (subscriptionId: string) => Promise<void> | void;
   onError: (message: string) => void;
 }) {
-  const paypalRef = useRef<HTMLDivElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { ready, failed } = useSubscriptionSdk(clientId);
-  const [cardEligible, setCardEligible] = useState<boolean | null>(null);
 
   // Latest callbacks without re-rendering PayPal's iframes on every keystroke.
   const cb = useRef({ getCustomId, beforeOpen, onApproved, onError });
@@ -68,9 +66,12 @@ export default function PayPalSubscribeButtons({
 
   useEffect(() => {
     const paypal = (window as any)[NAMESPACE];
-    if (!ready || !paypal || !paypalRef.current || !cardRef.current) return;
+    if (!ready || !paypal || !containerRef.current) return;
 
-    const shared = {
+    containerRef.current.innerHTML = "";
+    // Default (no fundingSource, default style) -- same stack as the store
+    // checkout's PayPalCheckoutButton.
+    const buttons = paypal.Buttons({
       onClick: (_data: any, actions: any) => (cb.current.beforeOpen?.() === false ? actions.reject() : actions.resolve()),
       createSubscription: async (_data: any, actions: any) => {
         try {
@@ -85,41 +86,14 @@ export default function PayPalSubscribeButtons({
         await cb.current.onApproved(data.subscriptionID);
       },
       onError: () => cb.current.onError("PayPal ran into a problem. Please try again."),
-    };
-
-    paypalRef.current.innerHTML = "";
-    cardRef.current.innerHTML = "";
-    const rendered: any[] = [];
-
-    const ppButton = paypal.Buttons({
-      ...shared,
-      fundingSource: paypal.FUNDING.PAYPAL,
-      style: { label: "subscribe", shape: "pill", height: 42 },
     });
-    if (ppButton.isEligible()) {
-      ppButton.render(paypalRef.current);
-      rendered.push(ppButton);
-    }
-
-    const cardButton = paypal.Buttons({
-      ...shared,
-      fundingSource: paypal.FUNDING.CARD,
-      style: { shape: "pill", height: 42 },
-    });
-    const eligible = cardButton.isEligible();
-    setCardEligible(eligible);
-    if (eligible) {
-      cardButton.render(cardRef.current);
-      rendered.push(cardButton);
-    }
+    buttons.render(containerRef.current);
 
     return () => {
-      for (const b of rendered) {
-        try {
-          b.close();
-        } catch {
-          // already torn down
-        }
+      try {
+        buttons.close();
+      } catch {
+        // already torn down
       }
     };
   }, [ready, planId]);
@@ -127,16 +101,9 @@ export default function PayPalSubscribeButtons({
   if (failed) return <p className="text-sm text-red-600">Couldn&apos;t load PayPal. Check your connection and refresh.</p>;
 
   return (
-    <div className="max-w-sm space-y-2">
+    <div className="max-w-md">
       {!ready && <p className="text-sm text-gray-500">Loading payment options…</p>}
-      <div ref={paypalRef} />
-      <div ref={cardRef} />
-      {ready && cardEligible && (
-        <p className="text-xs text-gray-500">Pay with your PayPal account, or with any debit or credit card. No PayPal account needed.</p>
-      )}
-      {ready && cardEligible === false && (
-        <p className="text-xs text-amber-700">Card payments aren&apos;t available right now; please use PayPal.</p>
-      )}
+      <div ref={containerRef} className="mt-2" />
     </div>
   );
 }
