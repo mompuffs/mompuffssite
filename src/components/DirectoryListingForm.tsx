@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import ImageInput from "@/components/ImageInput";
 import { DAYS, DIRECTORY_CATEGORIES, US_STATES, type DayKey } from "@/lib/directory";
 
-type DayState = { mode: "" | "open" | "closed" | "24h"; open: string; close: string };
+// Empty open/close times on a day that isn't Closed or 24 hours = not listed.
+type DayState = { open: string; close: string; closed: boolean; allDay: boolean };
 
 export type ListingFormValues = {
   name: string;
@@ -43,10 +44,10 @@ function initialDays(hours: Record<string, any> | null): Record<DayKey, DayState
   const out = {} as Record<DayKey, DayState>;
   for (const { key } of DAYS) {
     const d = hours?.[key];
-    if (d?.closed) out[key] = { mode: "closed", open: "09:00", close: "21:00" };
-    else if (d?.open === "00:00" && d?.close === "23:59") out[key] = { mode: "24h", open: "09:00", close: "21:00" };
-    else if (d?.open) out[key] = { mode: "open", open: d.open, close: d.close };
-    else out[key] = { mode: "", open: "09:00", close: "21:00" };
+    if (d?.closed) out[key] = { open: "", close: "", closed: true, allDay: false };
+    else if (d?.open === "00:00" && d?.close === "23:59") out[key] = { open: "", close: "", closed: false, allDay: true };
+    else if (d?.open) out[key] = { open: d.open, close: d.close, closed: false, allDay: false };
+    else out[key] = { open: "", close: "", closed: false, allDay: false };
   }
   return out;
 }
@@ -87,21 +88,20 @@ export default function DirectoryListingForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
     setError(null);
 
     const hours: Record<string, any> = {};
-    for (const { key } of DAYS) {
+    for (const { key, label: dayLabel } of DAYS) {
       const d = days[key];
-      hours[key] =
-        d.mode === "closed"
-          ? { closed: true }
-          : d.mode === "24h"
-            ? { open: "00:00", close: "23:59" }
-            : d.mode === "open"
-              ? { open: d.open, close: d.close }
-              : null;
+      if (d.closed) hours[key] = { closed: true };
+      else if (d.allDay) hours[key] = { open: "00:00", close: "23:59" };
+      else if (d.open && d.close) hours[key] = { open: d.open, close: d.close };
+      else if (d.open || d.close) {
+        setError(`Add both an open and a close time for ${dayLabel}, or leave both blank.`);
+        return;
+      } else hours[key] = null;
     }
+    setSaving(true);
 
     const res = await fetch(listingId ? `/api/directory/${listingId}` : "/api/directory", {
       method: listingId ? "PATCH" : "POST",
@@ -235,30 +235,52 @@ export default function DirectoryListingForm({
             Copy Monday to every day
           </button>
         </div>
-        <div className="space-y-2">
+        <p className="text-xs text-gray-500 mb-3">Leave a day blank if you don&apos;t know its hours.</p>
+        <div className="divide-y">
           {DAYS.map(({ key, label: dayLabel }) => {
             const d = days[key];
+            const noTimes = d.closed || d.allDay;
             return (
-              <div key={key} className="flex flex-wrap items-center gap-2 text-sm">
-                <span className="w-24 font-medium">{dayLabel}</span>
-                <select
-                  value={d.mode}
-                  onChange={(e) => setDay(key, { mode: e.target.value as DayState["mode"] })}
-                  className="border rounded-lg px-2 py-1.5"
-                  aria-label={`${dayLabel} hours`}
-                >
-                  <option value="">Not listed</option>
-                  <option value="open">Open</option>
-                  <option value="24h">Open 24 hours</option>
-                  <option value="closed">Closed</option>
-                </select>
-                {d.mode === "open" && (
-                  <span className="flex items-center gap-1">
-                    <input type="time" value={d.open} onChange={(e) => setDay(key, { open: e.target.value })} className="border rounded-lg px-2 py-1" aria-label={`${dayLabel} opens`} />
-                    <span className="text-gray-400">to</span>
-                    <input type="time" value={d.close} onChange={(e) => setDay(key, { close: e.target.value })} className="border rounded-lg px-2 py-1" aria-label={`${dayLabel} closes`} />
-                  </span>
-                )}
+              <div key={key} className="flex flex-wrap items-center gap-x-4 gap-y-2 py-2.5 text-sm">
+                <span className="w-24 font-semibold">{dayLabel}</span>
+                <label className="flex items-center gap-1.5">
+                  <span className="text-gray-500 w-12 sm:w-auto">Opens</span>
+                  <input
+                    type="time"
+                    value={noTimes ? "" : d.open}
+                    disabled={noTimes}
+                    onChange={(e) => setDay(key, { open: e.target.value })}
+                    className="border rounded-lg px-2 py-1 disabled:bg-gray-100 disabled:text-gray-300"
+                  />
+                </label>
+                <label className="flex items-center gap-1.5">
+                  <span className="text-gray-500 w-12 sm:w-auto">Closes</span>
+                  <input
+                    type="time"
+                    value={noTimes ? "" : d.close}
+                    disabled={noTimes}
+                    onChange={(e) => setDay(key, { close: e.target.value })}
+                    className="border rounded-lg px-2 py-1 disabled:bg-gray-100 disabled:text-gray-300"
+                  />
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={d.closed}
+                    onChange={(e) => setDay(key, { closed: e.target.checked, allDay: false })}
+                    className="accent-brand-600"
+                  />
+                  Closed
+                </label>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={d.allDay}
+                    onChange={(e) => setDay(key, { allDay: e.target.checked, closed: false })}
+                    className="accent-brand-600"
+                  />
+                  Open 24 hours
+                </label>
               </div>
             );
           })}
