@@ -5,7 +5,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import NotificationBell from "@/components/NotificationBell";
-import SearchBar from "@/components/SearchBar";
 
 type ShopSummary = { id: string; name: string; slug: string; productCount: number };
 
@@ -85,29 +84,33 @@ function MessagesLink() {
   );
 }
 
+function Logo({ className = "" }: { className?: string }) {
+  return (
+    <Link href="/feed" className={`flex items-center shrink-0 ${className}`}>
+      <Image
+        src="/logo.png"
+        alt="Mompuffs"
+        width={250}
+        height={250}
+        className="rounded-full w-auto h-[110px]"
+        priority
+      />
+    </Link>
+  );
+}
+
 export default function Navbar() {
   const { data: session, status } = useSession();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <nav className="sticky top-0 z-30 bg-brand-500 shadow-sm">
-      <div className="max-w-6xl mx-auto px-4 h-[150px] flex items-center justify-between gap-4">
-        <Link href="/feed" className="flex items-center shrink-0">
-          <Image
-            src="/logo.png"
-            alt="Mompuffs"
-            width={250}
-            height={250}
-            className="rounded-full w-auto h-[110px]"
-            priority
-          />
-        </Link>
+      <div className="max-w-6xl mx-auto px-4 h-[150px] flex items-center justify-between lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-4">
+        {/* Phones/tablets: logo on the left + menu button. Desktop (lg+): logo
+            dead center, with the bell and account links to its right. */}
+        <Logo className="lg:hidden" />
 
-        <div className="flex-1 max-w-md hidden sm:block">
-          <SearchBar />
-        </div>
-
-        <div className="hidden md:flex items-center gap-3 text-sm font-semibold text-[#43203F]">
+        <div className="hidden lg:flex items-center justify-end gap-2.5 xl:gap-3 whitespace-nowrap text-sm font-semibold text-[#43203F]">
           <Link href="/feed" className="hover:text-white">Feed</Link>
           <Link href="/groups" className="hover:text-white">Groups</Link>
           <MarketplaceMenu>
@@ -116,11 +119,15 @@ export default function Navbar() {
           <Link href="/cart" className="hover:text-white">Cart</Link>
           <Link href="/blog" className="hover:text-white">Blog</Link>
           <Link href="/directory" className="hover:text-white">Directory</Link>
+          {status === "authenticated" && session?.user && <MessagesLink />}
+        </div>
 
+        <Logo className="hidden lg:flex" />
+
+        <div className="hidden lg:flex items-center gap-2.5 xl:gap-3 whitespace-nowrap text-sm font-semibold text-[#43203F]">
           {status === "authenticated" && session?.user ? (
             <>
               <NotificationBell />
-              <MessagesLink />
               <Link href="/dashboard/shop" className="hover:text-white">My Shop</Link>
               <Link href={`/profile/${session.user.username}`} className="hover:text-white">
                 My Profile
@@ -147,7 +154,7 @@ export default function Navbar() {
 
         <button
           onClick={() => setMobileOpen((o) => !o)}
-          className="md:hidden text-xl text-[#43203F] hover:text-white leading-none px-1"
+          className="lg:hidden text-xl text-[#43203F] hover:text-white leading-none px-1"
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
         >
           {mobileOpen ? "✕" : "☰"}
@@ -155,8 +162,7 @@ export default function Navbar() {
       </div>
 
       {mobileOpen && (
-        <div className="md:hidden border-t border-gray-200 px-4 py-3 space-y-1 text-sm bg-white">
-          <SearchBar variant="mobile" onNavigate={() => setMobileOpen(false)} />
+        <div className="lg:hidden border-t border-gray-200 px-4 py-3 space-y-1 text-sm bg-white">
           <Link href="/feed" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Feed</Link>
           <Link href="/groups" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Groups</Link>
           <Link href="/marketplace" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Marketplace</Link>
