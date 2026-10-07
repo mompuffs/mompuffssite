@@ -107,11 +107,11 @@ export const DIRECTORY_PRICES = {
 } as const;
 export type DirectoryPlan = keyof typeof DIRECTORY_PRICES;
 
-export const FREE_FIELDS_LABEL = "logo, address, phone and about";
-export const PREMIUM_FIELDS_LABEL = "website, email, hours, specials and menu link";
+export const FREE_FIELDS_LABEL = "logo, address, phone, website and about";
+export const PREMIUM_FIELDS_LABEL = "email, hours, specials and menu link";
 
-// Whether a listing's premium fields (website, email, hours, specials,
-// menu) show publicly: admin-added/comped listings always, otherwise only
+// Whether a listing's premium fields (email, hours, specials, menu) show
+// publicly -- website is a free field: admin-added/comped listings always, otherwise only
 // while a claimed owner's subscription has them paid through.
 export function listingShowsAll(l: { fullAccess: boolean; premiumUntil: Date | string | null }, now = new Date()) {
   return l.fullAccess || (l.premiumUntil != null && new Date(l.premiumUntil) > now);

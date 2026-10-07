@@ -369,7 +369,7 @@ export default function DirectoryListingForm({
             <input id="email" type="email" maxLength={200} value={v.email} onChange={(e) => set("email", e.target.value)} placeholder="hello@example.com" className={input} />
           </div>
           <div>
-            <label className={label} htmlFor="website">Website<PremiumTag show={tagPremium} /></label>
+            <label className={label} htmlFor="website">Website</label>
             <input id="website" maxLength={500} value={v.website} onChange={(e) => set("website", e.target.value)} placeholder="example.com" className={input} />
           </div>
         </div>

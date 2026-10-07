@@ -518,6 +518,10 @@ model BusinessListing {
   status               String    @default("PENDING")
   reviewNote           String?
   fullAccess           Boolean   @default(false)
+  // Where an imported listing came from, e.g. source "osm" + sourceId
+  // "node/123" (OpenStreetMap, ODbL -- the listing page credits it).
+  source               String?
+  sourceId             String?   @unique
   submittedBy          User      @relation("SubmittedListings", fields: [submittedById], references: [id], onDelete: Cascade)
   submittedById        String
   approvedAt           DateTime?

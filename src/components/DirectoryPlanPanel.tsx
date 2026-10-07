@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { DIRECTORY_PRICES, PREMIUM_FIELDS_LABEL, type DirectoryPlan } from "@/lib/directory";
+import { DIRECTORY_PRICES, FREE_FIELDS_LABEL, PREMIUM_FIELDS_LABEL, type DirectoryPlan } from "@/lib/directory";
 import PayPalSubscribeButtons from "@/components/PayPalSubscribeButtons";
 
 type Props = {
@@ -91,7 +91,7 @@ export default function DirectoryPlanPanel(props: Props) {
             </p>
           ) : (
             <p>
-              <span className="font-semibold">Free.</span> Visitors see your logo, address, phone and about. Your {PREMIUM_FIELDS_LABEL}{" "}
+              <span className="font-semibold">Free.</span> Visitors see your {FREE_FIELDS_LABEL}. Your {PREMIUM_FIELDS_LABEL}{" "}
               are saved but hidden.
             </p>
           )}

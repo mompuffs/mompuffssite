@@ -10,8 +10,8 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Claim your listing | Mompuffs" };
 
-const FREE = ["Business name and category", "Logo or photo", "Address and map pin", "Phone number", "About your business"];
-const PREMIUM = ["Everything in Free", "Website link", "Email address", "Hours", "Specials and deals", "Link to your menu"];
+const FREE = ["Business name and category", "Logo or photo", "Address and map pin", "Phone number", "Website link", "About your business"];
+const PREMIUM = ["Everything in Free", "Email address", "Hours", "Specials and deals", "Link to your menu"];
 
 export default async function ClaimListingPage({ params }: { params: { slug: string } }) {
   const [l, user] = await Promise.all([

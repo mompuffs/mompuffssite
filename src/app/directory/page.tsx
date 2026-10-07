@@ -78,8 +78,9 @@ export default async function DirectoryPage({
     // Every match goes on the map, not just this page of the list.
     db.businessListing.findMany({
       where: { ...where, lat: { not: null }, lng: { not: null } },
-      take: 5000,
-      select: { id: true, slug: true, name: true, category: true, lat: true, lng: true, city: true, state: true },
+      // Kept lean: thousands of pins ship with the page.
+      take: 15000,
+      select: { slug: true, name: true, category: true, lat: true, lng: true, city: true, state: true },
     }),
     db.businessListing.groupBy({
       by: ["category"],
@@ -234,7 +235,7 @@ export default async function DirectoryPage({
         <div className="w-full lg:sticky lg:top-[166px]">
           <DirectoryMap
             mode="us"
-            points={points.map((p) => ({ ...p, lat: p.lat!, lng: p.lng! }))}
+            points={points.map((p) => ({ ...p, id: p.slug, lat: p.lat!, lng: p.lng! }))}
             fitToPoints={filtered}
             className="h-72 sm:h-96 lg:h-[calc(100vh-190px)] lg:min-h-[420px]"
           />

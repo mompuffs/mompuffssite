@@ -61,13 +61,13 @@ export default async function DirectoryListingPage({ params }: { params: { slug:
   const cat = categoryFor(l.category);
   // Free listings show name/category/logo/address/phone/about only.
   const showAll = listingShowsAll(l);
-  const website = showAll ? l.website : null;
+  const website = l.website; // free field
   const email = showAll ? l.email : null;
   const menuUrl = showAll ? l.menuUrl : null;
   const specials = showAll ? l.specials : null;
   const hours = showAll ? parseHours(l.hours) : null;
   const isOwner = Boolean(userId && l.claimedById === userId);
-  const hasHiddenFields = !showAll && Boolean(l.website || l.email || l.menuUrl || l.specials || l.hours);
+  const hasHiddenFields = !showAll && Boolean(l.email || l.menuUrl || l.specials || l.hours);
   const hasMap = l.lat != null && l.lng != null;
 
   const btn = "inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full";
@@ -260,7 +260,29 @@ export default async function DirectoryListingPage({ params }: { params: { slug:
           )}
 
           <p className="text-xs text-gray-400 px-1">
-            {!l.claimedById && (
+            {l.source === "osm" ? (
+              <>
+                Listing info from{" "}
+                <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                  OpenStreetMap contributors
+                </a>
+                {l.sourceId && (
+                  <>
+                    {" "}(
+                    <a
+                      href={`https://www.openstreetmap.org/${l.sourceId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline"
+                    >
+                      source
+                    </a>
+                    )
+                  </>
+                )}
+                .{" "}
+              </>
+            ) : !l.claimedById && (
               <>
                 Submitted by{" "}
                 <Link href={`/profile/${l.submittedBy.username}`} className="hover:underline">
