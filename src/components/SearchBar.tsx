@@ -39,9 +39,11 @@ function Avatar({ url, name }: { url: string | null; name: string }) {
 export default function SearchBar({
   variant = "desktop",
   onNavigate,
+  autoFocus = false,
 }: {
   variant?: "desktop" | "mobile";
   onNavigate?: () => void;
+  autoFocus?: boolean;
 }) {
   const router = useRouter();
   const [q, setQ] = useState("");
@@ -114,6 +116,7 @@ export default function SearchBar({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onFocus={() => setOpen(true)}
+          autoFocus={autoFocus}
           placeholder="Search Mompuffs…"
           className={
             variant === "desktop"

@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
 import NotificationBell from "@/components/NotificationBell";
+import SearchToggle from "@/components/SearchToggle";
 
 type ShopSummary = { id: string; name: string; slug: string; productCount: number };
 
@@ -110,7 +111,7 @@ export default function Navbar() {
             dead center, with the bell and account links to its right. */}
         <Logo className="lg:hidden" />
 
-        <div className="hidden lg:flex items-center justify-end gap-2.5 xl:gap-3 whitespace-nowrap text-sm font-semibold text-[#43203F]">
+        <div className="hidden lg:flex items-center justify-end gap-2 xl:gap-3 whitespace-nowrap text-[13px] xl:text-sm font-semibold text-[#43203F]">
           <Link href="/feed" className="hover:text-white">Feed</Link>
           <Link href="/groups" className="hover:text-white">Groups</Link>
           <MarketplaceMenu>
@@ -124,10 +125,9 @@ export default function Navbar() {
 
         <Logo className="hidden lg:flex" />
 
-        <div className="hidden lg:flex items-center gap-2.5 xl:gap-3 whitespace-nowrap text-sm font-semibold text-[#43203F]">
+        <div className="hidden lg:flex items-center gap-2 xl:gap-3 whitespace-nowrap text-[13px] xl:text-sm font-semibold text-[#43203F]">
           {status === "authenticated" && session?.user ? (
             <>
-              <NotificationBell />
               <Link href="/dashboard/shop" className="hover:text-white">My Shop</Link>
               <Link href={`/profile/${session.user.username}`} className="hover:text-white">
                 My Profile
@@ -140,6 +140,7 @@ export default function Navbar() {
               <button onClick={() => signOut({ callbackUrl: "/login" })} className="hover:text-red-100">
                 Sign out
               </button>
+              <NotificationBell />
             </>
           ) : status === "unauthenticated" ? (
             <>
@@ -150,15 +151,19 @@ export default function Navbar() {
               </Link>
             </>
           ) : null}
+          <SearchToggle />
         </div>
 
-        <button
-          onClick={() => setMobileOpen((o) => !o)}
-          className="lg:hidden text-xl text-[#43203F] hover:text-white leading-none px-1"
-          aria-label={mobileOpen ? "Close menu" : "Open menu"}
-        >
-          {mobileOpen ? "✕" : "☰"}
-        </button>
+        <div className="lg:hidden flex items-center gap-3 text-[#43203F]">
+          <SearchToggle />
+          <button
+            onClick={() => setMobileOpen((o) => !o)}
+            className="text-xl hover:text-white leading-none px-1"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+          >
+            {mobileOpen ? "✕" : "☰"}
+          </button>
+        </div>
       </div>
 
       {mobileOpen && (
