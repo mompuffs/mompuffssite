@@ -8,14 +8,14 @@ import { pageMeta } from "@/lib/seo";
 import JsonLd from "@/components/JsonLd";
 import ArticleBody from "@/components/ArticleBody";
 import { article, breadcrumbs, faqPage } from "@/lib/structuredData";
-import { LAW_HUB_PATH, LAW_STATES, lawArticleSlug, lawLevel, lawPath } from "@/lib/stateLaws";
+import { LAW_HUB_PATH, LAW_STATES, lawLevel, lawPath } from "@/lib/stateLaws";
 
 export const revalidate = 3600;
 
 async function getGuide(stateParam: string) {
   const st = stateFromSlug(stateParam);
   if (!st) return null;
-  const a = await db.blogArticle.findFirst({ where: { slug: lawArticleSlug(st.code), status: "PUBLISHED" } });
+  const a = await db.stateLawGuide.findUnique({ where: { state: st.code } });
   return a ? { st, a } : null;
 }
 
@@ -51,7 +51,7 @@ export default async function StateLawPage({ params }: { params: { state: string
       <JsonLd
         items={[
           article({
-            slug: a.slug,
+            slug: st.code,
             path: lawPath(st.code),
             title: a.title,
             description: a.metaDescription ?? a.dek,

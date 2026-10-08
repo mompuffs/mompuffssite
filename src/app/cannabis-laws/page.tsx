@@ -4,7 +4,7 @@ import { pageMeta } from "@/lib/seo";
 import JsonLd from "@/components/JsonLd";
 import StateLawMap from "@/components/StateLawMap";
 import { breadcrumbs, itemList } from "@/lib/structuredData";
-import { LAW_HUB_PATH, LAW_LEVELS, LAW_STATES, lawArticleSlug, lawLevel, lawPath } from "@/lib/stateLaws";
+import { LAW_HUB_PATH, LAW_LEVELS, LAW_STATES, lawLevel, lawPath } from "@/lib/stateLaws";
 
 // Hourly is plenty: the levels live in code and the pages change rarely.
 export const revalidate = 3600;
@@ -17,16 +17,9 @@ export const metadata = pageMeta({
 });
 
 export default async function CannabisLawsHub() {
-  // Only link states whose guide is published.
-  const published = new Set(
-    (
-      await db.blogArticle.findMany({
-        where: { status: "PUBLISHED", category: { slug: "state-by-state-laws" } },
-        select: { slug: true },
-      })
-    ).map((a) => a.slug)
-  );
-  const states = LAW_STATES.filter((s) => published.has(lawArticleSlug(s.code)));
+  // Only link states that have a guide.
+  const published = new Set((await db.stateLawGuide.findMany({ select: { state: true } })).map((g) => g.state));
+  const states = LAW_STATES.filter((s) => published.has(s.code));
   const countFor = (key: string) => LAW_STATES.filter((s) => lawLevel(s.code).key === key).length;
 
   return (

@@ -46,12 +46,13 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function BlogArticlePage({ params }: { params: { slug: string } }) {
+  // The state-law guides moved out of the blog to /cannabis-laws/<state>.
+  const lawState = stateForLawArticle(params.slug);
+  if (lawState) permanentRedirect(lawPath(lawState));
+
   const admin = await getAdminUser();
   const a = await getArticle(params.slug, Boolean(admin));
   if (!a) notFound();
-  // State-law guides moved to /cannabis-laws/<state> (drafts stay here for admin review).
-  const lawState = stateForLawArticle(a.slug);
-  if (lawState && a.status === "PUBLISHED") permanentRedirect(lawPath(lawState));
 
   const faq = asFaq(a.faq);
   const sources = asSources(a.sources);

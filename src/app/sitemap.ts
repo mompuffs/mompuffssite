@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { SITE_URL } from "@/lib/seo";
 import { LOCATION_CATEGORIES, locationCategory, stateSlug } from "@/lib/directory";
 import { VISITOR_HELP_TOPICS } from "@/lib/visitorHelp";
-import { LAW_HUB_PATH, articleHref } from "@/lib/stateLaws";
+import { LAW_HUB_PATH, lawPath } from "@/lib/stateLaws";
 
 // Rebuilt at most hourly, so new listings, products and posts show up
 // without a deploy. (Without a revalidate this would be generated once at
@@ -11,7 +11,7 @@ import { LAW_HUB_PATH, articleHref } from "@/lib/stateLaws";
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [articles, shops, products, listings, stateCats, cityCats] = await Promise.all([
+  const [articles, shops, products, listings, stateCats, cityCats, lawGuides] = await Promise.all([
     db.blogArticle.findMany({ where: { status: "PUBLISHED" }, select: { slug: true, updatedAt: true } }),
     db.shop.findMany({ where: { products: { some: { archivedAt: null } } }, select: { slug: true } }),
     db.product.findMany({ where: { archivedAt: null }, select: { id: true, createdAt: true } }),
@@ -36,6 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       where: { status: "APPROVED", citySlug: { not: null } },
       _count: { _all: true },
     }),
+    db.stateLawGuide.findMany({ select: { state: true, updatedAt: true } }),
   ]);
 
   const url = (path: string) => `${SITE_URL}${path}`;
@@ -78,7 +79,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...fixed,
     ...directoryViews,
-    ...articles.map((a) => ({ url: url(articleHref(a.slug)), lastModified: a.updatedAt, changeFrequency: "monthly" as const, priority: 0.7 })),
+    ...articles.map((a) => ({ url: url(`/blog/${a.slug}`), lastModified: a.updatedAt, changeFrequency: "monthly" as const, priority: 0.7 })),
+    ...lawGuides.map((g) => ({ url: url(lawPath(g.state)), lastModified: g.updatedAt, changeFrequency: "monthly" as const, priority: 0.8 })),
     ...shops.map((s) => ({ url: url(`/shop/${s.slug}`), changeFrequency: "weekly" as const, priority: 0.6 })),
     ...products.map((p) => ({ url: url(`/product/${p.id}`), lastModified: p.createdAt, changeFrequency: "weekly" as const, priority: 0.5 })),
     ...listings.map((l) => ({ url: url(`/directory/${l.slug}`), lastModified: l.updatedAt, changeFrequency: "monthly" as const, priority: 0.5 })),

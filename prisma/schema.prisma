@@ -585,3 +585,24 @@ model GeoPlace {
 
   @@index([kind, key])
 }
+
+// One plain-English cannabis-law guide per state (plus DC), shown at
+// /cannabis-laws/<state>. Moved out of the blog on 2026-10-08; the old
+// /blog/<state>-cannabis-laws URLs redirect here.
+model StateLawGuide {
+  state           String   @id // 2-letter code
+  title           String
+  dek             String?
+  tldr            String?
+  body            String   // markdown
+  metaTitle       String?
+  metaDescription String?
+  heroImage       String?
+  heroAlt         String?
+  author          String?
+  tags            String[] @default([])
+  faq             Json? // [{ q, a }]
+  sources         Json? // [{ title, url }]
+  publishedAt     DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

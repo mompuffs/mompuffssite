@@ -39,6 +39,10 @@ ${DIRECTORY_CATEGORIES.map((c) => `- [${CATEGORY_PLURAL[c.slug]}](${SITE_URL}/di
 - Each business has its own page at /directory/<name-city-state> with address, phone, website, map and (when known) hours and license number
 - [Add or claim a business](${SITE_URL}/directory/submit)
 
+## Cannabis laws by state
+
+- [Cannabis laws by state (map)](${SITE_URL}/cannabis-laws): every state and D.C. color-coded by legality, each with a plain-English guide at /cannabis-laws/<state>, e.g. [Missouri cannabis laws](${SITE_URL}/cannabis-laws/missouri)
+
 ## Blog
 
 ${articles.map((a) => `- [${a.title}](${SITE_URL}/blog/${a.slug})${a.dek ? `: ${a.dek.replace(/\s+/g, " ").trim()}` : ""}`).join("\n")}

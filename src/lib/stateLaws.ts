@@ -1,9 +1,7 @@
 import { US_STATES, stateFromSlug, stateSlug } from "@/lib/directory";
 
 // The state-by-state cannabis law pages (/cannabis-laws/<state>). The text
-// lives in the BlogArticle rows in the "state-by-state-laws" category
-// (slug "<state>-cannabis-laws"); these pages are their public home, and
-// the old /blog URLs redirect here.
+// lives in the StateLawGuide table; the colors for the map live here.
 
 export type LawLevel = "recreational" | "medical" | "limited" | "illegal";
 
@@ -40,20 +38,10 @@ export function lawPath(code: string) {
   return `${LAW_HUB_PATH}/${stateSlug(code)}`;
 }
 
-export function lawArticleSlug(code: string) {
-  return `${stateSlug(code)}-cannabis-laws`;
-}
-
-// "missouri-cannabis-laws" -> "MO" (undefined for other blog slugs).
+// Old blog URL slug "missouri-cannabis-laws" -> "MO", for the redirect.
 export function stateForLawArticle(slug: string) {
   const m = slug.match(/^(.+)-cannabis-laws$/);
   return m ? stateFromSlug(m[1])?.code : undefined;
-}
-
-// Where a blog article lives: state-law posts moved to /cannabis-laws.
-export function articleHref(slug: string) {
-  const code = stateForLawArticle(slug);
-  return code ? lawPath(code) : `/blog/${slug}`;
 }
 
 export const LAW_STATES = US_STATES.filter((s) => s.code in LEVEL_BY_STATE);
