@@ -145,9 +145,10 @@ export async function locateListing(data: ListingInput): Promise<{ lat: number |
 export const ADDRESS_NOT_FOUND =
   "We couldn't find that street address on the map. Double-check it, or leave the street blank.";
 
-// Directory sort key: owner-managed and fuller listings first.
+// Directory sort key: owner-managed, state-licensed and fuller listings first.
 export function listingCompleteness(l: {
   claimedById?: string | null;
+  licenseNumber?: string | null;
   website?: string | null;
   imageUrl?: string | null;
   phone?: string | null;
@@ -158,6 +159,7 @@ export function listingCompleteness(l: {
 }) {
   return (
     (l.claimedById ? 8 : 0) +
+    (l.licenseNumber ? 3 : 0) +
     (l.website ? 4 : 0) +
     (l.imageUrl ? 3 : 0) +
     (l.phone ? 2 : 0) +

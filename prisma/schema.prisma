@@ -520,6 +520,9 @@ model BusinessListing {
   fullAccess           Boolean   @default(false)
   // Where an imported listing came from, e.g. source "osm" + sourceId
   // "node/123" (OpenStreetMap, ODbL -- the listing page credits it).
+  // State cannabis license, e.g. Missouri "DIS000143", when the listing was
+  // matched to the state's official licensed-dispensary list.
+  licenseNumber        String?
   // Sort key for the directory list: fuller listings first. Recomputed on
   // every write (src/lib/directoryServer.ts listingCompleteness).
   completeness         Int       @default(0)

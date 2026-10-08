@@ -74,6 +74,7 @@ export default async function DirectoryPage({
         fullAccess: true,
         premiumUntil: true,
         claimedById: true,
+        licenseNumber: true,
       },
     }),
     // Every match goes on the map, not just this page of the list.
@@ -206,6 +207,9 @@ export default async function DirectoryPage({
                         )}
                         {l.claimedById && (
                           <span className="text-[11px] font-semibold bg-brand-100 text-brand-800 px-1.5 py-0.5 rounded">✓ Owner</span>
+                        )}
+                        {l.licenseNumber && (
+                          <span className="text-[11px] font-semibold bg-green-100 text-green-800 px-1.5 py-0.5 rounded">✓ Licensed</span>
                         )}
                         {showAll && l.specials && (
                           <span className="text-[11px] font-semibold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">Deals</span>

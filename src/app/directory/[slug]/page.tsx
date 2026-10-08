@@ -12,6 +12,7 @@ import {
   fullAddress,
   listingShowsAll,
   parseHours,
+  stateName,
 } from "@/lib/directory";
 import DirectoryMap from "@/components/DirectoryMap";
 import DirectoryHours from "@/components/DirectoryHours";
@@ -69,6 +70,19 @@ function SourceCredit({ source, sourceId }: { source: string; sourceId: string |
       </span>
     );
   }
+  if (parts.includes("mo-dcr")) {
+    credits.push(
+      <a
+        key="mo-dcr"
+        href={LICENSE_LOOKUP.MO}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="hover:underline"
+      >
+        Missouri Division of Cannabis Regulation
+      </a>
+    );
+  }
   if (parts.includes("overture")) {
     credits.push(
       <a key="overture" href="https://overturemaps.org" target="_blank" rel="noopener noreferrer" className="hover:underline">
@@ -79,10 +93,22 @@ function SourceCredit({ source, sourceId }: { source: string; sourceId: string |
   if (credits.length === 0) return null;
   return (
     <>
-      Listing info from {credits.length === 2 ? <>{credits[0]} and {credits[1]}</> : credits[0]}.
+      Listing info from{" "}
+      {credits.map((c, i) => (
+        <span key={i}>
+          {i > 0 && (i === credits.length - 1 ? " and " : ", ")}
+          {c}
+        </span>
+      ))}
+      .
     </>
   );
 }
+
+// Where a visitor can confirm a state cannabis license.
+const LICENSE_LOOKUP: Record<string, string> = {
+  MO: "https://health.mo.gov/business-professionals/cannabis-regulation/licensee-compliance-guidance/licensed-dispensary-map",
+};
 
 function telHref(phone: string) {
   return `tel:${phone.replace(/[^\d+]/g, "")}`;
@@ -174,6 +200,17 @@ export default async function DirectoryListingPage({ params }: { params: { slug:
               <span className="text-xs font-semibold bg-brand-100 text-brand-800 px-2 py-0.5 rounded-full">
                 ✓ Owner verified
               </span>
+            )}
+            {l.licenseNumber && (
+              <a
+                href={LICENSE_LOOKUP[l.state] ?? "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`State license ${l.licenseNumber}`}
+                className="text-xs font-semibold bg-green-100 text-green-800 px-2 py-0.5 rounded-full hover:bg-green-200"
+              >
+                ✓ Licensed by the State of {stateName(l.state)} · {l.licenseNumber}
+              </a>
             )}
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold leading-tight mt-1 break-words">{l.name}</h1>
