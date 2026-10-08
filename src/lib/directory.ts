@@ -146,3 +146,17 @@ export function canEditListing(
   if (!userId) return false;
   return l.claimedById ? l.claimedById === userId : l.submittedById === userId;
 }
+
+// Wording for page titles/descriptions.
+export const CATEGORY_PLURAL: Record<string, string> = {
+  dispensaries: "Dispensaries",
+  "smoke-supplies": "Smoke & Vape Shops",
+  "mmj-doctors": "Medical Marijuana Doctors",
+  "fun-stuff": "Cannabis-Friendly Fun",
+};
+export const CATEGORY_SINGULAR: Record<string, string> = {
+  dispensaries: "cannabis dispensary",
+  "smoke-supplies": "smoke and vape shop",
+  "mmj-doctors": "medical marijuana doctor",
+  "fun-stuff": "cannabis-friendly business",
+};
