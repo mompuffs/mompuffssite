@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { permanentRedirect } from "next/navigation";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { pageMeta } from "@/lib/seo";
@@ -31,6 +32,8 @@ export default async function BlogPage({
 }: {
   searchParams: { q?: string; category?: string; sort?: string; page?: string };
 }) {
+  // The old state-law category moved to its own section.
+  if (searchParams.category === "state-by-state-laws") permanentRedirect(LAW_HUB_PATH);
   const q = searchParams.q?.trim() || undefined;
   const sort = parseSort(searchParams.sort);
   const page = parsePage(searchParams.page);
