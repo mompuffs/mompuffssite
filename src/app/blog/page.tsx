@@ -12,6 +12,7 @@ import ProductPagination from "@/components/ProductPagination";
 import JsonLd from "@/components/JsonLd";
 import { breadcrumbs, itemList } from "@/lib/structuredData";
 import { heroFit } from "@/lib/blog";
+import { LAW_HUB_PATH, articleHref } from "@/lib/stateLaws";
 
 export const dynamic = "force-dynamic";
 
@@ -134,7 +135,8 @@ export default async function BlogPage({
           return (
             <Link
               key={c.slug || "all"}
-              href={`/blog${qs.toString() ? `?${qs}` : ""}`}
+              // The state guides have their own map hub.
+              href={isStateLaws ? LAW_HUB_PATH : `/blog${qs.toString() ? `?${qs}` : ""}`}
               className={`text-sm font-semibold px-3 py-1.5 rounded-full border transition ${
                 active
                   ? "bg-brand-600 text-white border-brand-600"
@@ -152,10 +154,13 @@ export default async function BlogPage({
 
       {stateLaws.length > 0 && (
         <section className="bg-white rounded-xl shadow p-4 sm:p-5 mb-4">
-          <h2 className="font-bold text-lg mb-3">Jump to your state</h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+            <h2 className="font-bold text-lg">Jump to your state</h2>
+            <Link href={LAW_HUB_PATH} className="text-sm text-brand-600 hover:underline">See the map →</Link>
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-1">
             {stateLaws.map((a) => (
-              <Link key={a.slug} href={`/blog/${a.slug}`} className="text-sm text-brand-700 hover:underline py-0.5">
+              <Link key={a.slug} href={articleHref(a.slug)} className="text-sm text-brand-700 hover:underline py-0.5">
                 {a.title.split(" Cannabis Laws")[0]}
               </Link>
             ))}
@@ -185,7 +190,7 @@ export default async function BlogPage({
             {articles.map((a) => (
               <Link
                 key={a.slug}
-                href={`/blog/${a.slug}`}
+                href={articleHref(a.slug)}
                 className="group bg-white rounded-xl shadow overflow-hidden hover:shadow-md transition flex flex-col"
               >
                 <div className="aspect-[16/10] bg-brand-100 overflow-hidden">

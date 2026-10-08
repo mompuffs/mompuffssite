@@ -10,6 +10,7 @@ import JsonLd from "@/components/JsonLd";
 import { organization, website } from "@/lib/structuredData";
 import { locationCategory } from "@/lib/directory";
 import { heroFit } from "@/lib/blog";
+import { articleHref } from "@/lib/stateLaws";
 
 // Public home page. Browsing (directory, marketplace, blog) is open to
 // everyone; the community side (feed, groups, members, messages) needs an
@@ -192,7 +193,7 @@ export default async function HomePage() {
             {articles.map((a) => (
               <Link
                 key={a.slug}
-                href={`/blog/${a.slug}`}
+                href={articleHref(a.slug)}
                 className="group bg-white rounded-xl shadow overflow-hidden hover:shadow-md transition flex flex-col"
               >
                 <div className="aspect-[16/10] bg-brand-100 overflow-hidden">

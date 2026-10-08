@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { SITE_URL } from "@/lib/seo";
 import { LOCATION_CATEGORIES, locationCategory, stateSlug } from "@/lib/directory";
 import { VISITOR_HELP_TOPICS } from "@/lib/visitorHelp";
+import { LAW_HUB_PATH, articleHref } from "@/lib/stateLaws";
 
 // Rebuilt at most hourly, so new listings, products and posts show up
 // without a deploy. (Without a revalidate this would be generated once at
@@ -44,6 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: url("/directory"), lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: url("/marketplace"), lastModified: now, changeFrequency: "daily", priority: 0.8 },
     { url: url("/blog"), lastModified: now, changeFrequency: "weekly", priority: 0.8 },
+    { url: url(LAW_HUB_PATH), lastModified: now, changeFrequency: "monthly", priority: 0.8 },
     { url: url("/directory/submit"), changeFrequency: "monthly", priority: 0.5 },
     { url: url("/help"), changeFrequency: "monthly", priority: 0.4 },
     ...VISITOR_HELP_TOPICS.map((t) => ({ url: url(`/help/${t.slug}`), changeFrequency: "monthly" as const, priority: 0.3 })),
@@ -76,7 +78,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...fixed,
     ...directoryViews,
-    ...articles.map((a) => ({ url: url(`/blog/${a.slug}`), lastModified: a.updatedAt, changeFrequency: "monthly" as const, priority: 0.7 })),
+    ...articles.map((a) => ({ url: url(articleHref(a.slug)), lastModified: a.updatedAt, changeFrequency: "monthly" as const, priority: 0.7 })),
     ...shops.map((s) => ({ url: url(`/shop/${s.slug}`), changeFrequency: "weekly" as const, priority: 0.6 })),
     ...products.map((p) => ({ url: url(`/product/${p.id}`), lastModified: p.createdAt, changeFrequency: "weekly" as const, priority: 0.5 })),
     ...listings.map((l) => ({ url: url(`/directory/${l.slug}`), lastModified: l.updatedAt, changeFrequency: "monthly" as const, priority: 0.5 })),

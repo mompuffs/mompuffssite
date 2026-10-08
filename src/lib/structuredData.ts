@@ -153,8 +153,9 @@ export function article(a: {
   updatedAt: Date;
   tags: string[];
   category: string | null;
+  path?: string; // defaults to /blog/<slug>
 }): Thing {
-  const page = abs(`/blog/${a.slug}`);
+  const page = abs(a.path ?? `/blog/${a.slug}`);
   return {
     "@type": "BlogPosting",
     "@id": `${page}#article`,
