@@ -51,6 +51,7 @@ ${articles.map((a) => `- [${a.title}](${SITE_URL}/blog/${a.slug})${a.dek ? `: ${
 ## About and help
 
 - [Home](${SITE_URL}/)
+- [About Mompuffs](${SITE_URL}/about)
 - [Help & Support](${SITE_URL}/help)
 - [Contact](${SITE_URL}/contact)
 - [Privacy Policy](${SITE_URL}/privacy) and [Terms of Use](${SITE_URL}/terms)

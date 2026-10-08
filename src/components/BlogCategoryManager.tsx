@@ -3,14 +3,29 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Cat = { id: string; name: string; slug: string; description: string | null; count: number };
+type Cat = { id: string; name: string; slug: string; description: string | null; parentId: string | null; count: number };
 
-function CategoryRow({ cat }: { cat: Cat }) {
+// Top-level categories a category could be nested under.
+function ParentSelect({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: Cat[] }) {
+  return (
+    <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full border rounded px-3 py-1.5 text-sm bg-white">
+      <option value="">No parent (top-level)</option>
+      {options.map((o) => (
+        <option key={o.id} value={o.id}>
+          Subcategory of: {o.name}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function CategoryRow({ cat, parents, child = false }: { cat: Cat; parents: Cat[]; child?: boolean }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(cat.name);
   const [slug, setSlug] = useState(cat.slug);
   const [description, setDescription] = useState(cat.description ?? "");
+  const [parentId, setParentId] = useState(cat.parentId ?? "");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -20,7 +35,7 @@ function CategoryRow({ cat }: { cat: Cat }) {
     const res = await fetch(`/api/admin/blog/categories/${cat.id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name, slug, description }),
+      body: JSON.stringify({ name, slug, description, parentId }),
     });
     const data = await res.json().catch(() => ({}));
     setBusy(false);
@@ -58,6 +73,7 @@ function CategoryRow({ cat }: { cat: Cat }) {
           className="w-full border rounded px-3 py-1.5 text-sm"
           placeholder="Description (optional)"
         />
+        <ParentSelect value={parentId} onChange={setParentId} options={parents.filter((p) => p.id !== cat.id)} />
         {error && <p className="text-xs text-red-600">{error}</p>}
         <div className="flex gap-3">
           <button onClick={save} disabled={busy} className="text-sm bg-brand-600 text-white px-3 py-1 rounded-full disabled:opacity-40">
@@ -72,9 +88,10 @@ function CategoryRow({ cat }: { cat: Cat }) {
   }
 
   return (
-    <div className="py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
+    <div className={`py-3 flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between ${child ? "pl-6" : ""}`}>
       <div className="min-w-0">
         <p className="font-medium text-sm">
+          {child && <span className="text-gray-400 mr-1">↳</span>}
           {cat.name} <span className="text-gray-400 font-mono text-xs ml-1">/{cat.slug}</span>
         </p>
         {cat.description && <p className="text-xs text-gray-500 truncate">{cat.description}</p>}
@@ -98,8 +115,10 @@ export default function BlogCategoryManager({ categories }: { categories: Cat[] 
   const router = useRouter();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [parentId, setParentId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const parents = categories.filter((c) => !c.parentId);
 
   async function create(e: React.FormEvent) {
     e.preventDefault();
@@ -108,7 +127,7 @@ export default function BlogCategoryManager({ categories }: { categories: Cat[] 
     const res = await fetch("/api/admin/blog/categories", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name, description }),
+      body: JSON.stringify({ name, description, parentId }),
     });
     const data = await res.json().catch(() => ({}));
     setBusy(false);
@@ -118,6 +137,7 @@ export default function BlogCategoryManager({ categories }: { categories: Cat[] 
     }
     setName("");
     setDescription("");
+    setParentId("");
     router.refresh();
   }
 
@@ -139,6 +159,7 @@ export default function BlogCategoryManager({ categories }: { categories: Cat[] 
           rows={2}
           className="w-full border rounded px-3 py-1.5 text-sm"
         />
+        <ParentSelect value={parentId} onChange={setParentId} options={parents} />
         {error && <p className="text-xs text-red-600">{error}</p>}
         <button
           type="submit"
@@ -153,7 +174,13 @@ export default function BlogCategoryManager({ categories }: { categories: Cat[] 
         {categories.length === 0 ? (
           <p className="text-sm text-gray-500 py-3">No categories yet.</p>
         ) : (
-          categories.map((c) => <CategoryRow key={c.id} cat={c} />)
+          // Parents, each followed by its subcategories.
+          parents.flatMap((p) => [
+            <CategoryRow key={p.id} cat={p} parents={parents} />,
+            ...categories
+              .filter((c) => c.parentId === p.id)
+              .map((c) => <CategoryRow key={c.id} cat={c} parents={parents} child />),
+          ])
         )}
       </div>
     </div>

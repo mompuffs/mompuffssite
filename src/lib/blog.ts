@@ -47,3 +47,28 @@ export function asFaq(v: unknown): { q: string; a: string }[] {
 export function asSources(v: unknown): { title: string; url: string }[] {
   return Array.isArray(v) ? v.filter((x) => x && typeof x.title === "string" && typeof x.url === "string") : [];
 }
+
+// Validates a requested parent category: must exist, can't be the category
+// itself, and must be top-level (one level of nesting only). Returns the id
+// to store, null for "no parent", or an error message.
+// (undefined = "not provided, leave as is").
+export async function resolveBlogParent(
+  raw: unknown,
+  selfId?: string
+): Promise<{ parentId: string | null | undefined } | { error: string }> {
+  if (raw === undefined) return { parentId: undefined };
+  if (raw === null || raw === "") return { parentId: null };
+  if (typeof raw !== "string" || raw === selfId) return { error: "A category can't be its own parent." };
+  const parent = await db.blogCategory.findUnique({ where: { id: raw }, select: { id: true, parentId: true } });
+  if (!parent) return { error: "Parent category not found." };
+  if (parent.parentId) return { error: "Subcategories can't have their own subcategories." };
+  if (selfId && (await db.blogCategory.count({ where: { parentId: selfId } }))) {
+    return { error: "This category has subcategories, so it can't become one." };
+  }
+  return { parentId: parent.id };
+}
+
+// Prisma filter for "articles in this category or any of its subcategories".
+export function inBlogCategory(slug: string) {
+  return { OR: [{ slug }, { parent: { slug } }] };
+}

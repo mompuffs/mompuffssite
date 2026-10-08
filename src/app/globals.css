@@ -79,5 +79,7 @@ body {
 .blog-prose pre { background: #241f28; color: #f1eef4; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
 .blog-prose pre code { background: none; padding: 0; }
 .blog-prose table { width: 100%; border-collapse: collapse; font-size: 0.875rem; display: block; overflow-x: auto; }
+/* Row labels (first column) stay on one line instead of breaking mid-word. */
+.blog-prose td:first-child, .blog-prose th:first-child { white-space: nowrap; font-weight: 600; }
 .blog-prose th, .blog-prose td { border: 1px solid #e6e1ea; padding: 0.5rem; text-align: left; }
 .blog-prose hr { border-color: #e6e1ea; margin: 2rem 0; }

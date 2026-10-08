@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAdminUser } from "@/lib/admin";
-import { blogSlugify, uniqueBlogCategorySlug } from "@/lib/blog";
+import { blogSlugify, resolveBlogParent, uniqueBlogCategorySlug } from "@/lib/blog";
 
 export const dynamic = "force-dynamic";
 
@@ -16,8 +16,11 @@ export async function POST(req: Request) {
   const base = blogSlugify(typeof body.slug === "string" && body.slug.trim() ? body.slug : name);
   if (!base) return NextResponse.json({ error: "Name needs at least one letter or number." }, { status: 400 });
 
+  const parent = await resolveBlogParent(body.parentId);
+  if ("error" in parent) return NextResponse.json({ error: parent.error }, { status: 400 });
+
   const category = await db.blogCategory.create({
-    data: { name, description, slug: await uniqueBlogCategorySlug(base) },
+    data: { name, description, slug: await uniqueBlogCategorySlug(base), parentId: parent.parentId ?? null },
   });
   return NextResponse.json({ category });
 }

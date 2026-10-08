@@ -6,6 +6,9 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 py-2.5 text-xs text-gray-500 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <span>© Copyright 2026 MomPuffs. All rights reserved.</span>
         <nav className="flex items-center gap-4">
+          <Link href="/about" className="hover:text-brand-600 hover:underline">
+            About
+          </Link>
           <Link href="/privacy" className="hover:text-brand-600 hover:underline">
             Privacy Policy
           </Link>

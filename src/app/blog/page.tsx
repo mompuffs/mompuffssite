@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { pageMeta } from "@/lib/seo";
-import { BLOG_PER_PAGE, parseSort } from "@/lib/blog";
+import { BLOG_PER_PAGE, inBlogCategory, parseSort } from "@/lib/blog";
 import { pageCount, parsePage } from "@/lib/pagination";
 import BlogFilters from "@/components/BlogFilters";
 import ProductPagination from "@/components/ProductPagination";
@@ -34,7 +34,8 @@ export default async function BlogPage({
 
   const where: Prisma.BlogArticleWhereInput = {
     status: "PUBLISHED",
-    ...(searchParams.category ? { category: { slug: searchParams.category } } : {}),
+    // A parent category includes its subcategories' articles.
+    ...(searchParams.category ? { category: inBlogCategory(searchParams.category) } : {}),
     ...(q
       ? {
           OR: [
@@ -48,11 +49,26 @@ export default async function BlogPage({
   };
 
   const [categories, total, articles] = await Promise.all([
-    db.blogCategory.findMany({
-      where: { articles: { some: { status: "PUBLISHED" } } },
-      orderBy: { name: "asc" },
-      select: { name: true, slug: true },
-    }),
+    db.blogCategory
+      .findMany({
+        where: {
+          OR: [
+            { articles: { some: { status: "PUBLISHED" } } },
+            { children: { some: { articles: { some: { status: "PUBLISHED" } } } } },
+          ],
+        },
+        orderBy: { name: "asc" },
+        select: { name: true, slug: true, parentId: true, id: true },
+      })
+      // Parents first, each followed by its subcategories (indented).
+      .then((cats) =>
+        cats
+          .filter((c) => !c.parentId || !cats.some((p) => p.id === c.parentId))
+          .flatMap((p) => [
+            { name: p.name, slug: p.slug },
+            ...cats.filter((c) => c.parentId === p.id).map((c) => ({ name: `  – ${c.name}`, slug: c.slug })),
+          ])
+      ),
     db.blogArticle.count({ where }),
     db.blogArticle.findMany({
       where,

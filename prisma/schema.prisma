@@ -444,12 +444,17 @@ model TaxRate {
 // ---------------------------------------------------------------------------
 
 model BlogCategory {
-  id          String        @id @default(cuid())
+  id          String         @id @default(cuid())
   name        String
-  slug        String        @unique
+  slug        String         @unique
   description String?
+  // Optional parent, e.g. "State by State Laws" under "Legalization and
+  // Laws". A parent's /blog?category= view includes its children's posts.
+  parent      BlogCategory?  @relation("BlogCategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  parentId    String?
+  children    BlogCategory[] @relation("BlogCategoryTree")
   articles    BlogArticle[]
-  createdAt   DateTime      @default(now())
+  createdAt   DateTime       @default(now())
 }
 
 model BlogArticle {

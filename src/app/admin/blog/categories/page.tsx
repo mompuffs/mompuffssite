@@ -24,6 +24,7 @@ export default async function AdminBlogCategoriesPage() {
           name: c.name,
           slug: c.slug,
           description: c.description,
+          parentId: c.parentId,
           count: c._count.articles,
         }))}
       />

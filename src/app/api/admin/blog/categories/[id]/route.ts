@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAdminUser } from "@/lib/admin";
-import { blogSlugify, uniqueBlogCategorySlug } from "@/lib/blog";
+import { blogSlugify, resolveBlogParent, uniqueBlogCategorySlug } from "@/lib/blog";
 
 export const dynamic = "force-dynamic";
 
@@ -23,9 +23,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     if (base && base !== existing.slug) slug = await uniqueBlogCategorySlug(base, existing.id);
   }
 
+  const parent = await resolveBlogParent(body.parentId, existing.id);
+  if ("error" in parent) return NextResponse.json({ error: parent.error }, { status: 400 });
+
   const category = await db.blogCategory.update({
     where: { id: existing.id },
-    data: { name, description, slug },
+    data: { name, description, slug, ...(body.parentId !== undefined ? { parentId: parent.parentId } : {}) },
   });
   return NextResponse.json({ category });
 }

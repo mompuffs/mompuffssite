@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
+import { getAdminUser } from "@/lib/admin";
 import { asFaq, asSources, renderMarkdown } from "@/lib/blog";
 import { pageMeta } from "@/lib/seo";
 import JsonLd from "@/components/JsonLd";
@@ -9,10 +10,11 @@ import { article, breadcrumbs, faqPage } from "@/lib/structuredData";
 
 export const dynamic = "force-dynamic";
 
-async function getArticle(slug: string) {
+// Admins can open hidden drafts (with a banner) to review them before publishing.
+async function getArticle(slug: string, includeHidden = false) {
   return db.blogArticle.findFirst({
-    where: { slug, status: "PUBLISHED" },
-    include: { category: { select: { name: true, slug: true } } },
+    where: { slug, ...(includeHidden ? {} : { status: "PUBLISHED" }) },
+    include: { category: { select: { name: true, slug: true, parent: { select: { name: true, slug: true } } } } },
   });
 }
 
@@ -42,7 +44,8 @@ export async function generateMetadata({ params }: { params: { slug: string } })
 }
 
 export default async function BlogArticlePage({ params }: { params: { slug: string } }) {
-  const a = await getArticle(params.slug);
+  const admin = await getAdminUser();
+  const a = await getArticle(params.slug, Boolean(admin));
   if (!a) notFound();
 
   const faq = asFaq(a.faq);
@@ -51,6 +54,14 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
 
   return (
     <article className="bg-white rounded-xl shadow overflow-hidden">
+      {a.status !== "PUBLISHED" && (
+        <div className="bg-amber-100 text-amber-900 text-sm font-semibold px-5 py-2">
+          Draft: only admins can see this.{" "}
+          <Link href={`/admin/blog/${a.id}`} className="underline">
+            Edit or publish it
+          </Link>
+        </div>
+      )}
       <JsonLd
         items={[
           article({
@@ -68,6 +79,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
           breadcrumbs([
             { name: "Home", path: "/" },
             { name: "Blog", path: "/blog" },
+            ...(a.category?.parent ? [{ name: a.category.parent.name, path: `/blog?category=${a.category.parent.slug}` }] : []),
             ...(a.category ? [{ name: a.category.name, path: `/blog?category=${a.category.slug}` }] : []),
             { name: a.title },
           ]),
@@ -82,6 +94,14 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
           <Link href="/blog" className="text-brand-600 hover:underline">
             ← Blog
           </Link>
+          {a.category?.parent && (
+            <Link
+              href={`/blog?category=${a.category.parent.slug}`}
+              className="bg-brand-50 text-brand-700 font-medium px-2 py-0.5 rounded-full text-xs hover:bg-brand-100"
+            >
+              {a.category.parent.name}
+            </Link>
+          )}
           {a.category && (
             <Link
               href={`/blog?category=${a.category.slug}`}
