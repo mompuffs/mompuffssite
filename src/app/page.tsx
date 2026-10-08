@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Mompuffs | A community for canna-loving women",
   description:
-    "Mompuffs is a community site (mostly) for women who enjoy cannabis: find dispensaries and smoke shops near you, shop canna-themed goods, read the blog, and connect with other members.",
+    "Mompuffs is a community site (mainly) for women who enjoy cannabis: find dispensaries and smoke shops near you, shop canna-themed goods, read the blog, and connect with other members.",
 };
 
 const COMMUNITY = [
@@ -57,11 +57,15 @@ export default async function HomePage() {
           <div className="flex-1 min-w-0">
             <p className="uppercase tracking-widest text-xs font-semibold text-brand-200 mb-2">Welcome to Mompuffs</p>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight">
-              A community (mostly) for women who enjoy the canna goodness.
+              A community (mainly) for women who enjoy the canna goodness.
             </h1>
-            <p className="mt-4 text-brand-100 text-base sm:text-lg max-w-xl">
-              Find dispensaries and smoke shops near you, shop canna-themed goods, catch up on the blog, and connect with
-              other members who get it.
+            <p className="mt-4 text-white font-semibold text-lg sm:text-xl max-w-xl">
+              Mommy needs a joint should be just as acceptable as Mommy needs a glass of wine!
+            </p>
+            <p className="mt-2 text-brand-100 text-base sm:text-lg max-w-xl">
+              Find dispensaries, smoke shops and other mj oriented businesses near you, explore member shops with unique
+              products, catch up on cannabis news/recipes/articles, and connect with other members who get it. No
+              algorithms or bots to disturb your visit!
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               {user ? (
