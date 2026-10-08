@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/session";
 import ProductCard from "@/components/ProductCard";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +30,8 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
     );
   }
 
+  // Members and groups are members-only; visitors just get shops and products.
+  const member = Boolean(await getCurrentUser());
   const [users, groups, shops, products] = await Promise.all([
     db.user.findMany({
       where: {
@@ -37,7 +40,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
           { username: { contains: q, mode: "insensitive" } },
         ],
       },
-      take: FULL_LIMIT,
+      take: member ? FULL_LIMIT : 0,
       orderBy: { displayName: "asc" },
       select: { id: true, username: true, displayName: true, avatarUrl: true, bio: true },
     }),
@@ -45,7 +48,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
       where: {
         OR: [{ name: { contains: q, mode: "insensitive" } }, { topic: { contains: q, mode: "insensitive" } }],
       },
-      take: FULL_LIMIT,
+      take: member ? FULL_LIMIT : 0,
       orderBy: { name: "asc" },
       select: {
         id: true,

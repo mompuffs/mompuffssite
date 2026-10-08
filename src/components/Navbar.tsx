@@ -87,7 +87,7 @@ function MessagesLink() {
 
 function Logo({ className = "" }: { className?: string }) {
   return (
-    <Link href="/feed" className={`flex items-center shrink-0 ${className}`}>
+    <Link href="/" className={`flex items-center shrink-0 ${className}`}>
       <Image
         src="/logo.png"
         alt="Mompuffs"
@@ -112,8 +112,15 @@ export default function Navbar() {
         <Logo className="lg:hidden" />
 
         <div className="hidden lg:flex items-center justify-end gap-2 xl:gap-3 whitespace-nowrap text-[13px] xl:text-sm font-semibold text-[#43203F]">
-          <Link href="/feed" className="hover:text-white">Feed</Link>
-          <Link href="/groups" className="hover:text-white">Groups</Link>
+          {/* Feed and Groups are members-only; visitors get Home instead. */}
+          {status === "authenticated" ? (
+            <>
+              <Link href="/feed" className="hover:text-white">Feed</Link>
+              <Link href="/groups" className="hover:text-white">Groups</Link>
+            </>
+          ) : (
+            <Link href="/" className="hover:text-white">Home</Link>
+          )}
           <MarketplaceMenu>
             <Link href="/marketplace" className="hover:text-white">Marketplace</Link>
           </MarketplaceMenu>
@@ -168,8 +175,13 @@ export default function Navbar() {
 
       {mobileOpen && (
         <div className="lg:hidden border-t border-gray-200 px-4 py-3 space-y-1 text-sm bg-white">
-          <Link href="/feed" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Feed</Link>
-          <Link href="/groups" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Groups</Link>
+          <Link href="/" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Home</Link>
+          {status === "authenticated" && (
+            <>
+              <Link href="/feed" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Feed</Link>
+              <Link href="/groups" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Groups</Link>
+            </>
+          )}
           <Link href="/marketplace" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Marketplace</Link>
           <Link href="/cart" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Cart</Link>
           <Link href="/blog" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Blog</Link>

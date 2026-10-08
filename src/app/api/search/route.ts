@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { getCurrentUser } from "@/lib/session";
 
 // Powers the navbar's live search dropdown -- capped per category so the
 // dropdown stays short. The full /search page re-queries with higher caps
@@ -14,6 +15,8 @@ export async function GET(req: Request) {
   const q = searchParams.get("q")?.trim();
   if (!q) return NextResponse.json({ users: [], groups: [], shops: [], products: [] });
 
+  // Members and groups are members-only; visitors just get shops and products.
+  const member = Boolean(await getCurrentUser());
   const [users, groups, shops, products] = await Promise.all([
     db.user.findMany({
       where: {
@@ -22,7 +25,7 @@ export async function GET(req: Request) {
           { username: { contains: q, mode: "insensitive" } },
         ],
       },
-      take: PREVIEW_LIMIT,
+      take: member ? PREVIEW_LIMIT : 0,
       orderBy: { displayName: "asc" },
       select: { id: true, username: true, displayName: true, avatarUrl: true },
     }),
@@ -30,7 +33,7 @@ export async function GET(req: Request) {
       where: {
         OR: [{ name: { contains: q, mode: "insensitive" } }, { topic: { contains: q, mode: "insensitive" } }],
       },
-      take: PREVIEW_LIMIT,
+      take: member ? PREVIEW_LIMIT : 0,
       orderBy: { name: "asc" },
       select: { id: true, name: true, slug: true, avatarUrl: true, topic: true },
     }),

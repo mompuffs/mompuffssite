@@ -343,9 +343,14 @@ export default async function DirectoryListingPage({ params }: { params: { slug:
             ) : !l.claimedById && (
               <>
                 Submitted by{" "}
-                <Link href={`/profile/${l.submittedBy.username}`} className="hover:underline">
-                  {l.submittedBy.displayName}
-                </Link>
+                {/* Member names are members-only. */}
+                {user ? (
+                  <Link href={`/profile/${l.submittedBy.username}`} className="hover:underline">
+                    {l.submittedBy.displayName}
+                  </Link>
+                ) : (
+                  "a Mompuffs member"
+                )}
                 .{" "}
               </>
             )}

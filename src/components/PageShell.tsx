@@ -16,6 +16,7 @@ export default function PageShell({ children }: { children: React.ReactNode }) {
   }
 
   const skipRightRail =
+    pathname === "/" ||
     pathname?.startsWith("/marketplace") ||
     pathname?.startsWith("/shop/") ||
     pathname?.startsWith("/dashboard/shop") ||

@@ -5,6 +5,22 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
+// Where to go after signing in: the page the middleware bounced them from
+// (?callbackUrl=, set by next-auth's withAuth), else the feed. Only paths on
+// this site are honored, so the parameter can't be used to send someone to
+// another domain.
+function safeCallbackPath(raw: string | null): string {
+  if (!raw) return "/feed";
+  try {
+    const url = new URL(raw, window.location.origin);
+    if (url.origin !== window.location.origin) return "/feed";
+    const path = url.pathname + url.search;
+    return path.startsWith("/login") || path.startsWith("/register") ? "/feed" : path;
+  } catch {
+    return "/feed";
+  }
+}
+
 // useSearchParams() (used below, to read ?verified=1 / ?verifyError=1 coming
 // back from /api/auth/verify-email) requires a Suspense boundary in the App
 // Router, or the build opts the whole page out of static rendering.
@@ -44,7 +60,8 @@ function LoginForm() {
   // button, stale /login render mid-navigation, etc).
   useEffect(() => {
     if (status !== "authenticated") return;
-    router.replace("/feed");
+    const target = safeCallbackPath(searchParams.get("callbackUrl"));
+    router.replace(target);
     // Belt-and-suspenders: reported live (2026-08-05) that after a
     // successful sign-in the header/sidebar correctly flip to the
     // authenticated state (they read the session directly, independent of
@@ -56,11 +73,11 @@ function LoginForm() {
     // client-router involved at all. Cleared as soon as the soft nav wins.
     const fallback = setTimeout(() => {
       if (window.location.pathname === "/login") {
-        window.location.href = "/feed";
+        window.location.href = target;
       }
     }, 1000);
     return () => clearTimeout(fallback);
-  }, [status, router]);
+  }, [status, router, searchParams]);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
