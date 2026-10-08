@@ -8,6 +8,7 @@ import ProductCard from "@/components/ProductCard";
 import { DEFAULT_TITLE, pageMeta } from "@/lib/seo";
 import JsonLd from "@/components/JsonLd";
 import { organization, website } from "@/lib/structuredData";
+import { locationCategory } from "@/lib/directory";
 
 // Public home page. Browsing (directory, marketplace, blog) is open to
 // everyone; the community side (feed, groups, members, messages) needs an
@@ -144,7 +145,7 @@ export default async function HomePage() {
           {DIRECTORY_CATEGORIES.map((c) => (
             <Link
               key={c.slug}
-              href={`/directory?category=${c.slug}`}
+              href={locationCategory(c.slug) ? `/${locationCategory(c.slug)!.segment}` : `/directory?category=${c.slug}`}
               className="rounded-xl border border-gray-100 bg-brand-50/50 hover:bg-brand-50 p-3 transition"
             >
               <span className="text-2xl">{c.icon}</span>

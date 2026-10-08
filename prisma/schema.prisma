@@ -504,6 +504,9 @@ model BusinessListing {
   city                 String?
   state                String // 2-letter code
   zip                  String?
+  // Normalized city for the /dispensaries/<state>/<city> pages, so "St.
+  // Louis", "Saint Louis" and "St Louis" land on one page. See citySlug().
+  citySlug             String?
   // Null when there's no street address to pin on the map.
   lat                  Float?
   lng                  Float?
@@ -550,6 +553,7 @@ model BusinessListing {
   @@index([submittedById])
   @@index([claimedById])
   @@index([status, completeness])
+  @@index([status, category, state, citySlug])
 }
 
 // Small key/value store for site-wide config set from the admin area

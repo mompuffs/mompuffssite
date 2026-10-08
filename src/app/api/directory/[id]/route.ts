@@ -9,7 +9,7 @@ import {
   uniqueListingSlug,
   validateListingInput,
 } from "@/lib/directoryServer";
-import { canEditListing } from "@/lib/directory";
+import { canEditListing, citySlug } from "@/lib/directory";
 import { CANCELLABLE_STATUSES, cancelSubscription } from "@/lib/directoryBilling";
 
 export const dynamic = "force-dynamic";
@@ -55,6 +55,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       ...data,
       hours: data.hours ?? Prisma.DbNull,
       ...coords,
+      citySlug: citySlug(data.city),
       completeness: listingCompleteness({ ...data, claimedById: listing.claimedById }),
       slug: renamed ? await uniqueListingSlug(data.name, data.city ?? "", data.state, listing.id) : listing.slug,
       ...(isAdmin || isOwner ? {} : { status: "PENDING", reviewNote: null }),

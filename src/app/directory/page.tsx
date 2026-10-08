@@ -16,9 +16,11 @@ import { pageCount, parsePage } from "@/lib/pagination";
 import { CATEGORY_PLURAL } from "@/lib/directory";
 import { pageMeta } from "@/lib/seo";
 import DirectoryMap from "@/components/DirectoryMap";
+import DirectoryListingCard, { LISTING_CARD_SELECT } from "@/components/DirectoryListingCard";
 import ProductPagination from "@/components/ProductPagination";
 import JsonLd from "@/components/JsonLd";
 import { breadcrumbs, itemList } from "@/lib/structuredData";
+import { locationCategory, locationPath, stateSlug } from "@/lib/directory";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +35,7 @@ export async function generateMetadata({
   const cat = categoryFor(searchParams.category);
   const state = US_STATES.find((s) => s.code === searchParams.state);
   const page = parsePage(searchParams.page);
+  const locCat = cat ? locationCategory(cat.slug) : undefined;
   const what = cat ? CATEGORY_PLURAL[cat.slug] : "Dispensaries, Smoke Shops & MMJ Doctors";
   const where = state ? ` in ${state.name}` : " Near You";
   const qs = new URLSearchParams();
@@ -45,7 +48,8 @@ export async function generateMetadata({
     description: `Find ${cat ? CATEGORY_PLURAL[cat.slug].toLowerCase() : "dispensaries, smoke and vape shops, and MMJ doctors"}${
       state ? ` in ${state.name}` : " across the US"
     } on an interactive map, with addresses, phone numbers, websites and state license info.`,
-    path,
+    // The clean location pages are the official versions of these views.
+    path: locCat && page === 1 ? `/${locCat.segment}${state ? `/${stateSlug(state.code)}` : ""}` : path,
     noindex: Boolean(searchParams.q),
   });
 }
@@ -76,7 +80,7 @@ export default async function DirectoryPage({
       : {}),
   };
 
-  const [total, listings, points, counts] = await Promise.all([
+  const [total, listings, counts] = await Promise.all([
     db.businessListing.count({ where }),
     db.businessListing.findMany({
       where,
@@ -84,32 +88,7 @@ export default async function DirectoryPage({
       orderBy: [{ completeness: "desc" }, { name: "asc" }],
       skip: (page - 1) * DIRECTORY_PER_PAGE,
       take: DIRECTORY_PER_PAGE,
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        category: true,
-        street: true,
-        city: true,
-        state: true,
-        zip: true,
-        phone: true,
-        imageUrl: true,
-        about: true,
-        specials: true,
-        menuUrl: true,
-        fullAccess: true,
-        premiumUntil: true,
-        claimedById: true,
-        licenseNumber: true,
-      },
-    }),
-    // Every match goes on the map, not just this page of the list.
-    db.businessListing.findMany({
-      where: { ...where, lat: { not: null }, lng: { not: null } },
-      // Kept lean: thousands of pins ship with the page.
-      take: 15000,
-      select: { slug: true, name: true, category: true, lat: true, lng: true, city: true, state: true },
+      select: LISTING_CARD_SELECT,
     }),
     db.businessListing.groupBy({
       by: ["category"],
@@ -208,6 +187,14 @@ export default async function DirectoryPage({
           <p className="text-sm text-gray-500 mb-2">
             {total} business{total === 1 ? "" : "es"}
             {state && <> in {stateName(state)}</>}
+            {state && (
+              <>
+                {" "}·{" "}
+                <Link href={locationPath(category ?? "dispensaries", state)} className="text-brand-600 hover:underline">
+                  browse {stateName(state)} by city
+                </Link>
+              </>
+            )}
             {filtered && (
               <>
                 {" "}·{" "}
@@ -223,51 +210,9 @@ export default async function DirectoryPage({
             </div>
           ) : (
             <div className="space-y-3">
-              {listings.map((l) => {
-                const cat = categoryFor(l.category);
-                const showAll = listingShowsAll(l);
-                return (
-                  <Link
-                    key={l.id}
-                    href={`/directory/${l.slug}`}
-                    className="group flex gap-3 bg-white rounded-xl shadow p-3 hover:shadow-md transition"
-                  >
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 shrink-0 rounded-lg overflow-hidden bg-brand-50 flex items-center justify-center text-3xl">
-                      {l.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={l.imageUrl} alt="" loading="lazy" className="w-full h-full object-cover" />
-                      ) : (
-                        cat?.icon
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-                        {cat && (
-                          <span className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: cat.color }}>
-                            {cat.name}
-                          </span>
-                        )}
-                        {l.claimedById && (
-                          <span className="text-[11px] font-semibold bg-brand-100 text-brand-800 px-1.5 py-0.5 rounded">✓ Owner</span>
-                        )}
-                        {l.licenseNumber && (
-                          <span className="text-[11px] font-semibold bg-green-100 text-green-800 px-1.5 py-0.5 rounded">✓ Licensed</span>
-                        )}
-                        {showAll && l.specials && (
-                          <span className="text-[11px] font-semibold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">Deals</span>
-                        )}
-                        {showAll && l.menuUrl && (
-                          <span className="text-[11px] font-semibold bg-green-100 text-green-800 px-1.5 py-0.5 rounded">Menu</span>
-                        )}
-                      </div>
-                      <h2 className="font-bold leading-snug group-hover:text-brand-700 truncate">{l.name}</h2>
-                      <p className="text-sm text-gray-500 truncate">{fullAddress(l)}</p>
-                      {l.phone && <p className="text-sm text-gray-500">{formatPhone(l.phone)}</p>}
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-1">{l.about}</p>
-                    </div>
-                  </Link>
-                );
-              })}
+              {listings.map((l) => (
+                <DirectoryListingCard key={l.id} l={l} />
+              ))}
             </div>
           )}
 
@@ -282,7 +227,11 @@ export default async function DirectoryPage({
         <div className="w-full lg:sticky lg:top-[166px]">
           <DirectoryMap
             mode="us"
-            points={points.map((p) => ({ ...p, id: p.slug, lat: p.lat!, lng: p.lng! }))}
+            pinsUrl={`/api/directory/pins?${new URLSearchParams({
+              ...(category ? { category } : {}),
+              ...(state ? { state } : {}),
+              ...(q ? { q } : {}),
+            })}`}
             fitToPoints={filtered}
             className="h-72 sm:h-96 lg:h-[calc(100vh-190px)] lg:min-h-[420px]"
           />

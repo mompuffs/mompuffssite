@@ -20,6 +20,7 @@ import DirectoryMap from "@/components/DirectoryMap";
 import DirectoryHours from "@/components/DirectoryHours";
 import JsonLd from "@/components/JsonLd";
 import { breadcrumbs, localBusiness } from "@/lib/structuredData";
+import { locationCategory, locationPath } from "@/lib/directory";
 
 export const dynamic = "force-dynamic";
 
@@ -161,18 +162,28 @@ export default async function DirectoryListingPage({ params }: { params: { slug:
   const btn = "inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full";
   const softBtn = `${btn} bg-brand-50 text-brand-700 hover:bg-brand-100`;
 
+  const locCat = locationCategory(l.category);
   const structured =
     l.status === "APPROVED"
       ? [
           // Mirrors what this page shows: premium-only fields only when visible.
           localBusiness({ ...l, email, hours }),
-          breadcrumbs([
-            { name: "Home", path: "/" },
-            { name: "Directory", path: "/directory" },
-            { name: stateName(l.state), path: `/directory?state=${l.state}` },
-            ...(cat ? [{ name: cat.name, path: `/directory?state=${l.state}&category=${cat.slug}` }] : []),
-            { name: l.name },
-          ]),
+          breadcrumbs(
+            locCat
+              ? [
+                  { name: "Home", path: "/" },
+                  { name: locCat.plural, path: `/${locCat.segment}` },
+                  { name: stateName(l.state), path: locationPath(l.category, l.state) },
+                  ...(l.citySlug ? [{ name: l.city ?? l.citySlug, path: locationPath(l.category, l.state, l.city) }] : []),
+                  { name: l.name },
+                ]
+              : [
+                  { name: "Home", path: "/" },
+                  { name: "Directory", path: "/directory" },
+                  { name: stateName(l.state), path: `/directory?state=${l.state}` },
+                  { name: l.name },
+                ]
+          ),
         ]
       : [];
 
@@ -317,6 +328,13 @@ export default async function DirectoryListingPage({ params }: { params: { slug:
                   Get directions
                 </a>
               </p>
+              {locCat && (
+                <p className="text-sm mt-2">
+                  <Link href={locationPath(l.category, l.state, l.city)} className="text-brand-600 font-semibold hover:underline">
+                    More {locCat.plural.toLowerCase()} in {l.city ?? stateName(l.state)} →
+                  </Link>
+                </p>
+              )}
             </section>
           )}
         </div>

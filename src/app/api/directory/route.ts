@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { citySlug } from "@/lib/directory";
 import {
   ADDRESS_NOT_FOUND,
   listingCompleteness,
@@ -52,6 +53,7 @@ export async function POST(req: Request) {
       approvedAt: isAdmin ? new Date() : null,
       fullAccess: isAdmin,
       ...(premium ? { claimedById: userId, claimedAt: new Date() } : {}),
+      citySlug: citySlug(data.city),
       completeness: listingCompleteness({ ...data, claimedById: premium ? userId : null }),
     },
     select: { id: true, slug: true, status: true },

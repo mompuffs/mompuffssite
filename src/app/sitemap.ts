@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { db } from "@/lib/db";
 import { SITE_URL } from "@/lib/seo";
-import { DIRECTORY_CATEGORIES } from "@/lib/directory";
+import { LOCATION_CATEGORIES, locationCategory, stateSlug } from "@/lib/directory";
 import { VISITOR_HELP_TOPICS } from "@/lib/visitorHelp";
 
 // Rebuilt at most hourly, so new listings, products and posts show up
@@ -10,7 +10,7 @@ import { VISITOR_HELP_TOPICS } from "@/lib/visitorHelp";
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [articles, shops, products, listings, states] = await Promise.all([
+  const [articles, shops, products, listings, stateCats, cityCats] = await Promise.all([
     db.blogArticle.findMany({ where: { status: "PUBLISHED" }, select: { slug: true, updatedAt: true } }),
     db.shop.findMany({ where: { products: { some: { archivedAt: null } } }, select: { slug: true } }),
     db.product.findMany({ where: { archivedAt: null }, select: { id: true, createdAt: true } }),
@@ -30,6 +30,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       select: { slug: true, updatedAt: true },
     }),
     db.businessListing.groupBy({ by: ["state", "category"], where: { status: "APPROVED" }, _count: { _all: true } }),
+    db.businessListing.groupBy({
+      by: ["state", "category", "citySlug"],
+      where: { status: "APPROVED", citySlug: { not: null } },
+      _count: { _all: true },
+    }),
   ]);
 
   const url = (path: string) => `${SITE_URL}${path}`;
@@ -47,17 +52,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: url("/terms"), changeFrequency: "yearly", priority: 0.2 },
   ];
 
-  // State and state+category views of the directory (e.g. dispensaries in MO).
-  const stateViews = new Map<string, number>();
-  for (const s of states) stateViews.set(s.state, (stateViews.get(s.state) ?? 0) + s._count._all);
-  const directoryViews: MetadataRoute.Sitemap = [
-    ...DIRECTORY_CATEGORIES.map((c) => ({ url: url(`/directory?category=${c.slug}`), changeFrequency: "weekly" as const, priority: 0.7 })),
-    ...Array.from(stateViews.keys()).map((st) => ({ url: url(`/directory?state=${st}`), changeFrequency: "weekly" as const, priority: 0.7 })),
-    ...states
-      .filter((s) => s._count._all >= 3)
-      // "&" must be pre-escaped: Next writes <loc> values into the XML verbatim.
-      .map((s) => ({ url: url(`/directory?state=${s.state}&amp;category=${s.category}`), changeFrequency: "weekly" as const, priority: 0.6 })),
-  ];
+  // Location pages: /dispensaries, /dispensaries/missouri,
+  // /dispensaries/missouri/springfield (and smoke-shops, mmj-doctors).
+  const states = new Set<string>();
+  const directoryViews: MetadataRoute.Sitemap = [];
+  for (const cat of LOCATION_CATEGORIES) {
+    directoryViews.push({ url: url(`/${cat.segment}`), lastModified: now, changeFrequency: "weekly", priority: 0.8 });
+  }
+  for (const s of stateCats) {
+    const cat = locationCategory(s.category);
+    states.add(s.state);
+    if (cat) directoryViews.push({ url: url(`/${cat.segment}/${stateSlug(s.state)}`), changeFrequency: "weekly", priority: 0.7 });
+  }
+  for (const c of cityCats) {
+    const cat = locationCategory(c.category);
+    if (cat && c.citySlug) {
+      directoryViews.push({ url: url(`/${cat.segment}/${stateSlug(c.state)}/${c.citySlug}`), changeFrequency: "weekly", priority: 0.6 });
+    }
+  }
+  for (const st of Array.from(states)) directoryViews.push({ url: url(`/directory?state=${st}`), changeFrequency: "weekly", priority: 0.5 });
 
   return [
     ...fixed,

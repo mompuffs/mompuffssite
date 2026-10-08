@@ -35,7 +35,7 @@ Mompuffs does not sell cannabis. Directory listings come from business owners, m
 
 - [Directory home and map](${SITE_URL}/directory): search by name, city, ZIP or state
 ${DIRECTORY_CATEGORIES.map((c) => `- [${CATEGORY_PLURAL[c.slug]}](${SITE_URL}/directory?category=${c.slug}): ${count(c.slug).toLocaleString("en-US")} listing${count(c.slug) === 1 ? "" : "s"}`).join("\n")}
-- State pages use ?state=XX, e.g. [Dispensaries in Missouri](${SITE_URL}/directory?state=MO&category=dispensaries)
+- Location pages by category, state and city: [Dispensaries by state](${SITE_URL}/dispensaries), [Smoke & vape shops by state](${SITE_URL}/smoke-shops), [Medical marijuana doctors by state](${SITE_URL}/mmj-doctors). Pattern: /dispensaries/<state>/<city>, e.g. [Dispensaries in Missouri](${SITE_URL}/dispensaries/missouri) and [Dispensaries in Springfield, MO](${SITE_URL}/dispensaries/missouri/springfield)
 - Each business has its own page at /directory/<name-city-state> with address, phone, website, map and (when known) hours and license number
 - [Add or claim a business](${SITE_URL}/directory/submit)
 

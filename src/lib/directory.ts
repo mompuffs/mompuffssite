@@ -160,3 +160,48 @@ export const CATEGORY_SINGULAR: Record<string, string> = {
   "mmj-doctors": "medical marijuana doctor",
   "fun-stuff": "cannabis-friendly business",
 };
+
+// ---------- Location pages (/dispensaries/<state>/<city>) ----------
+
+// URL-friendly city key: "St. Louis", "Saint Louis" and "St Louis" all
+// become "st-louis"; "O'Fallon" and "O Fallon" become "ofallon".
+export function citySlug(city: string | null | undefined): string | null {
+  if (!city) return null;
+  let s = city.toLowerCase().replace(/['’.]/g, "").replace(/\bsaint\b/g, "st").trim();
+  // "o fallon" -> "ofallon" (a lone letter belongs to the next word)
+  s = s.replace(/\b([a-z]) (?=[a-z]{2,})/g, "$1");
+  return s.replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || null;
+}
+
+// Display form of a city name ("Lee'S Summit" -> "Lee's Summit").
+export function tidyCity(city: string) {
+  return city.replace(/'S\b/g, "'s").replace(/\s+/g, " ").trim();
+}
+
+// Categories that get location pages, and their URL segment.
+export const LOCATION_CATEGORIES = [
+  { slug: "dispensaries", segment: "dispensaries", plural: "Dispensaries", singular: "dispensary" },
+  { slug: "smoke-supplies", segment: "smoke-shops", plural: "Smoke & Vape Shops", singular: "smoke or vape shop" },
+  { slug: "mmj-doctors", segment: "mmj-doctors", plural: "Medical Marijuana Doctors", singular: "medical marijuana doctor" },
+] as const;
+export type LocationCategory = (typeof LOCATION_CATEGORIES)[number];
+
+export function locationCategory(slug: string) {
+  return LOCATION_CATEGORIES.find((c) => c.slug === slug);
+}
+
+export function stateSlug(code: string) {
+  return stateName(code).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+export function stateFromSlug(slug: string) {
+  return US_STATES.find((s) => stateSlug(s.code) === slug);
+}
+
+// Where a listing's "more like this" links go.
+export function locationPath(category: string, state: string, city?: string | null) {
+  const c = locationCategory(category);
+  if (!c) return `/directory?state=${state}`;
+  const cs = citySlug(city);
+  return `/${c.segment}/${stateSlug(state)}${cs ? `/${cs}` : ""}`;
+}
