@@ -80,7 +80,7 @@ export async function fetchTextCapped(url: string, timeoutMs: number = FETCH_TIM
       signal: controller.signal,
       redirect: "follow",
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; MompuffsImportBot/1.0; +https://mompuffs.com)",
+        "User-Agent": "Mozilla/5.0 (compatible; MomPuffsImportBot/1.0; +https://mompuffs.com)",
         Accept: "text/html,application/xhtml+xml",
       },
     });

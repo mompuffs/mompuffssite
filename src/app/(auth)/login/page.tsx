@@ -116,7 +116,7 @@ function LoginForm() {
 
   return (
     <div className="max-w-sm mx-auto mt-12 bg-white p-6 rounded-xl shadow">
-      <h1 className="text-2xl font-bold text-brand-600 mb-4">Log in to Mompuffs</h1>
+      <h1 className="text-2xl font-bold text-brand-600 mb-4">Log in to MomPuffs</h1>
       {notice && <p className="text-sm text-gray-700 mb-3">{notice}</p>}
       <form onSubmit={handleSubmit} className="space-y-3">
         <input

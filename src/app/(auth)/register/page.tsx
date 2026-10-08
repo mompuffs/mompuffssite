@@ -60,7 +60,7 @@ export default function RegisterPage() {
 
   return (
     <div className="max-w-sm mx-auto mt-12 bg-white p-6 rounded-xl shadow">
-      <h1 className="text-2xl font-bold text-brand-600 mb-4">Join Mompuffs</h1>
+      <h1 className="text-2xl font-bold text-brand-600 mb-4">Join MomPuffs</h1>
       <form onSubmit={handleSubmit} className="space-y-3">
         <input required placeholder="Display name" value={form.displayName} onChange={update("displayName")} className="w-full border rounded px-3 py-2" />
         <input required placeholder="Username" value={form.username} onChange={update("username")} className="w-full border rounded px-3 py-2" />

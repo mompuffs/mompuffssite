@@ -98,8 +98,8 @@ export async function setUpBillingPlans() {
   if (!creds) throw new Error(`The "${BILLING_SHOP_SLUG}" shop hasn't connected PayPal.`);
 
   const product = await paypal<{ id: string }>(creds, "POST", "/v1/catalogs/products", {
-    name: "Mompuffs Directory Premium",
-    description: "Shows website, email, hours, specials and menu on a Mompuffs business directory listing.",
+    name: "MomPuffs Directory Premium",
+    description: "Shows website, email, hours, specials and menu on a MomPuffs business directory listing.",
     type: "SERVICE",
     home_url: "https://www.mompuffs.com/directory",
   });
@@ -109,7 +109,7 @@ export async function setUpBillingPlans() {
     const created = await paypal<{ id: string }>(creds, "POST", "/v1/billing/plans", {
       product_id: product.id,
       name: `Directory Premium - ${price.label}`,
-      description: `Mompuffs directory premium listing, ${price.display}`,
+      description: `MomPuffs directory premium listing, ${price.display}`,
       status: "ACTIVE",
       billing_cycles: [
         {
@@ -210,7 +210,7 @@ export async function activateSubscription(listingId: string, subscriptionId: st
   // Switching plans: stop the old subscription so they aren't billed twice.
   if (listing.paypalSubscriptionId && listing.paypalSubscriptionId !== sub.id && listing.subscriptionStatus === "ACTIVE") {
     await paypal(creds, "POST", `/v1/billing/subscriptions/${encodeURIComponent(listing.paypalSubscriptionId)}/cancel`, {
-      reason: "Switched to a different Mompuffs directory plan.",
+      reason: "Switched to a different MomPuffs directory plan.",
     }).catch((err) => console.error("Couldn't cancel replaced directory subscription:", err));
   }
 }
@@ -230,7 +230,7 @@ export async function cancelSubscription(listingId: string) {
   if (!creds) throw new Error("PayPal isn't connected.");
 
   await paypal(creds, "POST", `/v1/billing/subscriptions/${encodeURIComponent(listing.paypalSubscriptionId)}/cancel`, {
-    reason: "Cancelled by the listing owner on Mompuffs.",
+    reason: "Cancelled by the listing owner on MomPuffs.",
   });
   await db.businessListing.update({
     where: { id: listingId },

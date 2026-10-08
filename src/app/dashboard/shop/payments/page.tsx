@@ -123,7 +123,7 @@ export default function PaymentsPage() {
         </Link>
       </div>
       <p className="text-sm text-gray-500 mb-4">
-        Connect your own payment processor. Credentials are yours alone -- other shops on Mompuffs never see or
+        Connect your own payment processor. Credentials are yours alone -- other shops on MomPuffs never see or
         use them.
       </p>
 

@@ -23,11 +23,11 @@ export async function GET() {
   ]);
   const count = (slug: string) => counts.find((c) => c.category === slug)?._count._all ?? 0;
 
-  const body = `# Mompuffs
+  const body = `# MomPuffs
 
-> Mompuffs (mompuffs.com) is a community (mainly) for women and moms who enjoy cannabis. It combines a nationwide directory of dispensaries, smoke and vape shops and medical marijuana doctors, a marketplace of member-run shops selling cannabis-themed goods, a blog of cannabis news, recipes and articles, and a members-only social community. "Mommy needs a joint should be just as acceptable as Mommy needs a glass of wine!"
+> MomPuffs (mompuffs.com) is a community (mainly) for women and moms who enjoy cannabis. It combines a nationwide directory of dispensaries, smoke and vape shops and medical marijuana doctors, a marketplace of member-run shops selling cannabis-themed goods, a blog of cannabis news, recipes and articles, and a members-only social community. "Mommy needs a joint should be just as acceptable as Mommy needs a glass of wine!"
 
-Mompuffs does not sell cannabis. Directory listings come from business owners, members, OpenStreetMap, Overture Maps and official state licensing data. Listings marked "Licensed by the State of ..." were matched to that state's official licensed-dispensary list${
+MomPuffs does not sell cannabis. Directory listings come from business owners, members, OpenStreetMap, Overture Maps and official state licensing data. Listings marked "Licensed by the State of ..." were matched to that state's official licensed-dispensary list${
     states.length ? ` (currently: ${states.map((s) => s.state).join(", ")})` : ""
   }.
 
@@ -51,7 +51,7 @@ ${articles.map((a) => `- [${a.title}](${SITE_URL}/blog/${a.slug})${a.dek ? `: ${
 ## About and help
 
 - [Home](${SITE_URL}/)
-- [About Mompuffs](${SITE_URL}/about)
+- [About MomPuffs](${SITE_URL}/about)
 - [Help & Support](${SITE_URL}/help)
 - [Contact](${SITE_URL}/contact)
 - [Privacy Policy](${SITE_URL}/privacy) and [Terms of Use](${SITE_URL}/terms)

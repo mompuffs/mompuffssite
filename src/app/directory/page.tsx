@@ -44,7 +44,7 @@ export async function generateMetadata({
   if (page > 1) qs.set("page", String(page));
   const path = `/directory${qs.toString() ? `?${qs}` : ""}`;
   return pageMeta({
-    title: `${what}${where}${page > 1 ? ` (page ${page})` : ""} | Mompuffs Directory`,
+    title: `${what}${where}${page > 1 ? ` (page ${page})` : ""} | MomPuffs Directory`,
     description: `Find ${cat ? CATEGORY_PLURAL[cat.slug].toLowerCase() : "dispensaries, smoke and vape shops, and MMJ doctors"}${
       state ? ` in ${state.name}` : " across the US"
     } on an interactive map, with addresses, phone numbers, websites and state license info.`,

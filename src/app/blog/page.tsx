@@ -4,6 +4,8 @@ import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { pageMeta } from "@/lib/seo";
 import { BLOG_PER_PAGE, inBlogCategory, parseSort } from "@/lib/blog";
+
+const STATE_LAWS_SLUG = "state-by-state-laws";
 import { pageCount, parsePage } from "@/lib/pagination";
 import BlogFilters from "@/components/BlogFilters";
 import ProductPagination from "@/components/ProductPagination";
@@ -13,9 +15,9 @@ import { breadcrumbs, itemList } from "@/lib/structuredData";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = pageMeta({
-  title: "Cannabis News, Recipes & Articles for Moms | Mompuffs Blog",
+  title: "Cannabis News, Recipes & Articles for Moms | MomPuffs Blog",
   description:
-    "Cannabis news, recipes, health guides and honest articles for canna-loving women and moms, from the Mompuffs community.",
+    "Cannabis news, recipes, health guides and honest articles for canna-loving women and moms, from the MomPuffs community.",
   path: "/blog",
 });
 
@@ -65,8 +67,8 @@ export default async function BlogPage({
         cats
           .filter((c) => !c.parentId || !cats.some((p) => p.id === c.parentId))
           .flatMap((p) => [
-            { name: p.name, slug: p.slug },
-            ...cats.filter((c) => c.parentId === p.id).map((c) => ({ name: `  – ${c.name}`, slug: c.slug })),
+            { name: p.name, slug: p.slug, child: false },
+            ...cats.filter((c) => c.parentId === p.id).map((c) => ({ name: c.name, slug: c.slug, child: true })),
           ])
       ),
     db.blogArticle.count({ where }),
@@ -87,6 +89,16 @@ export default async function BlogPage({
     }),
   ]);
 
+  // "Jump to your state" grid on the state-law category.
+  const stateLaws =
+    searchParams.category === STATE_LAWS_SLUG
+      ? await db.blogArticle.findMany({
+          where: { status: "PUBLISHED", category: { slug: STATE_LAWS_SLUG } },
+          orderBy: { title: "asc" },
+          select: { slug: true, title: true },
+        })
+      : [];
+
   const pages = pageCount(total, BLOG_PER_PAGE);
   const filtered = Boolean(q || searchParams.category);
 
@@ -94,13 +106,56 @@ export default async function BlogPage({
     <div>
       <JsonLd
         items={[
-          itemList("Mompuffs blog articles", articles.map((a) => `/blog/${a.slug}`)),
+          itemList("MomPuffs blog articles", articles.map((a) => `/blog/${a.slug}`)),
           breadcrumbs([{ name: "Home", path: "/" }, { name: "Blog" }]),
         ]}
       />
       <h1 className="text-2xl font-bold mb-4">Blog</h1>
 
-      <BlogFilters categories={categories} q={q ?? ""} category={searchParams.category ?? ""} sort={sort} />
+      <BlogFilters
+        categories={categories.map((c) => ({ name: c.child ? `  – ${c.name}` : c.name, slug: c.slug }))}
+        q={q ?? ""}
+        category={searchParams.category ?? ""}
+        sort={sort}
+      />
+
+      {/* Quick category buttons (same filter as the dropdown). */}
+      <nav aria-label="Blog categories" className="flex flex-wrap gap-2 mb-4">
+        {[{ name: "All", slug: "", child: false }, ...categories].map((c) => {
+          const active = (searchParams.category ?? "") === c.slug;
+          const isStateLaws = c.slug === STATE_LAWS_SLUG;
+          const qs = new URLSearchParams({ ...(c.slug ? { category: c.slug } : {}), ...(sort === "oldest" ? { sort } : {}) });
+          return (
+            <Link
+              key={c.slug || "all"}
+              href={`/blog${qs.toString() ? `?${qs}` : ""}`}
+              className={`text-sm font-semibold px-3 py-1.5 rounded-full border transition ${
+                active
+                  ? "bg-brand-600 text-white border-brand-600"
+                  : isStateLaws
+                    ? "bg-green-50 text-green-800 border-green-200 hover:bg-green-100"
+                    : "bg-white text-gray-700 border-gray-200 hover:bg-brand-50"
+              }`}
+            >
+              {isStateLaws ? "⚖️ " : ""}
+              {c.name}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {stateLaws.length > 0 && (
+        <section className="bg-white rounded-xl shadow p-4 sm:p-5 mb-4">
+          <h2 className="font-bold text-lg mb-3">Jump to your state</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-1">
+            {stateLaws.map((a) => (
+              <Link key={a.slug} href={`/blog/${a.slug}`} className="text-sm text-brand-700 hover:underline py-0.5">
+                {a.title.split(" Cannabis Laws")[0]}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <p className="text-sm text-gray-500 mb-3">
         {total} article{total === 1 ? "" : "s"}

@@ -117,7 +117,7 @@ export default function SearchBar({
           onChange={(e) => setQ(e.target.value)}
           onFocus={() => setOpen(true)}
           autoFocus={autoFocus}
-          placeholder="Search Mompuffs…"
+          placeholder="Search MomPuffs…"
           className={
             variant === "desktop"
               ? "block w-full bg-white/90 rounded-full px-4 py-1.5 text-sm text-gray-700 placeholder:text-gray-500 hover:bg-white focus:bg-white transition"

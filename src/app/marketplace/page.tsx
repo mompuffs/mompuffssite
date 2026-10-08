@@ -10,9 +10,9 @@ import { breadcrumbs, itemList } from "@/lib/structuredData";
 export const dynamic = "force-dynamic";
 
 export const metadata = pageMeta({
-  title: "Marketplace – Cannabis-Themed Apparel, Accessories & Gifts | Mompuffs",
+  title: "Marketplace – Cannabis-Themed Apparel, Accessories & Gifts | MomPuffs",
   description:
-    "Shop canna-themed apparel, accessories, home goods and gifts from Mompuffs member shops. Secure checkout with PayPal or card.",
+    "Shop canna-themed apparel, accessories, home goods and gifts from MomPuffs member shops. Secure checkout with PayPal or card.",
   path: "/marketplace",
 });
 

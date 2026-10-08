@@ -17,10 +17,10 @@ export async function generateMetadata({ params }: { params: { slug: string } })
     where: { slug: params.slug },
     select: { name: true, description: true, bannerUrl: true, _count: { select: { products: { where: { archivedAt: null } } } } },
   });
-  if (!shop) return { title: "Shop not found | Mompuffs", robots: { index: false } };
+  if (!shop) return { title: "Shop not found | MomPuffs", robots: { index: false } };
   return pageMeta({
-    title: `${shop.name} – Shop on Mompuffs`,
-    description: `${shop.description ? `${shop.description} ` : ""}Browse ${shop._count.products} products from ${shop.name} on the Mompuffs marketplace.`,
+    title: `${shop.name} – Shop on MomPuffs`,
+    description: `${shop.description ? `${shop.description} ` : ""}Browse ${shop._count.products} products from ${shop.name} on the MomPuffs marketplace.`,
     path: `/shop/${params.slug}`,
     image: shop.bannerUrl,
     imageAlt: shop.name,

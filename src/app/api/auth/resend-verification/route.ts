@@ -15,7 +15,7 @@ const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // per hour, per IP
 // Always responds with the same generic message whether or not the email
 // matches an account (and whether or not it's already verified) -- same
 // reasoning as /api/auth/forgot-password: this endpoint shouldn't be usable
-// to check which emails have Mompuffs accounts.
+// to check which emails have MomPuffs accounts.
 const GENERIC_MESSAGE = "If that account needs verifying, we've sent a new link.";
 
 export async function POST(req: Request) {

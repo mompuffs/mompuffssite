@@ -2,8 +2,8 @@ import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 
 export const metadata = pageMeta({
-  title: "Terms of Use | Mompuffs",
-  description: "The terms that govern your use of Mompuffs.",
+  title: "Terms of Use | MomPuffs",
+  description: "The terms that govern your use of MomPuffs.",
   path: "/terms",
 });
 
@@ -18,8 +18,8 @@ export default function TermsOfUsePage() {
       </div>
 
       <p className="text-gray-700">
-        These Terms of Use (&ldquo;Terms&rdquo;) govern your access to and use of Mompuffs
-        (&ldquo;Mompuffs,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;),
+        These Terms of Use (&ldquo;Terms&rdquo;) govern your access to and use of MomPuffs
+        (&ldquo;MomPuffs,&rdquo; &ldquo;we,&rdquo; &ldquo;us,&rdquo; or &ldquo;our&rdquo;),
         including our social feed, groups, messaging, and marketplace features (together, the
         &ldquo;Service&rdquo;). By creating an account or otherwise using the Service, you
         agree to these Terms. If you don&rsquo;t agree, please don&rsquo;t use the Service.
@@ -27,7 +27,7 @@ export default function TermsOfUsePage() {
 
       <Section title="1. Eligibility">
         <p className="text-gray-700">
-          You must be at least 18 years old to use Mompuffs. Our marketplace includes
+          You must be at least 18 years old to use MomPuffs. Our marketplace includes
           age-restricted products, and by using the Service you represent that you meet the
           minimum age required to view and purchase such products where you live.
         </p>
@@ -45,8 +45,8 @@ export default function TermsOfUsePage() {
       <Section title="3. Your content">
         <p className="text-gray-700">
           You retain ownership of the posts, comments, photos, videos, messages, and product
-          listings you submit to Mompuffs (&ldquo;your content&rdquo;). By posting content, you
-          grant Mompuffs a non-exclusive, worldwide, royalty-free license to host, store,
+          listings you submit to MomPuffs (&ldquo;your content&rdquo;). By posting content, you
+          grant MomPuffs a non-exclusive, worldwide, royalty-free license to host, store,
           display, reproduce, and distribute it solely for the purpose of operating and
           improving the Service (for example, showing your post in a friend&rsquo;s feed, or
           your product listing in the marketplace). This license ends when you delete the
@@ -78,8 +78,8 @@ export default function TermsOfUsePage() {
       <Section title="5. Marketplace, orders &amp; payments">
         <ul className="list-disc pl-5 space-y-1 text-gray-700">
           <li>
-            <strong>Independent sellers:</strong> shops on Mompuffs are run by individual
-            users, not by Mompuffs. Mompuffs is not the seller of record for marketplace
+            <strong>Independent sellers:</strong> shops on MomPuffs are run by individual
+            users, not by MomPuffs. MomPuffs is not the seller of record for marketplace
             products and is not responsible for product quality, accuracy of listings, or
             fulfillment.
           </li>
@@ -95,10 +95,10 @@ export default function TermsOfUsePage() {
           </li>
           <li>
             <strong>Refunds:</strong> refund requests are submitted to and handled by the shop
-            owner. Mompuffs facilitates the request but does not process the refund itself.
+            owner. MomPuffs facilitates the request but does not process the refund itself.
           </li>
           <li>
-            <strong>Seller responsibilities:</strong> if you sell on Mompuffs, you&rsquo;re
+            <strong>Seller responsibilities:</strong> if you sell on MomPuffs, you&rsquo;re
             responsible for the legality and accuracy of your listings, fulfilling orders, and
             complying with applicable laws (including age-restriction and tax laws) in the
             jurisdictions you sell to.
@@ -108,7 +108,7 @@ export default function TermsOfUsePage() {
 
       <Section title="6. Intellectual property">
         <p className="text-gray-700">
-          The Mompuffs name, logo, and Service (excluding user content) are owned by Mompuffs
+          The MomPuffs name, logo, and Service (excluding user content) are owned by MomPuffs
           or its licensors and protected by intellectual property laws. You may not copy,
           modify, or use them without our prior written permission.
         </p>
@@ -133,7 +133,7 @@ export default function TermsOfUsePage() {
 
       <Section title="9. Limitation of liability">
         <p className="text-gray-700">
-          To the fullest extent permitted by law, Mompuffs will not be liable for any
+          To the fullest extent permitted by law, MomPuffs will not be liable for any
           indirect, incidental, special, consequential, or punitive damages, or any loss of
           profits or data, arising from your use of the Service. Our total liability for any
           claim relating to the Service will not exceed the amount you paid us, if any, in the
@@ -143,7 +143,7 @@ export default function TermsOfUsePage() {
 
       <Section title="10. Indemnification">
         <p className="text-gray-700">
-          You agree to indemnify and hold Mompuffs harmless from any claims, damages, or
+          You agree to indemnify and hold MomPuffs harmless from any claims, damages, or
           expenses (including reasonable legal fees) arising from your content, your use of
           the Service, or your violation of these Terms.
         </p>

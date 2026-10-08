@@ -20,9 +20,9 @@ async function getArticle(slug: string, includeHidden = false) {
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const a = await getArticle(params.slug);
-  if (!a) return { title: "Article not found | Mompuffs", robots: { index: false } };
+  if (!a) return { title: "Article not found | MomPuffs", robots: { index: false } };
   const base = pageMeta({
-    title: `${a.metaTitle ?? a.title} | Mompuffs`,
+    title: `${a.metaTitle ?? a.title} | MomPuffs`,
     description: a.metaDescription ?? a.dek,
     path: `/blog/${a.slug}`,
     image: a.heroImage,

@@ -2,12 +2,12 @@ import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 
 export const metadata = pageMeta({
-  title: "Privacy Policy | Mompuffs",
-  description: "How Mompuffs collects, uses, and protects your information.",
+  title: "Privacy Policy | MomPuffs",
+  description: "How MomPuffs collects, uses, and protects your information.",
   path: "/privacy",
 });
 
-const LAST_UPDATED = "August 5, 2026";
+const LAST_UPDATED = "October 8, 2026";
 
 export default function PrivacyPolicyPage() {
   return (
@@ -18,7 +18,7 @@ export default function PrivacyPolicyPage() {
       </div>
 
       <p className="text-gray-700">
-        This Privacy Policy explains how Mompuffs (&ldquo;Mompuffs,&rdquo; &ldquo;we,&rdquo;
+        This Privacy Policy explains how MomPuffs (&ldquo;MomPuffs,&rdquo; &ldquo;we,&rdquo;
         &ldquo;us,&rdquo; or &ldquo;our&rdquo;) collects, uses, and shares information when you
         use our website and services (the &ldquo;Service&rdquo;), including our social feed,
         groups, messaging, and marketplace features. By using the Service, you agree to the
@@ -38,7 +38,7 @@ export default function PrivacyPolicyPage() {
             descriptions, and private messages you send to other users.
           </li>
           <li>
-            <strong>Marketplace information:</strong> if you buy or sell on Mompuffs, we
+            <strong>Marketplace information:</strong> if you buy or sell on MomPuffs, we
             collect order details, shipping addresses, and shop information (product
             listings, pricing, coupons). Payments are processed by Stripe and/or PayPal — we
             do not store your full card number or bank details on our servers.
@@ -62,9 +62,19 @@ export default function PrivacyPolicyPage() {
           </li>
           <li>
             <strong>Cookies:</strong> we use a session cookie to keep you signed in. This
-            cookie is required for the Service to function and isn&rsquo;t used for
-            third-party advertising or cross-site tracking. We don&rsquo;t currently run any
-            analytics or advertising trackers on Mompuffs.
+            cookie is required for the Service to function. Our analytics tool (below) also
+            sets a first-party visitor cookie. Neither is used for third-party advertising or
+            cross-site tracking.
+          </li>
+          <li>
+            <strong>Analytics:</strong> MomPuffs uses Apollo, an analytics tool we built and run
+            ourselves (it isn&rsquo;t a third-party ad network). It records which pages are
+            visited, how visitors arrived (for example, from a link or an ad), and basic browser
+            and device information, using a first-party visitor cookie. When you place an order,
+            we send Apollo the order total, the products, and your email address so we can see
+            which links lead to sales and keep track of refunds. This information stays with
+            MomPuffs; it isn&rsquo;t shared with or sold to advertisers or anyone else. We
+            don&rsquo;t use any third-party analytics or advertising trackers.
           </li>
         </ul>
       </Section>
@@ -102,10 +112,10 @@ export default function PrivacyPolicyPage() {
           </li>
           <li>
             <strong>Legal reasons:</strong> if required by law, or to protect the rights,
-            safety, or property of Mompuffs, our users, or the public.
+            safety, or property of MomPuffs, our users, or the public.
           </li>
           <li>
-            <strong>Business transfers:</strong> if Mompuffs is involved in a merger,
+            <strong>Business transfers:</strong> if MomPuffs is involved in a merger,
             acquisition, or sale of assets, your information may be transferred as part of
             that transaction.
           </li>
@@ -164,7 +174,7 @@ export default function PrivacyPolicyPage() {
 
       <Section title="7. Children's privacy">
         <p className="text-gray-700">
-          Mompuffs is not directed to children, and our marketplace includes age-restricted
+          MomPuffs is not directed to children, and our marketplace includes age-restricted
           products. The Service is not intended for anyone under 18, and we do not knowingly
           collect personal information from anyone under 18. If you believe a minor has
           provided us with personal information, contact us and we&rsquo;ll remove it.

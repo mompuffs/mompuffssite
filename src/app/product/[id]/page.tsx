@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     where: { id: params.id },
     select: { title: true, description: true, priceCents: true, currency: true, imageUrl: true, archivedAt: true, shop: { select: { name: true } } },
   });
-  if (!p || p.archivedAt) return { title: "Product not found | Mompuffs", robots: { index: false } };
+  if (!p || p.archivedAt) return { title: "Product not found | MomPuffs", robots: { index: false } };
   const price = formatCents(p.priceCents, p.currency);
   // Imported (print-on-demand) descriptions end in spec tables; keep the
   // prose before them.
@@ -25,8 +25,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     .replace(/<[^>]+>/g, " ")
     .split(/\b(?:Size|Specifications?|Product details|Dimensions)|\(cm\/in\)/i)[0];
   return pageMeta({
-    title: `${p.title} – ${price} | ${p.shop.name} on Mompuffs`,
-    description: plain.trim() ? `${price} from ${p.shop.name}. ${plain}` : `${p.title}, ${price} from ${p.shop.name} on the Mompuffs marketplace.`,
+    title: `${p.title} – ${price} | ${p.shop.name} on MomPuffs`,
+    description: plain.trim() ? `${price} from ${p.shop.name}. ${plain}` : `${p.title}, ${price} from ${p.shop.name} on the MomPuffs marketplace.`,
     path: `/product/${params.id}`,
     image: p.imageUrl,
     imageAlt: p.title,

@@ -3,10 +3,10 @@ import type { Metadata } from "next";
 // Search/social metadata shared by every page. Canonical URLs always use the
 // www host (the apex domain 308-redirects there).
 export const SITE_URL = "https://www.mompuffs.com";
-export const SITE_NAME = "Mompuffs";
-export const DEFAULT_TITLE = "Mompuffs | A community for canna-loving women";
+export const SITE_NAME = "MomPuffs";
+export const DEFAULT_TITLE = "MomPuffs | A community for canna-loving women";
 export const DEFAULT_DESCRIPTION =
-  "Mompuffs is a community (mainly) for women who enjoy cannabis: find dispensaries, smoke shops and MMJ doctors near you, shop member stores, read cannabis news, recipes and articles, and connect with members who get it.";
+  "MomPuffs is a community (mainly) for women who enjoy cannabis: find dispensaries, smoke shops and MMJ doctors near you, shop member stores, read cannabis news, recipes and articles, and connect with members who get it.";
 export const DEFAULT_IMAGE = "/logo.png";
 
 // Trims to a search-snippet-friendly length on a word boundary.

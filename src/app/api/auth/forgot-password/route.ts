@@ -10,7 +10,7 @@ const SITE_URL = process.env.NEXTAUTH_URL || "https://mompuffs.com";
 
 // Always responds with the same generic message whether or not the email
 // matches an account -- otherwise this endpoint could be used to check
-// which emails have Mompuffs accounts.
+// which emails have MomPuffs accounts.
 const GENERIC_MESSAGE = "If an account exists for that email, we've sent a password reset link.";
 
 export async function POST(req: Request) {

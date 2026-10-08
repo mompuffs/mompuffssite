@@ -56,7 +56,7 @@ export default async function HomePage() {
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 text-white shadow-lg">
         <div className="px-6 py-10 sm:px-10 sm:py-14 flex flex-col md:flex-row items-center gap-8">
           <div className="flex-1 min-w-0">
-            <p className="uppercase tracking-widest text-xs font-semibold text-brand-200 mb-2">Welcome to Mompuffs</p>
+            <p className="uppercase tracking-widest text-xs font-semibold text-brand-200 mb-2">Welcome to MomPuffs</p>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight">
               A community (mainly) for women who enjoy the canna goodness.
             </h1>
@@ -64,8 +64,8 @@ export default async function HomePage() {
               Mommy needs a joint should be just as acceptable as Mommy needs a glass of wine!
             </p>
             <p className="mt-2 text-brand-100 text-base sm:text-lg max-w-xl">
-              Find dispensaries, smoke shops and other mj oriented businesses near you, explore member shops with unique
-              products, catch up on cannabis news/recipes/articles, and connect with other members who get it. No
+              A place to find the dispensaries, smoke shops and canna-friendly businesses near you, shop from member-run
+              stores, catch up on cannabis news, recipes and honest articles, and connect with other members who get it. No
               algorithms or bots to disturb your visit!
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
@@ -101,7 +101,7 @@ export default async function HomePage() {
           <div className="shrink-0">
             <Image
               src="/logo.png"
-              alt="Mompuffs"
+              alt="MomPuffs"
               width={250}
               height={250}
               className="rounded-full w-40 h-40 sm:w-52 sm:h-52 lg:w-60 lg:h-60 ring-8 ring-white/15 shadow-2xl"

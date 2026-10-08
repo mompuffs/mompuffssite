@@ -8,8 +8,8 @@ import { getBillingConfig } from "@/lib/directoryBilling";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = pageMeta({
-  title: "Add Your Business to the Mompuffs Directory",
-  description: "List your dispensary, smoke shop, MMJ doctor or canna-friendly business in the Mompuffs directory. Free listings, or Premium for $5/month.",
+  title: "Add Your Business to the MomPuffs Directory",
+  description: "List your dispensary, smoke shop, MMJ doctor or canna-friendly business in the MomPuffs directory. Free listings, or Premium for $5/month.",
   path: "/directory/submit",
 });
 
@@ -33,7 +33,7 @@ export default async function SubmitBusinessPage() {
         />
       ) : (
         <div className="bg-white rounded-xl shadow p-6 text-sm">
-          <p className="mb-3">You need a Mompuffs account to submit a business.</p>
+          <p className="mb-3">You need a MomPuffs account to submit a business.</p>
           <div className="flex gap-2">
             <Link href="/login" className="bg-brand-600 text-white font-semibold px-4 py-2 rounded-full hover:bg-brand-700">
               Log in

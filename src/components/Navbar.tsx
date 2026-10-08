@@ -90,7 +90,7 @@ function Logo({ className = "" }: { className?: string }) {
     <Link href="/" className={`flex items-center shrink-0 ${className}`}>
       <Image
         src="/logo.png"
-        alt="Mompuffs"
+        alt="MomPuffs"
         width={250}
         height={250}
         className="rounded-full w-auto h-[110px]"

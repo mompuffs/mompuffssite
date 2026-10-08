@@ -22,6 +22,7 @@ export function organization(): Thing {
     url: `${SITE_URL}/`,
     logo: { "@type": "ImageObject", url: abs("/logo.png"), width: 250, height: 250 },
     description: DEFAULT_DESCRIPTION,
+    founder: { "@type": "Person", name: "Mel", description: "Founder of MomPuffs and longtime cannabis activist" },
     email: "info@mompuffs.com",
     contactPoint: { "@type": "ContactPoint", contactType: "customer support", email: "info@mompuffs.com", url: abs("/contact") },
   };

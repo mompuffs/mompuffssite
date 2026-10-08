@@ -2,7 +2,7 @@ import { Resend } from "resend";
 import { formatCents } from "@/lib/money";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const FROM = process.env.RESEND_FROM_EMAIL || "Mompuffs <onboarding@resend.dev>";
+const FROM = process.env.RESEND_FROM_EMAIL || "MomPuffs <onboarding@resend.dev>";
 // mompuffssite.vercel.app was a duplicate Vercel project deleted 2026-08-04
 // -- don't fall back to it. If NEXTAUTH_URL is ever unset, the real custom
 // domain is a much safer default than a dead one.
@@ -23,8 +23,8 @@ export async function sendPasswordResetEmail({ to, resetUrl }: { to: string; res
     const { error } = await resend.emails.send({
       from: FROM,
       to,
-      subject: "Reset your Mompuffs password",
-      text: `Someone (hopefully you) asked to reset the password for this Mompuffs account.
+      subject: "Reset your MomPuffs password",
+      text: `Someone (hopefully you) asked to reset the password for this MomPuffs account.
 
 Reset your password: ${resetUrl}
 
@@ -66,7 +66,7 @@ export async function sendSaleNotification({
     const { error } = await resend.emails.send({
       from: FROM,
       to,
-      subject: `You made a sale on Mompuffs! (${shopName})`,
+      subject: `You made a sale on MomPuffs! (${shopName})`,
       text: `Good news -- ${buyerName} just placed an order from ${shopName}.
 
 Items:
@@ -109,7 +109,7 @@ export async function sendRefundRequestNotification({
     const { error } = await resend.emails.send({
       from: FROM,
       to,
-      subject: `Refund request on ${shopName} (Mompuffs)`,
+      subject: `Refund request on ${shopName} (MomPuffs)`,
       text: `${buyerName} requested a refund on an item from an order on ${shopName}.
 
 Item: ${item.title}${item.variantLabel ? ` (${item.variantLabel})` : ""} x${item.quantity} - ${formatCents(item.unitPriceCents * item.quantity)}
@@ -141,12 +141,12 @@ export async function sendVerificationEmail({ to, verifyUrl }: { to: string; ver
     const { error } = await resend.emails.send({
       from: FROM,
       to,
-      subject: "Verify your Mompuffs account",
-      text: `Welcome to Mompuffs! Confirm this email address to finish setting up your account.
+      subject: "Verify your MomPuffs account",
+      text: `Welcome to MomPuffs! Confirm this email address to finish setting up your account.
 
 Verify your email: ${verifyUrl}
 
-This link expires in 24 hours. If you didn't create a Mompuffs account, you can ignore this email.`,
+This link expires in 24 hours. If you didn't create a MomPuffs account, you can ignore this email.`,
     });
     if (error) {
       console.error("Resend rejected the verification email:", error);
@@ -180,7 +180,7 @@ export async function sendContactMessage({
       // respond straight to the person who submitted the form.
       replyTo: email,
       subject: `[Contact form] ${subject}`,
-      text: `New message from the Mompuffs contact form.
+      text: `New message from the MomPuffs contact form.
 
 Name: ${name}
 Email: ${email}
@@ -223,10 +223,10 @@ export async function sendDirectoryRenewalReminder({
     const { error } = await resend.emails.send({
       from: FROM,
       to,
-      subject: `Your Mompuffs directory premium renews on ${when}`,
+      subject: `Your MomPuffs directory premium renews on ${when}`,
       text: `Hi ${name},
 
-Heads up: the premium plan for your Mompuffs directory listing "${listingName}" renews on ${when}. PayPal will automatically charge ${amount} then.
+Heads up: the premium plan for your MomPuffs directory listing "${listingName}" renews on ${when}. PayPal will automatically charge ${amount} then.
 
 Nothing to do if you'd like to keep it. To cancel, go to ${SITE_URL}/directory/${listingSlug}/edit and choose "Cancel subscription" before ${when}. Your listing keeps its premium details through the time you've already paid for.
 

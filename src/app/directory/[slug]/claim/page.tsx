@@ -92,7 +92,7 @@ export default async function ClaimListingPage({ params }: { params: { slug: str
           </>
         ) : (
           <div className="text-sm">
-            <p className="mb-3">Log in or create a free Mompuffs account to claim this listing.</p>
+            <p className="mb-3">Log in or create a free MomPuffs account to claim this listing.</p>
             <div className="flex gap-2">
               <Link href="/login" className="bg-brand-600 text-white font-semibold px-4 py-2 rounded-full hover:bg-brand-700">
                 Log in

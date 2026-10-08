@@ -5,8 +5,8 @@ import { pageMeta } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 
 export const metadata = pageMeta({
-  title: "Help & Support | Mompuffs",
-  description: "Answers to common questions about Mompuffs: your account, the feed, groups, the marketplace, checkout and the business directory.",
+  title: "Help & Support | MomPuffs",
+  description: "Answers to common questions about MomPuffs: your account, the feed, groups, the marketplace, checkout and the business directory.",
   path: "/help",
 });
 

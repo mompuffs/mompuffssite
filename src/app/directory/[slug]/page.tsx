@@ -33,7 +33,7 @@ async function getListing(slug: string) {
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const l = await getListing(params.slug);
-  if (!l || l.status !== "APPROVED") return { title: "Business not found | Mompuffs", robots: { index: false } };
+  if (!l || l.status !== "APPROVED") return { title: "Business not found | MomPuffs", robots: { index: false } };
   const where = l.city ? `${l.city}, ${l.state}` : stateName(l.state);
   const kind = CATEGORY_SINGULAR[l.category] ?? "business";
   const licensed = l.licenseNumber ? `state-licensed ${kind}` : kind;
@@ -53,7 +53,7 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   // owner or import fills them in; licensed and claimed ones always count.
   const thin = !l.licenseNumber && !l.claimedById && !l.fullAccess && !l.street && !l.website;
   return pageMeta({
-    title: `${l.name} – ${kind.replace(/^./, (c) => c.toUpperCase())} in ${where} | Mompuffs`,
+    title: `${l.name} – ${kind.replace(/^./, (c) => c.toUpperCase())} in ${where} | MomPuffs`,
     description,
     path: `/directory/${l.slug}`,
     image: l.imageUrl,
@@ -406,7 +406,7 @@ export default async function DirectoryListingPage({ params }: { params: { slug:
                     {l.submittedBy.displayName}
                   </Link>
                 ) : (
-                  "a Mompuffs member"
+                  "a MomPuffs member"
                 )}
                 .{" "}
               </>

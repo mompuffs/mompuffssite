@@ -70,7 +70,7 @@ function OtherCategories({ current, stateSlugValue, citySlugValue, counts }: {
 export async function hubMetadata(segment: string): Promise<Metadata> {
   const cat = categoryForSegment(segment);
   return pageMeta({
-    title: `${cat.plural} Near You – Browse by State | Mompuffs`,
+    title: `${cat.plural} Near You – Browse by State | MomPuffs`,
     description: `Find ${lower(cat.plural)} in every state on an interactive map, with addresses, phone numbers, websites, hours and state license info.`,
     path: `/${cat.segment}`,
   });
@@ -93,7 +93,7 @@ export async function CategoryHub({ segment }: { segment: string }) {
         <Crumbs items={[{ name: "Home", href: "/" }, { name: "Directory", href: "/directory" }, { name: cat.plural }]} />
         <h1 className="text-2xl sm:text-3xl font-bold">{cat.plural} by State</h1>
         <p className="text-gray-600 mt-2 max-w-3xl">
-          Mompuffs lists {n(total)} {lower(cat.plural)} nationwide
+          MomPuffs lists {n(total)} {lower(cat.plural)} nationwide
           {licensed > 0 ? `, including ${n(licensed)} matched to official state license lists` : ""}. Pick a state to see every
           city, or explore the map.
         </p>
@@ -121,11 +121,11 @@ export async function stateMetadata(segment: string, state: string, pageRaw?: st
   const cat = categoryForSegment(segment);
   const page = parsePage(pageRaw);
   const data = await getStatePage(cat, state, 1);
-  if (!data) return { title: "Not found | Mompuffs", robots: { index: false } };
+  if (!data) return { title: "Not found | MomPuffs", robots: { index: false } };
   const lic = data.licensed > 0 ? ` (${n(data.licensed)} State-Licensed)` : ` – ${n(data.total)} Listed`;
   const top = data.cities.slice(0, 3).map((c) => c.name);
   return pageMeta({
-    title: `${cat.plural} in ${data.state.name}${lic}${page > 1 ? ` – Page ${page}` : ""} | Mompuffs`,
+    title: `${cat.plural} in ${data.state.name}${lic}${page > 1 ? ` – Page ${page}` : ""} | MomPuffs`,
     description: `Find ${n(data.total)} ${lower(cat.plural)} in ${data.state.name}${top.length ? `, including ${list(top)}` : ""}. Addresses, phone numbers, websites and a map${
       data.licensed ? ", plus state license numbers" : ""
     }.`,
@@ -160,7 +160,7 @@ export async function StatePage({ segment, state, pageRaw }: { segment: string; 
           {cat.plural} in {st.name}
         </h1>
         <p className="text-gray-600 mt-2 max-w-3xl">
-          Mompuffs lists {n(total)} {lower(cat.plural)} in {st.name}
+          MomPuffs lists {n(total)} {lower(cat.plural)} in {st.name}
           {cities.length ? ` across ${n(cities.length)} ${cities.length === 1 ? "city" : "cities"}` : ""}.{" "}
           {licensed > 0 &&
             (licensed === total
@@ -220,10 +220,10 @@ export async function StatePage({ segment, state, pageRaw }: { segment: string; 
 export async function cityMetadata(segment: string, state: string, city: string): Promise<Metadata> {
   const cat = categoryForSegment(segment);
   const data = await getCityPage(cat, state, city);
-  if (!data) return { title: "Not found | Mompuffs", robots: { index: false } };
+  if (!data) return { title: "Not found | MomPuffs", robots: { index: false } };
   const count = data.listings.length;
   return pageMeta({
-    title: `${cat.plural} in ${data.city.name}, ${data.state.code} – ${count} ${count === 1 ? "Listing" : "Listed"} | Mompuffs`,
+    title: `${cat.plural} in ${data.city.name}, ${data.state.code} – ${count} ${count === 1 ? "Listing" : "Listed"} | MomPuffs`,
     description: `${count} ${count === 1 ? cat.singular : lower(cat.plural)} in ${data.city.name}, ${data.state.name}: ${list(
       data.listings.slice(0, 3).map((l) => l.name)
     )}${count > 3 ? " and more" : ""}. Addresses, phone numbers, websites, hours and directions.`,
