@@ -7,6 +7,8 @@ import { BLOG_PER_PAGE, parseSort } from "@/lib/blog";
 import { pageCount, parsePage } from "@/lib/pagination";
 import BlogFilters from "@/components/BlogFilters";
 import ProductPagination from "@/components/ProductPagination";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbs, itemList } from "@/lib/structuredData";
 
 export const dynamic = "force-dynamic";
 
@@ -74,6 +76,12 @@ export default async function BlogPage({
 
   return (
     <div>
+      <JsonLd
+        items={[
+          itemList("Mompuffs blog articles", articles.map((a) => `/blog/${a.slug}`)),
+          breadcrumbs([{ name: "Home", path: "/" }, { name: "Blog" }]),
+        ]}
+      />
       <h1 className="text-2xl font-bold mb-4">Blog</h1>
 
       <BlogFilters categories={categories} q={q ?? ""} category={searchParams.category ?? ""} sort={sort} />

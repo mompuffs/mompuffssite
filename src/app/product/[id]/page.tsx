@@ -7,6 +7,8 @@ import ProductViewer from "@/components/ProductViewer";
 import ProductGallery from "@/components/ProductGallery";
 import type { Metadata } from "next";
 import { pageMeta } from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbs, plainText, product as productLd } from "@/lib/structuredData";
 
 export const dynamic = "force-dynamic";
 
@@ -45,8 +47,29 @@ export default async function ProductPage({ params }: { params: { id: string } }
 
   const galleryImages = product.images.map((i) => i.url);
 
+  const structured = [
+    productLd({
+      id: product.id,
+      title: product.title,
+      description: plainText(product.description),
+      images: Array.from(new Set([product.imageUrl, ...galleryImages].filter((u): u is string => Boolean(u)))).slice(0, 8),
+      priceCents: product.priceCents,
+      currency: product.currency,
+      shopName: product.shop.name,
+      shopSlug: product.shop.slug,
+      variants: product.variants,
+    }),
+    breadcrumbs([
+      { name: "Home", path: "/" },
+      { name: "Marketplace", path: "/marketplace" },
+      { name: product.shop.name, path: `/shop/${product.shop.slug}` },
+      { name: product.title },
+    ]),
+  ];
+
   return (
     <div className="max-w-3xl mx-auto bg-white rounded-xl shadow p-6 grid sm:grid-cols-2 gap-6">
+      <JsonLd items={structured} />
       {product.variants.length > 0 ? (
         <ProductViewer
           product={{ id: product.id, title: product.title }}

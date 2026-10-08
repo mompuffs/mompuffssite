@@ -4,6 +4,8 @@ import ProductCard from "@/components/ProductCard";
 import ProductPagination from "@/components/ProductPagination";
 import { PRODUCTS_PER_PAGE, pageCount, parsePage } from "@/lib/pagination";
 import { pageMeta } from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbs, itemList } from "@/lib/structuredData";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +51,12 @@ export default async function MarketplacePage({
 
   return (
     <div>
+      <JsonLd
+        items={[
+          itemList("Marketplace products", products.map((p) => `/product/${p.id}`)),
+          breadcrumbs([{ name: "Home", path: "/" }, { name: "Marketplace" }]),
+        ]}
+      />
       <h1 className="text-2xl font-bold mb-4">Marketplace</h1>
 
       <div className="flex flex-col sm:flex-row gap-6">

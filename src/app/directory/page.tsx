@@ -17,6 +17,8 @@ import { CATEGORY_PLURAL } from "@/lib/directory";
 import { pageMeta } from "@/lib/seo";
 import DirectoryMap from "@/components/DirectoryMap";
 import ProductPagination from "@/components/ProductPagination";
+import JsonLd from "@/components/JsonLd";
+import { breadcrumbs, itemList } from "@/lib/structuredData";
 
 export const dynamic = "force-dynamic";
 
@@ -130,8 +132,23 @@ export default async function DirectoryPage({
     return s ? `/directory?${s}` : "/directory";
   }
 
+  const catInfo = categoryFor(category);
   return (
     <div>
+      <JsonLd
+        items={[
+          itemList(
+            `${catInfo ? CATEGORY_PLURAL[catInfo.slug] : "Businesses"}${state ? ` in ${stateName(state)}` : ""}`,
+            listings.map((l) => `/directory/${l.slug}`)
+          ),
+          breadcrumbs([
+            { name: "Home", path: "/" },
+            { name: "Directory", path: "/directory" },
+            ...(state ? [{ name: stateName(state), path: `/directory?state=${state}` }] : []),
+            ...(catInfo ? [{ name: catInfo.name }] : []),
+          ]),
+        ]}
+      />
       <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
         <div>
           <h1 className="text-2xl font-bold">Business Directory</h1>

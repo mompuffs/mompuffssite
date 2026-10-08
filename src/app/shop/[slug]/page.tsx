@@ -6,6 +6,9 @@ import ProductPagination from "@/components/ProductPagination";
 import { PRODUCTS_PER_PAGE, pageCount, parsePage } from "@/lib/pagination";
 import type { Metadata } from "next";
 import { pageMeta } from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
+import { ORG_ID, breadcrumbs, itemList } from "@/lib/structuredData";
+import { SITE_URL } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +91,25 @@ export default async function ShopPage({
 
   return (
     <div>
+      <JsonLd
+        items={[
+          {
+            "@type": "OnlineStore",
+            "@id": `${SITE_URL}/shop/${shop.slug}#store`,
+            name: shop.name,
+            url: `${SITE_URL}/shop/${shop.slug}`,
+            ...(shop.description ? { description: shop.description } : {}),
+            ...(shop.bannerUrl ? { image: shop.bannerUrl } : {}),
+            parentOrganization: { "@id": ORG_ID },
+          },
+          itemList(`${shop.name} products`, products.map((p) => `/product/${p.id}`)),
+          breadcrumbs([
+            { name: "Home", path: "/" },
+            { name: "Marketplace", path: "/marketplace" },
+            { name: shop.name },
+          ]),
+        ]}
+      />
       <div className="bg-white rounded-xl shadow p-6 mb-6">
         <h1 className="text-2xl font-bold">{shop.name}</h1>
         <p className="text-sm text-gray-500">

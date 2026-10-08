@@ -6,6 +6,8 @@ import { getCurrentUser } from "@/lib/session";
 import { DIRECTORY_CATEGORIES, US_STATES } from "@/lib/directory";
 import ProductCard from "@/components/ProductCard";
 import { DEFAULT_TITLE, pageMeta } from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
+import { organization, website } from "@/lib/structuredData";
 
 // Public home page. Browsing (directory, marketplace, blog) is open to
 // everyone; the community side (feed, groups, members, messages) needs an
@@ -48,6 +50,7 @@ export default async function HomePage() {
 
   return (
     <div className="space-y-10">
+      <JsonLd items={[organization(), website()]} />
       {/* Hero */}
       <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 text-white shadow-lg">
         <div className="px-6 py-10 sm:px-10 sm:py-14 flex flex-col md:flex-row items-center gap-8">

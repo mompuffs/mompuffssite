@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { asFaq, asSources, renderMarkdown } from "@/lib/blog";
 import { pageMeta } from "@/lib/seo";
+import JsonLd from "@/components/JsonLd";
+import { article, breadcrumbs, faqPage } from "@/lib/structuredData";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +51,28 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
 
   return (
     <article className="bg-white rounded-xl shadow overflow-hidden">
+      <JsonLd
+        items={[
+          article({
+            slug: a.slug,
+            title: a.title,
+            description: a.metaDescription ?? a.dek,
+            heroImage: a.heroImage,
+            author: a.author,
+            publishedAt: a.publishedAt,
+            updatedAt: a.updatedAt,
+            tags: a.tags,
+            category: a.category?.name ?? null,
+          }),
+          faqPage(faq),
+          breadcrumbs([
+            { name: "Home", path: "/" },
+            { name: "Blog", path: "/blog" },
+            ...(a.category ? [{ name: a.category.name, path: `/blog?category=${a.category.slug}` }] : []),
+            { name: a.title },
+          ]),
+        ]}
+      />
       {a.heroImage && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={a.heroImage} alt={a.heroAlt ?? a.title} className="w-full aspect-[16/9] object-cover" />
