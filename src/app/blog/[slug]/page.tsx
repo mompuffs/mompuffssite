@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getAdminUser } from "@/lib/admin";
-import { asFaq, asSources, renderMarkdown } from "@/lib/blog";
+import { asFaq, asSources, heroFit, renderMarkdown } from "@/lib/blog";
 import { pageMeta } from "@/lib/seo";
 import JsonLd from "@/components/JsonLd";
 import { article, breadcrumbs, faqPage } from "@/lib/structuredData";
@@ -87,7 +87,7 @@ export default async function BlogArticlePage({ params }: { params: { slug: stri
       />
       {a.heroImage && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={a.heroImage} alt={a.heroAlt ?? a.title} className="w-full aspect-[16/9] object-cover" />
+        <img src={a.heroImage} alt={a.heroAlt ?? a.title} className={`w-full aspect-[16/9] ${heroFit(a.heroImage)}`} />
       )}
       <div className="p-5 sm:p-8">
         <nav className="text-sm mb-3 flex flex-wrap items-center gap-2">

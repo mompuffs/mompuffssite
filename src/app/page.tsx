@@ -9,6 +9,7 @@ import { DEFAULT_TITLE, pageMeta } from "@/lib/seo";
 import JsonLd from "@/components/JsonLd";
 import { organization, website } from "@/lib/structuredData";
 import { locationCategory } from "@/lib/directory";
+import { heroFit } from "@/lib/blog";
 
 // Public home page. Browsing (directory, marketplace, blog) is open to
 // everyone; the community side (feed, groups, members, messages) needs an
@@ -201,7 +202,7 @@ export default async function HomePage() {
                       src={a.heroImage}
                       alt={a.heroAlt ?? a.title}
                       loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                      className={`w-full h-full ${heroFit(a.heroImage)} group-hover:scale-105 transition duration-300`}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-4xl">📰</div>

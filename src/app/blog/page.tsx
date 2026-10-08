@@ -11,6 +11,7 @@ import BlogFilters from "@/components/BlogFilters";
 import ProductPagination from "@/components/ProductPagination";
 import JsonLd from "@/components/JsonLd";
 import { breadcrumbs, itemList } from "@/lib/structuredData";
+import { heroFit } from "@/lib/blog";
 
 export const dynamic = "force-dynamic";
 
@@ -189,7 +190,7 @@ export default async function BlogPage({
                       src={a.heroImage}
                       alt={a.heroAlt ?? a.title}
                       loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                      className={`w-full h-full ${heroFit(a.heroImage)} group-hover:scale-105 transition duration-300`}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-4xl">📰</div>

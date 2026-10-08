@@ -72,3 +72,9 @@ export async function resolveBlogParent(
 export function inBlogCategory(slug: string) {
   return { OR: [{ slug }, { parent: { slug } }] };
 }
+
+// State flags (the state-law posts' images) are shown whole on a light
+// background; photos fill the frame.
+export function heroFit(url: string | null | undefined) {
+  return url && url.includes("/flags/") ? "object-contain bg-gray-50 p-3" : "object-cover";
+}
