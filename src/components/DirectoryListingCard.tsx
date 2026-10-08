@@ -43,7 +43,16 @@ export type ListingCardData = {
 };
 
 // One business in a directory list (directory page and location pages).
-export default function DirectoryListingCard({ l, headingLevel = "h2" }: { l: ListingCardData; headingLevel?: "h2" | "h3" }) {
+export default function DirectoryListingCard({
+  l,
+  headingLevel = "h2",
+  distanceMiles,
+}: {
+  l: ListingCardData;
+  headingLevel?: "h2" | "h3";
+  // Shown when the list is a "near this ZIP/city" search.
+  distanceMiles?: number;
+}) {
   const cat = categoryFor(l.category);
   const showAll = listingShowsAll(l);
   const Heading = headingLevel;
@@ -76,7 +85,12 @@ export default function DirectoryListingCard({ l, headingLevel = "h2" }: { l: Li
           )}
         </div>
         <Heading className="font-bold leading-snug group-hover:text-brand-700 truncate">{l.name}</Heading>
-        <p className="text-sm text-gray-500 truncate">{fullAddress(l)}</p>
+        <p className="text-sm text-gray-500 truncate">
+          {distanceMiles !== undefined && (
+            <span className="font-semibold text-brand-700">{distanceMiles < 10 ? distanceMiles.toFixed(1) : Math.round(distanceMiles)} mi · </span>
+          )}
+          {fullAddress(l)}
+        </p>
         {l.phone && <p className="text-sm text-gray-500">{formatPhone(l.phone)}</p>}
         <p className="text-sm text-gray-600 mt-1 line-clamp-1">{l.about}</p>
       </div>

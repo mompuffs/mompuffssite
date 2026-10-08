@@ -21,6 +21,7 @@ import ProductPagination from "@/components/ProductPagination";
 import JsonLd from "@/components/JsonLd";
 import { breadcrumbs, itemList } from "@/lib/structuredData";
 import { locationCategory, locationPath, stateSlug } from "@/lib/directory";
+import { NEAR_RADIUS_MILES, directorySearchWhere, milesBetween, resolveNearPlace } from "@/lib/geoSearch";
 
 export const dynamic = "force-dynamic";
 
@@ -64,32 +65,12 @@ export default async function DirectoryPage({
   const state = US_STATES.some((s) => s.code === searchParams.state) ? searchParams.state : undefined;
   const page = parsePage(searchParams.page);
 
-  const where: Prisma.BusinessListingWhereInput = {
-    status: "APPROVED",
-    ...(category ? { category } : {}),
-    ...(state ? { state } : {}),
-    ...(q
-      ? {
-          OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { city: { contains: q, mode: "insensitive" } },
-            { zip: { startsWith: q } },
-            { about: { contains: q, mode: "insensitive" } },
-          ],
-        }
-      : {}),
-  };
+  // "34241" or "Sarasota, FL" also pulls in everything within the radius.
+  const near = q ? await resolveNearPlace(q, state) : null;
+  const where = directorySearchWhere({ q, category, state, near });
 
-  const [total, listings, counts] = await Promise.all([
-    db.businessListing.count({ where }),
-    db.businessListing.findMany({
-      where,
-      // Fuller (and owner-claimed) listings first; see listingCompleteness.
-      orderBy: [{ completeness: "desc" }, { name: "asc" }],
-      skip: (page - 1) * DIRECTORY_PER_PAGE,
-      take: DIRECTORY_PER_PAGE,
-      select: LISTING_CARD_SELECT,
-    }),
+  const [{ total, listings }, counts] = await Promise.all([
+    near ? nearbyPage(where, near, q!, page) : plainPage(where, page),
     db.businessListing.groupBy({
       by: ["category"],
       where: { status: "APPROVED", ...(state ? { state } : {}) },
@@ -170,7 +151,7 @@ export default async function DirectoryPage({
         <input
           name="q"
           defaultValue={q ?? ""}
-          placeholder="Search by name, city or ZIP"
+          placeholder="Search by name, city or ZIP (shows everything within 60 miles)"
           className="flex-1 border rounded-lg px-3 py-2 text-sm bg-white"
         />
         <select name="state" defaultValue={state ?? ""} className="border rounded-lg px-3 py-2 text-sm bg-white">
@@ -186,8 +167,8 @@ export default async function DirectoryPage({
         <div className="w-full min-w-0">
           <p className="text-sm text-gray-500 mb-2">
             {total} business{total === 1 ? "" : "es"}
-            {state && <> in {stateName(state)}</>}
-            {state && (
+            {near ? <> within {NEAR_RADIUS_MILES} miles of {near.label}, closest first</> : state && <> in {stateName(state)}</>}
+            {state && !near && (
               <>
                 {" "}·{" "}
                 <Link href={locationPath(category ?? "dispensaries", state)} className="text-brand-600 hover:underline">
@@ -211,7 +192,7 @@ export default async function DirectoryPage({
           ) : (
             <div className="space-y-3">
               {listings.map((l) => (
-                <DirectoryListingCard key={l.id} l={l} />
+                <DirectoryListingCard key={l.id} l={l} distanceMiles={(l as { distance?: number }).distance} />
               ))}
             </div>
           )}
@@ -239,4 +220,51 @@ export default async function DirectoryPage({
       </div>
     </div>
   );
+}
+
+async function plainPage(where: Prisma.BusinessListingWhereInput, page: number) {
+  const [total, listings] = await Promise.all([
+    db.businessListing.count({ where }),
+    db.businessListing.findMany({
+      where,
+      // Fuller (and owner-claimed) listings first; see listingCompleteness.
+      orderBy: [{ completeness: "desc" }, { name: "asc" }],
+      skip: (page - 1) * DIRECTORY_PER_PAGE,
+      take: DIRECTORY_PER_PAGE,
+      select: LISTING_CARD_SELECT,
+    }),
+  ]);
+  return { total, listings };
+}
+
+// Near a place: closest first. The rectangle query overshoots at the
+// corners, so trim to the true radius (text matches farther away, e.g. a
+// shop named after the city, stay at the end of the list).
+async function nearbyPage(
+  where: Prisma.BusinessListingWhereInput,
+  near: { lat: number; lng: number },
+  q: string,
+  page: number
+) {
+  const needle = q.toLowerCase();
+  const matchesText = (r: { name: string; city: string | null; zip: string | null; about: string }) =>
+    r.name.toLowerCase().includes(needle) ||
+    (r.city ?? "").toLowerCase().includes(needle) ||
+    (r.zip ?? "").startsWith(q) ||
+    r.about.toLowerCase().includes(needle);
+  const rows = await db.businessListing.findMany({
+    where,
+    take: 5000,
+    orderBy: [{ completeness: "desc" }, { name: "asc" }],
+    select: { ...LISTING_CARD_SELECT, lat: true, lng: true },
+  });
+  const sorted = rows
+    .map((r) => ({
+      ...r,
+      distance: r.lat != null && r.lng != null ? milesBetween(near, { lat: r.lat, lng: r.lng }) : undefined,
+    }))
+    .filter((r) => r.distance === undefined || r.distance <= NEAR_RADIUS_MILES || matchesText(r))
+    .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
+  const start = (page - 1) * DIRECTORY_PER_PAGE;
+  return { total: sorted.length, listings: sorted.slice(start, start + DIRECTORY_PER_PAGE) };
 }

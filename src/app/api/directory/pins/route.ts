@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { categoryFor, US_STATES } from "@/lib/directory";
+import { directorySearchWhere, resolveNearPlace } from "@/lib/geoSearch";
 
 // Map pins for the directory and location pages, fetched by the map after
 // the page loads (keeps thousands of pins out of the page HTML). Compact
@@ -17,23 +18,12 @@ export async function GET(req: Request) {
   const city = searchParams.get("city") || undefined;
   const q = searchParams.get("q")?.trim() || undefined;
 
+  const near = q ? await resolveNearPlace(q, state) : null;
   const where: Prisma.BusinessListingWhereInput = {
-    status: "APPROVED",
+    ...directorySearchWhere({ q, category, state, near }),
     lat: { not: null },
     lng: { not: null },
-    ...(category ? { category } : {}),
-    ...(state ? { state } : {}),
     ...(city ? { citySlug: city } : {}),
-    ...(q
-      ? {
-          OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { city: { contains: q, mode: "insensitive" } },
-            { zip: { startsWith: q } },
-            { about: { contains: q, mode: "insensitive" } },
-          ],
-        }
-      : {}),
   };
   const rows = await db.businessListing.findMany({
     where,

@@ -568,3 +568,20 @@ model SiteSetting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+// ZIP codes and US places (cities, towns, CDPs) with a center point, from
+// the Census Bureau gazetteer files (public domain). Lets the directory
+// search treat "34241" or "Sarasota, FL" as a location and show nearby
+// businesses. Loaded once from the 2023 gazetteer files.
+model GeoPlace {
+  id       Int    @id @default(autoincrement())
+  kind     String // "zip" | "place"
+  key      String // the ZIP, or the lowercased place name without its legal suffix ("city", "CDP"...)
+  name     String // display name, e.g. "Sarasota" or "34241"
+  state    String? // 2-letter code (places only)
+  lat      Float
+  lng      Float
+  landSqMi Float  // tie-breaker when a name exists in several states
+
+  @@index([kind, key])
+}
