@@ -112,15 +112,11 @@ export default function Navbar() {
         <Logo className="lg:hidden" />
 
         <div className="hidden lg:flex items-center justify-end gap-2 xl:gap-3 whitespace-nowrap text-[13px] xl:text-sm font-semibold text-[#43203F]">
-          {/* Feed and Groups are members-only; visitors get Home instead. */}
-          {status === "authenticated" ? (
-            <>
-              <Link href="/feed" className="hover:text-white">Feed</Link>
-              <Link href="/groups" className="hover:text-white">Groups</Link>
-            </>
-          ) : (
-            <Link href="/" className="hover:text-white">Home</Link>
-          )}
+          {/* Feed and Groups are members-only: visitors who click them are
+              sent to log in (src/middleware.ts) and come back afterwards. */}
+          {status !== "authenticated" && <Link href="/" className="hover:text-white">Home</Link>}
+          <Link href="/feed" className="hover:text-white">Feed</Link>
+          <Link href="/groups" className="hover:text-white">Groups</Link>
           <MarketplaceMenu>
             <Link href="/marketplace" className="hover:text-white">Marketplace</Link>
           </MarketplaceMenu>
@@ -176,12 +172,8 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="lg:hidden border-t border-gray-200 px-4 py-3 space-y-1 text-sm bg-white">
           <Link href="/" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Home</Link>
-          {status === "authenticated" && (
-            <>
-              <Link href="/feed" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Feed</Link>
-              <Link href="/groups" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Groups</Link>
-            </>
-          )}
+          <Link href="/feed" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Feed</Link>
+          <Link href="/groups" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Groups</Link>
           <Link href="/marketplace" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Marketplace</Link>
           <Link href="/cart" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Cart</Link>
           <Link href="/blog" onClick={() => setMobileOpen(false)} className="block py-2 hover:text-brand-600">Blog</Link>
