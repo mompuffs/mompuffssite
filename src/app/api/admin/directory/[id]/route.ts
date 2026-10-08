@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getAdminUser } from "@/lib/admin";
 import { CANCELLABLE_STATUSES, cancelSubscription } from "@/lib/directoryBilling";
+import { recomputeCompleteness } from "@/lib/directoryServer";
 
 export const dynamic = "force-dynamic";
 
@@ -62,6 +63,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         reminderSentFor: null,
       },
     });
+    await recomputeCompleteness(params.id);
     return NextResponse.json({ ok: true });
   }
 

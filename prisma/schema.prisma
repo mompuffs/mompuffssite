@@ -520,6 +520,9 @@ model BusinessListing {
   fullAccess           Boolean   @default(false)
   // Where an imported listing came from, e.g. source "osm" + sourceId
   // "node/123" (OpenStreetMap, ODbL -- the listing page credits it).
+  // Sort key for the directory list: fuller listings first. Recomputed on
+  // every write (src/lib/directoryServer.ts listingCompleteness).
+  completeness         Int       @default(0)
   source               String?
   sourceId             String?   @unique
   submittedBy          User      @relation("SubmittedListings", fields: [submittedById], references: [id], onDelete: Cascade)
@@ -543,6 +546,7 @@ model BusinessListing {
   @@index([status, state])
   @@index([submittedById])
   @@index([claimedById])
+  @@index([status, completeness])
 }
 
 // Small key/value store for site-wide config set from the admin area

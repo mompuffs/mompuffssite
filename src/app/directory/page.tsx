@@ -53,7 +53,8 @@ export default async function DirectoryPage({
     db.businessListing.count({ where }),
     db.businessListing.findMany({
       where,
-      orderBy: [{ name: "asc" }],
+      // Fuller (and owner-claimed) listings first; see listingCompleteness.
+      orderBy: [{ completeness: "desc" }, { name: "asc" }],
       skip: (page - 1) * DIRECTORY_PER_PAGE,
       take: DIRECTORY_PER_PAGE,
       select: {

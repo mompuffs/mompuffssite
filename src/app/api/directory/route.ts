@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { checkRateLimit } from "@/lib/rateLimit";
-import { ADDRESS_NOT_FOUND, locateListing, uniqueListingSlug, validateListingInput } from "@/lib/directoryServer";
+import {
+  ADDRESS_NOT_FOUND,
+  listingCompleteness,
+  locateListing,
+  uniqueListingSlug,
+  validateListingInput,
+} from "@/lib/directoryServer";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +52,7 @@ export async function POST(req: Request) {
       approvedAt: isAdmin ? new Date() : null,
       fullAccess: isAdmin,
       ...(premium ? { claimedById: userId, claimedAt: new Date() } : {}),
+      completeness: listingCompleteness({ ...data, claimedById: premium ? userId : null }),
     },
     select: { id: true, slug: true, status: true },
   });

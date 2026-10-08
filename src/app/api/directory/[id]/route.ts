@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
-import { ADDRESS_NOT_FOUND, locateListing, uniqueListingSlug, validateListingInput } from "@/lib/directoryServer";
+import {
+  ADDRESS_NOT_FOUND,
+  listingCompleteness,
+  locateListing,
+  uniqueListingSlug,
+  validateListingInput,
+} from "@/lib/directoryServer";
 import { canEditListing } from "@/lib/directory";
 import { CANCELLABLE_STATUSES, cancelSubscription } from "@/lib/directoryBilling";
 
@@ -49,6 +55,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       ...data,
       hours: data.hours ?? Prisma.DbNull,
       ...coords,
+      completeness: listingCompleteness({ ...data, claimedById: listing.claimedById }),
       slug: renamed ? await uniqueListingSlug(data.name, data.city ?? "", data.state, listing.id) : listing.slug,
       ...(isAdmin || isOwner ? {} : { status: "PENDING", reviewNote: null }),
     },

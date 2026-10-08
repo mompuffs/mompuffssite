@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { sendDirectoryClaimNotification } from "@/lib/email";
+import { recomputeCompleteness } from "@/lib/directoryServer";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (count === 0) {
     return NextResponse.json({ error: "This listing has already been claimed." }, { status: 409 });
   }
+
+  await recomputeCompleteness(params.id);
 
   const [listing, claimer] = await Promise.all([
     db.businessListing.findUnique({ where: { id: params.id }, select: { name: true, slug: true } }),

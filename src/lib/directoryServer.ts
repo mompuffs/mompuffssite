@@ -144,3 +144,33 @@ export async function locateListing(data: ListingInput): Promise<{ lat: number |
 
 export const ADDRESS_NOT_FOUND =
   "We couldn't find that street address on the map. Double-check it, or leave the street blank.";
+
+// Directory sort key: owner-managed and fuller listings first.
+export function listingCompleteness(l: {
+  claimedById?: string | null;
+  website?: string | null;
+  imageUrl?: string | null;
+  phone?: string | null;
+  street?: string | null;
+  hours?: unknown;
+  email?: string | null;
+  menuUrl?: string | null;
+}) {
+  return (
+    (l.claimedById ? 8 : 0) +
+    (l.website ? 4 : 0) +
+    (l.imageUrl ? 3 : 0) +
+    (l.phone ? 2 : 0) +
+    (l.street ? 2 : 0) +
+    (l.hours ? 1 : 0) +
+    (l.email ? 1 : 0) +
+    (l.menuUrl ? 1 : 0)
+  );
+}
+
+// For writes that don't go through the full form (claim, unclaim).
+export async function recomputeCompleteness(id: string) {
+  const l = await db.businessListing.findUnique({ where: { id } });
+  if (!l) return;
+  await db.businessListing.update({ where: { id }, data: { completeness: listingCompleteness(l) } });
+}
