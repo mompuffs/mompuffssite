@@ -224,7 +224,7 @@ export default async function DirectoryPage({
           />
         </div>
 
-        <div className="w-full lg:sticky lg:top-[166px]">
+        <div className="w-full lg:sticky lg:top-4">
           <DirectoryMap
             mode="us"
             pinsUrl={`/api/directory/pins?${new URLSearchParams({

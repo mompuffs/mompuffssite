@@ -26,7 +26,7 @@ export default function SearchToggle() {
   }, [open]);
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="lg:relative">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -40,9 +40,10 @@ export default function SearchToggle() {
         </svg>
       </button>
       {open && (
-        // Phones/tablets: full width under the header with 16px gutters.
+        // Phones/tablets: full width just under the header (positioned against
+        // the <nav>) with 16px gutters.
         // Desktop: a box hanging below the icon.
-        <div className="fixed inset-x-4 top-[154px] lg:absolute lg:inset-x-auto lg:right-0 lg:top-full lg:mt-3 lg:w-80 bg-white rounded-xl shadow-lg border border-gray-100 p-3 z-40 font-normal">
+        <div className="absolute inset-x-4 top-full mt-1 lg:absolute lg:inset-x-auto lg:right-0 lg:top-full lg:mt-3 lg:w-80 bg-white rounded-xl shadow-lg border border-gray-100 p-3 z-40 font-normal">
           <SearchBar variant="desktop" autoFocus onNavigate={() => setOpen(false)} />
         </div>
       )}

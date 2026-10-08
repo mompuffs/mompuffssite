@@ -105,7 +105,7 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-30 bg-brand-500 shadow-sm">
+    <nav className="relative z-30 bg-brand-500 shadow-sm">
       <div className="max-w-6xl mx-auto px-4 h-[150px] flex items-center justify-between lg:grid lg:grid-cols-[1fr_auto_1fr] lg:gap-4">
         {/* Phones/tablets: logo on the left + menu button. Desktop (lg+): logo
             dead center, with the bell and account links to its right. */}

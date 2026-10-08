@@ -26,7 +26,7 @@ export default function AdminSidebar() {
 
   return (
     <aside className="w-full md:w-56 flex-shrink-0 bg-brand-900 text-brand-100 md:min-h-[calc(100vh-3.5rem)]">
-      <div className="md:sticky md:top-14">
+      <div className="md:sticky md:top-4">
         <div className="px-4 py-4 border-b border-white/10">
           <p className="text-xs font-semibold uppercase tracking-wide text-brand-300">MomPuffs</p>
           <p className="text-sm font-bold text-white">Admin</p>

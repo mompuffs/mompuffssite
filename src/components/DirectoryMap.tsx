@@ -172,7 +172,7 @@ export default function DirectoryMap({
 
   return (
     // `isolate` keeps Leaflet's internal z-indexes (up to 1000) from
-    // painting over the sticky navbar.
+    // painting over the navbar and search popup.
     <div className={`relative isolate ${className}`}>
       <div ref={el} className="absolute inset-0 rounded-xl overflow-hidden bg-brand-50" />
       {mode === "us" && (

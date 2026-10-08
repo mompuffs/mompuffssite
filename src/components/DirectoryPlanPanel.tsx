@@ -65,7 +65,7 @@ export default function DirectoryPlanPanel(props: Props) {
   }
 
   return (
-    <section id="plan" className="bg-white rounded-xl shadow p-5 space-y-3 scroll-mt-40">
+    <section id="plan" className="bg-white rounded-xl shadow p-5 space-y-3 scroll-mt-4">
       <h2 className="font-bold text-lg">Your plan</h2>
 
       {fullAccess ? (
