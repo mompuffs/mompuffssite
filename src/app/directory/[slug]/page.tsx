@@ -45,6 +45,45 @@ function hostOf(url: string) {
   }
 }
 
+// Imported listings must credit their data sources. source is "osm",
+// "overture" or "osm+overture" (OSM listing with details filled from Overture).
+function SourceCredit({ source, sourceId }: { source: string; sourceId: string | null }) {
+  const parts = source.split("+");
+  const osmId = sourceId && /^(node|way|relation)\//.test(sourceId) ? sourceId : null;
+  const credits: React.ReactNode[] = [];
+  if (parts.includes("osm")) {
+    credits.push(
+      <span key="osm">
+        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="hover:underline">
+          OpenStreetMap contributors
+        </a>
+        {osmId && (
+          <>
+            {" "}(
+            <a href={`https://www.openstreetmap.org/${osmId}`} target="_blank" rel="noopener noreferrer" className="hover:underline">
+              source
+            </a>
+            )
+          </>
+        )}
+      </span>
+    );
+  }
+  if (parts.includes("overture")) {
+    credits.push(
+      <a key="overture" href="https://overturemaps.org" target="_blank" rel="noopener noreferrer" className="hover:underline">
+        Overture Maps Foundation
+      </a>
+    );
+  }
+  if (credits.length === 0) return null;
+  return (
+    <>
+      Listing info from {credits.length === 2 ? <>{credits[0]} and {credits[1]}</> : credits[0]}.
+    </>
+  );
+}
+
 function telHref(phone: string) {
   return `tel:${phone.replace(/[^\d+]/g, "")}`;
 }
@@ -260,27 +299,9 @@ export default async function DirectoryListingPage({ params }: { params: { slug:
           )}
 
           <p className="text-xs text-gray-400 px-1">
-            {l.source === "osm" ? (
+            {l.source ? (
               <>
-                Listing info from{" "}
-                <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="hover:underline">
-                  OpenStreetMap contributors
-                </a>
-                {l.sourceId && (
-                  <>
-                    {" "}(
-                    <a
-                      href={`https://www.openstreetmap.org/${l.sourceId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline"
-                    >
-                      source
-                    </a>
-                    )
-                  </>
-                )}
-                .{" "}
+                <SourceCredit source={l.source} sourceId={l.sourceId} />{" "}
               </>
             ) : !l.claimedById && (
               <>
