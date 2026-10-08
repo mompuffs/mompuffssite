@@ -117,7 +117,7 @@ export default async function AboutPage() {
           </li>
           <li>
             <span className="font-semibold">Privacy first.</span> The community is members-only. The feed, groups and member
-            profiles aren&apos;t shown to the public or to search engines.
+            profiles aren&apos;t shown to the public or to search engines. And we never sell your information.
           </li>
           <li>
             <span className="font-semibold">Judgment-free.</span> Adults making legal choices about cannabis deserve the same respect as
