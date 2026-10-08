@@ -13,7 +13,9 @@ import {
   listingShowsAll,
   parseHours,
   stateName,
+  CATEGORY_SINGULAR,
 } from "@/lib/directory";
+import { pageMeta } from "@/lib/seo";
 import DirectoryMap from "@/components/DirectoryMap";
 import DirectoryHours from "@/components/DirectoryHours";
 
@@ -28,14 +30,33 @@ async function getListing(slug: string) {
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const l = await getListing(params.slug);
-  if (!l || l.status !== "APPROVED") return { title: "Business not found | Mompuffs" };
-  const cat = categoryFor(l.category);
-  const where = l.city ? `${l.city}, ${l.state}` : l.state;
-  return {
-    title: `${l.name} – ${where} | Mompuffs Directory`,
-    description: `${cat?.name ?? "Business"} in ${fullAddress(l)}. ${l.about.slice(0, 140)}`,
-    openGraph: { images: l.imageUrl ? [{ url: l.imageUrl }] : undefined },
-  };
+  if (!l || l.status !== "APPROVED") return { title: "Business not found | Mompuffs", robots: { index: false } };
+  const where = l.city ? `${l.city}, ${l.state}` : stateName(l.state);
+  const kind = CATEGORY_SINGULAR[l.category] ?? "business";
+  const licensed = l.licenseNumber ? `state-licensed ${kind}` : kind;
+  const at = l.street ? ` at ${l.street}` : "";
+  // Imported listings carry a generated one-liner ("Cannabis dispensary in
+  // X."); only an owner-written About adds anything to the description.
+  const generatedAbout = /^(state-licensed )?(cannabis dispensary|vape and smoke shop|medical marijuana doctor|recreational|medical)/i.test(l.about);
+  const contact = [l.phone ? `Call ${formatPhone(l.phone)}` : null, l.website ? "visit their website" : null].filter(Boolean).join(" or ");
+  const description = [
+    `${l.name} is a ${licensed}${at} in ${where}.`,
+    generatedAbout ? null : l.about,
+    contact ? `${contact[0].toUpperCase()}${contact.slice(1)}, or get directions on the map.` : "Find it on the map.",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  // Bare listings (just a name and a state) stay out of search until an
+  // owner or import fills them in; licensed and claimed ones always count.
+  const thin = !l.licenseNumber && !l.claimedById && !l.fullAccess && !l.street && !l.website;
+  return pageMeta({
+    title: `${l.name} – ${kind.replace(/^./, (c) => c.toUpperCase())} in ${where} | Mompuffs`,
+    description,
+    path: `/directory/${l.slug}`,
+    image: l.imageUrl,
+    imageAlt: l.name,
+    noindex: thin,
+  });
 }
 
 function hostOf(url: string) {

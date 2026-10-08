@@ -1,7 +1,14 @@
 import Link from "next/link";
 import { VISITOR_HELP_TOPICS } from "@/lib/visitorHelp";
+import { pageMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = pageMeta({
+  title: "Help & Support | Mompuffs",
+  description: "Answers to common questions about Mompuffs: your account, the feed, groups, the marketplace, checkout and the business directory.",
+  path: "/help",
+});
 
 export default function VisitorHelpPage() {
   return (

@@ -1,8 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getVisitorHelpTopic, VISITOR_HELP_TOPICS } from "@/lib/visitorHelp";
+import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export function generateMetadata({ params }: { params: { slug: string } }): Metadata {
+  const topic = getVisitorHelpTopic(params.slug);
+  if (!topic) return { title: "Help topic not found | Mompuffs", robots: { index: false } };
+  return pageMeta({ title: `${topic.title} – Help | Mompuffs`, description: topic.summary, path: `/help/${topic.slug}` });
+}
 
 export function generateStaticParams() {
   return VISITOR_HELP_TOPICS.map((t) => ({ slug: t.slug }));

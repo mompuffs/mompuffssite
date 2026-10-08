@@ -2,8 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
+import { privateMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = privateMeta("Messages");
 
 export default async function MessagesPage() {
   const user = await getCurrentUser();

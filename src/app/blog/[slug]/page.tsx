@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { asFaq, asSources, renderMarkdown } from "@/lib/blog";
+import { pageMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -15,17 +16,25 @@ async function getArticle(slug: string) {
 
 export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const a = await getArticle(params.slug);
-  if (!a) return { title: "Article not found | Mompuffs" };
-  const description = a.metaDescription ?? a.dek ?? undefined;
-  return {
+  if (!a) return { title: "Article not found | Mompuffs", robots: { index: false } };
+  const base = pageMeta({
     title: `${a.metaTitle ?? a.title} | Mompuffs`,
-    description,
+    description: a.metaDescription ?? a.dek,
+    path: `/blog/${a.slug}`,
+    image: a.heroImage,
+    imageAlt: a.heroAlt ?? a.title,
+    type: "article",
+  });
+  return {
+    ...base,
+    authors: a.author ? [{ name: a.author }] : undefined,
     openGraph: {
+      ...base.openGraph,
       type: "article",
-      title: a.metaTitle ?? a.title,
-      description,
-      images: a.heroImage ? [{ url: a.heroImage, alt: a.heroAlt ?? a.title }] : undefined,
       publishedTime: a.publishedAt.toISOString(),
+      modifiedTime: a.updatedAt.toISOString(),
+      authors: a.author ? [a.author] : undefined,
+      tags: a.tags,
     },
   };
 }

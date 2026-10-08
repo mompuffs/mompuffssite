@@ -5,8 +5,31 @@ import { formatCents } from "@/lib/money";
 import AddToCartButton from "@/components/AddToCartButton";
 import ProductViewer from "@/components/ProductViewer";
 import ProductGallery from "@/components/ProductGallery";
+import type { Metadata } from "next";
+import { pageMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const p = await db.product.findUnique({
+    where: { id: params.id },
+    select: { title: true, description: true, priceCents: true, currency: true, imageUrl: true, archivedAt: true, shop: { select: { name: true } } },
+  });
+  if (!p || p.archivedAt) return { title: "Product not found | Mompuffs", robots: { index: false } };
+  const price = formatCents(p.priceCents, p.currency);
+  // Imported (print-on-demand) descriptions end in spec tables; keep the
+  // prose before them.
+  const plain = (p.description ?? "")
+    .replace(/<[^>]+>/g, " ")
+    .split(/\b(?:Size|Specifications?|Product details|Dimensions)|\(cm\/in\)/i)[0];
+  return pageMeta({
+    title: `${p.title} – ${price} | ${p.shop.name} on Mompuffs`,
+    description: plain.trim() ? `${price} from ${p.shop.name}. ${plain}` : `${p.title}, ${price} from ${p.shop.name} on the Mompuffs marketplace.`,
+    path: `/product/${params.id}`,
+    image: p.imageUrl,
+    imageAlt: p.title,
+  });
+}
 
 export default async function ProductPage({ params }: { params: { id: string } }) {
   const product = await db.product.findUnique({

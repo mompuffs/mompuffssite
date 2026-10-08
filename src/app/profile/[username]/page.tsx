@@ -7,8 +7,11 @@ import PostCard from "@/components/PostCard";
 import FollowButton from "@/components/FollowButton";
 import FriendButton, { FriendState } from "@/components/FriendButton";
 import BlockButton from "@/components/BlockButton";
+import { privateMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = privateMeta("Member profile");
 
 export default async function ProfilePage({ params }: { params: { username: string } }) {
   const currentUser = await getCurrentUser();

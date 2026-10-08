@@ -4,10 +4,11 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { categoryFor, listingShowsAll } from "@/lib/directory";
+import { privateMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "My directory listings | Mompuffs" };
+export const metadata: Metadata = privateMeta("My directory listings");
 
 const STATUS_STYLE: Record<string, { label: string; cls: string }> = {
   APPROVED: { label: "Live", cls: "bg-green-100 text-green-800" },

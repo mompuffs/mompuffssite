@@ -2,8 +2,11 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import PostComposer from "@/components/PostComposer";
 import PostCard from "@/components/PostCard";
+import { privateMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = privateMeta("Your feed");
 
 export default async function FeedPage() {
   const user = await getCurrentUser();

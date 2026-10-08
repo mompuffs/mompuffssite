@@ -3,8 +3,11 @@ import { getCurrentUser } from "@/lib/session";
 import { formatCents } from "@/lib/money";
 import { redirect } from "next/navigation";
 import OrderItemRefund from "@/components/OrderItemRefund";
+import { privateMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = privateMeta("Your orders");
 
 export default async function OrdersPage() {
   const user = await getCurrentUser();

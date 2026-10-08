@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Nunito } from "next/font/google";
 import "./globals.css";
+import { DEFAULT_DESCRIPTION, DEFAULT_IMAGE, DEFAULT_TITLE, SITE_NAME, SITE_URL } from "@/lib/seo";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 import { CartProvider } from "@/components/CartContext";
 import OverlayProvider from "@/components/OverlayProvider";
@@ -22,9 +23,15 @@ const nunito = Nunito({
   display: "swap",
 });
 
+// Site-wide defaults; pages override title/description/canonical via
+// pageMeta() in src/lib/seo.ts.
 export const metadata: Metadata = {
-  title: "Mompuffs",
-  description: "A social feed with a marketplace attached.",
+  metadataBase: new URL(SITE_URL),
+  title: DEFAULT_TITLE,
+  description: DEFAULT_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: { siteName: SITE_NAME, type: "website", images: [{ url: DEFAULT_IMAGE, alt: SITE_NAME }] },
+  twitter: { card: "summary" },
 };
 
 // Was missing entirely -- without it, mobile browsers fall back to a wide

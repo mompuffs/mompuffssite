@@ -5,17 +5,14 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { DIRECTORY_CATEGORIES, US_STATES } from "@/lib/directory";
 import ProductCard from "@/components/ProductCard";
+import { DEFAULT_TITLE, pageMeta } from "@/lib/seo";
 
 // Public home page. Browsing (directory, marketplace, blog) is open to
 // everyone; the community side (feed, groups, members, messages) needs an
 // account -- see src/middleware.ts.
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Mompuffs | A community for canna-loving women",
-  description:
-    "Mompuffs is a community site (mainly) for women who enjoy cannabis: find dispensaries and smoke shops near you, shop canna-themed goods, read the blog, and connect with other members.",
-};
+export const metadata: Metadata = pageMeta({ title: DEFAULT_TITLE, path: "/" });
 
 const COMMUNITY = [
   { icon: "🏠", title: "Your feed", text: "Share posts, photos and videos, react and comment with people who get it." },

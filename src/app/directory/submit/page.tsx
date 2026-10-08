@@ -2,11 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/session";
 import DirectoryListingForm from "@/components/DirectoryListingForm";
+import { pageMeta } from "@/lib/seo";
 import { getBillingConfig } from "@/lib/directoryBilling";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "Submit a business | Mompuffs" };
+export const metadata: Metadata = pageMeta({
+  title: "Add Your Business to the Mompuffs Directory",
+  description: "List your dispensary, smoke shop, MMJ doctor or canna-friendly business in the Mompuffs directory. Free listings, or Premium for $5/month.",
+  path: "/directory/submit",
+});
 
 export default async function SubmitBusinessPage() {
   const user = await getCurrentUser();

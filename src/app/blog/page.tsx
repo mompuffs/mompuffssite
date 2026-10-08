@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { pageMeta } from "@/lib/seo";
 import { BLOG_PER_PAGE, parseSort } from "@/lib/blog";
 import { pageCount, parsePage } from "@/lib/pagination";
 import BlogFilters from "@/components/BlogFilters";
@@ -9,10 +10,12 @@ import ProductPagination from "@/components/ProductPagination";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Blog | Mompuffs",
-  description: "Articles and guides from Mompuffs.",
-};
+export const metadata: Metadata = pageMeta({
+  title: "Cannabis News, Recipes & Articles for Moms | Mompuffs Blog",
+  description:
+    "Cannabis news, recipes, health guides and honest articles for canna-loving women and moms, from the Mompuffs community.",
+  path: "/blog",
+});
 
 function fmt(d: Date) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });

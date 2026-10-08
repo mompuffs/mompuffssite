@@ -1,9 +1,11 @@
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 
-export const metadata = {
-  title: "Privacy Policy — Mompuffs",
+export const metadata = pageMeta({
+  title: "Privacy Policy | Mompuffs",
   description: "How Mompuffs collects, uses, and protects your information.",
-};
+  path: "/privacy",
+});
 
 const LAST_UPDATED = "August 5, 2026";
 

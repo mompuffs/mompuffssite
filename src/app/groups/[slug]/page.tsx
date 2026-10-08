@@ -7,8 +7,11 @@ import PostCard from "@/components/PostCard";
 import GroupJoinButton from "@/components/GroupJoinButton";
 import GroupJoinRequests from "@/components/GroupJoinRequests";
 import GroupSettings from "@/components/GroupSettings";
+import { privateMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = privateMeta("Group");
 
 export default async function GroupPage({ params }: { params: { slug: string } }) {
   const user = await getCurrentUser();

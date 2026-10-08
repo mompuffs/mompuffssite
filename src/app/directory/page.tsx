@@ -13,15 +13,40 @@ import {
   stateName,
 } from "@/lib/directory";
 import { pageCount, parsePage } from "@/lib/pagination";
+import { CATEGORY_PLURAL } from "@/lib/directory";
+import { pageMeta } from "@/lib/seo";
 import DirectoryMap from "@/components/DirectoryMap";
 import ProductPagination from "@/components/ProductPagination";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Business Directory | Mompuffs",
-  description: "Find dispensaries, smoke shops, MMJ doctors and more near you.",
-};
+// Each state/category view gets its own title and canonical URL, so
+// "dispensaries in Missouri" can rank on its own. Keyword searches are
+// kept out of the index (endless near-duplicate pages).
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: { q?: string; category?: string; state?: string; page?: string };
+}): Promise<Metadata> {
+  const cat = categoryFor(searchParams.category);
+  const state = US_STATES.find((s) => s.code === searchParams.state);
+  const page = parsePage(searchParams.page);
+  const what = cat ? CATEGORY_PLURAL[cat.slug] : "Dispensaries, Smoke Shops & MMJ Doctors";
+  const where = state ? ` in ${state.name}` : " Near You";
+  const qs = new URLSearchParams();
+  if (state) qs.set("state", state.code);
+  if (cat) qs.set("category", cat.slug);
+  if (page > 1) qs.set("page", String(page));
+  const path = `/directory${qs.toString() ? `?${qs}` : ""}`;
+  return pageMeta({
+    title: `${what}${where}${page > 1 ? ` (page ${page})` : ""} | Mompuffs Directory`,
+    description: `Find ${cat ? CATEGORY_PLURAL[cat.slug].toLowerCase() : "dispensaries, smoke and vape shops, and MMJ doctors"}${
+      state ? ` in ${state.name}` : " across the US"
+    } on an interactive map, with addresses, phone numbers, websites and state license info.`,
+    path,
+    noindex: Boolean(searchParams.q),
+  });
+}
 
 export default async function DirectoryPage({
   searchParams,

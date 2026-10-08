@@ -5,10 +5,11 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { DIRECTORY_PRICES, categoryFor, fullAddress } from "@/lib/directory";
 import ClaimListingButton from "@/components/ClaimListingButton";
+import { privateMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "Claim your listing | Mompuffs" };
+export const metadata: Metadata = privateMeta("Claim your listing");
 
 const FREE = ["Business name and category", "Logo or photo", "Address and map pin", "Phone number", "Website link", "About your business"];
 const PREMIUM = ["Everything in Free", "Email address", "Hours", "Specials and deals", "Link to your menu"];

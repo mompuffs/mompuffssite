@@ -3,8 +3,16 @@ import { db } from "@/lib/db";
 import ProductCard from "@/components/ProductCard";
 import ProductPagination from "@/components/ProductPagination";
 import { PRODUCTS_PER_PAGE, pageCount, parsePage } from "@/lib/pagination";
+import { pageMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = pageMeta({
+  title: "Marketplace – Cannabis-Themed Apparel, Accessories & Gifts | Mompuffs",
+  description:
+    "Shop canna-themed apparel, accessories, home goods and gifts from Mompuffs member shops. Secure checkout with PayPal or card.",
+  path: "/marketplace",
+});
 
 const listedProduct = { archivedAt: null } as const;
 

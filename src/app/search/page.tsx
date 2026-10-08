@@ -2,8 +2,12 @@ import Link from "next/link";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import ProductCard from "@/components/ProductCard";
+import { privateMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+// Search results are endless near-duplicates; keep them out of the index.
+export const metadata = privateMeta("Search");
 
 const FULL_LIMIT = 24;
 

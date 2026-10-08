@@ -1,9 +1,11 @@
+import { pageMeta } from "@/lib/seo";
 import Link from "next/link";
 
-export const metadata = {
-  title: "Terms of Use — Mompuffs",
+export const metadata = pageMeta({
+  title: "Terms of Use | Mompuffs",
   description: "The terms that govern your use of Mompuffs.",
-};
+  path: "/terms",
+});
 
 const LAST_UPDATED = "August 5, 2026";
 

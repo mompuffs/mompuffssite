@@ -4,8 +4,11 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { isBlockedEitherWay } from "@/lib/relationships";
 import MessageThread from "@/components/MessageThread";
+import { privateMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = privateMeta("Messages");
 
 export default async function MessageThreadPage({ params }: { params: { username: string } }) {
   const user = await getCurrentUser();

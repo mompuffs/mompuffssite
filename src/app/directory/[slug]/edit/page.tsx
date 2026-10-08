@@ -7,8 +7,11 @@ import { getBillingConfig } from "@/lib/directoryBilling";
 import DirectoryListingForm from "@/components/DirectoryListingForm";
 import DirectoryPlanPanel from "@/components/DirectoryPlanPanel";
 import DeleteListingButton from "@/components/DeleteListingButton";
+import { privateMeta } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export const metadata = privateMeta("Edit listing");
 
 export default async function EditBusinessPage({
   params,
