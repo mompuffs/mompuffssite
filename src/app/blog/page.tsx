@@ -122,7 +122,12 @@ export default async function BlogPage({
 
       {/* Quick category buttons (same filter as the dropdown). */}
       <nav aria-label="Blog categories" className="flex flex-wrap gap-2 mb-4">
-        {[{ name: "All", slug: "", child: false }, ...categories].map((c) => {
+        {[
+          { name: "All", slug: "", child: false },
+          // State by State Laws always sits last in the row.
+          ...categories.filter((c) => c.slug !== STATE_LAWS_SLUG),
+          ...categories.filter((c) => c.slug === STATE_LAWS_SLUG),
+        ].map((c) => {
           const active = (searchParams.category ?? "") === c.slug;
           const isStateLaws = c.slug === STATE_LAWS_SLUG;
           const qs = new URLSearchParams({ ...(c.slug ? { category: c.slug } : {}), ...(sort === "oldest" ? { sort } : {}) });
