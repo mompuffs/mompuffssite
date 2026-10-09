@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
-import { containsLink, isDisposableEmail, looksLikeBot } from "@/lib/antiSpam";
+import { containsLink, isDisposableEmail, looksLikeBot, looksLikeGibberish } from "@/lib/antiSpam";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { generateVerificationToken, VERIFY_TOKEN_TTL_MS } from "@/lib/emailVerification";
 import { sendVerificationEmail } from "@/lib/email";
@@ -58,10 +58,14 @@ export async function POST(req: Request) {
   if (containsLink(String(displayName)) || containsLink(normalizedUsername)) {
     return NextResponse.json({ error: "Names can't contain links or web addresses." }, { status: 400 });
   }
+  if (looksLikeGibberish(normalizedUsername) || looksLikeGibberish(String(displayName))) {
+    return NextResponse.json(
+      { error: "Please pick a username and display name made of real words or your name." },
+      { status: 400 }
+    );
+  }
 
-  await db.user
-    .deleteMany({ where: { emailVerifiedAt: null, createdAt: { lt: new Date(Date.now() - UNVERIFIED_TTL_MS) } } })
-    .catch(() => {});
+  await sweepSpamAccounts();
 
   const existing = await db.user.findFirst({
     where: { OR: [{ email: normalizedEmail }, { username: normalizedUsername }] },
@@ -99,4 +103,23 @@ export async function POST(req: Request) {
   // so there's nothing useful to do with a session yet. The frontend shows
   // a "check your email" screen instead.
   return NextResponse.json({ id: user.id, username: user.username, needsVerification: true });
+}
+
+// Unconfirmed accounts can't log in. Remove the stale ones, and any with a
+// keyboard-mash username right away (made before this check existed, or by
+// a bot that got around it).
+async function sweepSpamAccounts() {
+  try {
+    const unverified = await db.user.findMany({
+      where: { emailVerifiedAt: null },
+      select: { id: true, username: true, displayName: true, createdAt: true },
+    });
+    const cutoff = Date.now() - UNVERIFIED_TTL_MS;
+    const ids = unverified
+      .filter((u) => u.createdAt.getTime() < cutoff || looksLikeGibberish(u.username) || looksLikeGibberish(u.displayName ?? ""))
+      .map((u) => u.id);
+    if (ids.length) await db.user.deleteMany({ where: { id: { in: ids } } });
+  } catch {
+    // Best effort; never block a real sign-up over cleanup.
+  }
 }

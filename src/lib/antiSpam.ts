@@ -50,3 +50,21 @@ export function isDisposableEmail(email: string): boolean {
 export function containsLink(text: string): boolean {
   return /https?:\/\/|www\.|\.(com|net|org|ru|xyz|top|info|biz|io|shop|site|online)\b/i.test(text);
 }
+
+// Letter pairs common in English text (learned from the site's own state
+// law guides). Keyboard-mash usernames like "jfiavzobakqfuglzaslka" are
+// mostly made of pairs outside this set; real names and word mashups
+// ("jenninthevalley", "stephaniekowalczyk") stay well under the cutoff.
+const COMMON_LETTER_PAIRS = new Set(
+  "ab ac ad ai ak al am an ap ar as at av aw ax ay ba be bi bl bo br bu ca ce ch ci ck cl co cr ct da de di do dr ds du dv ea ec ed ee ef eg ei el em en ep er es et ev ew ex fd fe ff fi fl fo fr ga ge gh gi go gr gu ha hc he hi ho ia ib ic id ie if ig ii ij ik il im in io ir is it iv iz ja ju ka ke ki ks la ld le li ll lo ls lt lu ly ma mb me mi mo mp ms mu na nc nd ne nf ng ni nk nl nm nn no ns nt nv ny ob oc od of og oi ok ol om on oo op or os ot ou ov ow ox oy pa pe pl po pp pr ps pt pu qu ra rc rd re rg ri rk rm rn ro rr rs rt ru ry sa sc sd se sh si sm so sp ss st su sy ta te th ti to tr ts tu tw ty ua ub uc ud ug ui ul un up ur us ut uy va ve vi vo wa we wh wi wo ws xe xi ye yn yo yt ze".split(" ")
+);
+const GIBBERISH_MIN_LETTERS = 12;
+const GIBBERISH_RARE_SHARE = 0.5;
+
+export function looksLikeGibberish(text: string): boolean {
+  const s = text.toLowerCase().replace(/[^a-z]/g, "");
+  if (s.length < GIBBERISH_MIN_LETTERS) return false;
+  let rare = 0;
+  for (let i = 0; i < s.length - 1; i++) if (!COMMON_LETTER_PAIRS.has(s.slice(i, i + 2))) rare++;
+  return rare / (s.length - 1) >= GIBBERISH_RARE_SHARE;
+}
