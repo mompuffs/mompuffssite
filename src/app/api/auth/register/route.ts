@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
-import { looksLikeBot } from "@/lib/antiSpam";
+import { containsLink, isDisposableEmail, looksLikeBot } from "@/lib/antiSpam";
 import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 import { generateVerificationToken, VERIFY_TOKEN_TTL_MS } from "@/lib/emailVerification";
 import { sendVerificationEmail } from "@/lib/email";
@@ -13,6 +13,11 @@ const SITE_URL = process.env.NEXTAUTH_URL || "https://mompuffs.com";
 
 const RATE_LIMIT = 3; // registrations
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // per hour, per IP
+
+// Accounts that never confirm their email can't log in; they're almost all
+// spam sign-ups. Each new registration sweeps out ones older than this, so
+// nobody has to delete them by hand (and no cron job is needed).
+const UNVERIFIED_TTL_MS = 24 * 60 * 60 * 1000;
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
@@ -46,6 +51,17 @@ export async function POST(req: Request) {
 
   const normalizedEmail = String(email).toLowerCase().trim();
   const normalizedUsername = String(username).toLowerCase().trim();
+
+  if (isDisposableEmail(normalizedEmail)) {
+    return NextResponse.json({ error: "Please use a permanent email address, not a temporary inbox." }, { status: 400 });
+  }
+  if (containsLink(String(displayName)) || containsLink(normalizedUsername)) {
+    return NextResponse.json({ error: "Names can't contain links or web addresses." }, { status: 400 });
+  }
+
+  await db.user
+    .deleteMany({ where: { emailVerifiedAt: null, createdAt: { lt: new Date(Date.now() - UNVERIFIED_TTL_MS) } } })
+    .catch(() => {});
 
   const existing = await db.user.findFirst({
     where: { OR: [{ email: normalizedEmail }, { username: normalizedUsername }] },

@@ -39,6 +39,7 @@ export default async function SearchPage({ searchParams }: { searchParams: { q?:
   const [users, groups, shops, products] = await Promise.all([
     db.user.findMany({
       where: {
+        emailVerifiedAt: { not: null }, // unconfirmed sign-ups are mostly spam
         OR: [
           { displayName: { contains: q, mode: "insensitive" } },
           { username: { contains: q, mode: "insensitive" } },
